@@ -109,10 +109,14 @@ visitas.16.incomp <- ggplot(datos16, aes(x = num.indv, y = num.visits, group = G
 visitas.16.incomp
 
 
+
+x_scale <- scale_x_continuous(limits = c(0,10))#para cortar la escala
+
 visitas.19.incomp <- ggplot(datos19, aes(x = num.indv, y = num.visits, group = Group_Floralvisitor))+
   geom_point(aes(color = Group_Floralvisitor))+
   geom_smooth(method = "lm", aes(color = Group_Floralvisitor))+
-  NULL
+  x_scale+ #esto es para cortar el eje x donde a mi me interese, para el je y seria lo mismo
+   NULL
 visitas.19.incomp
 
 #visitas de pol segun la abundancia por spp de Planta ----
@@ -371,7 +375,7 @@ phenology.color.16 <- ggplot(FV_16, aes(x= week, y = Plant_Simple))+
 NULL
 phenology.color.16
 phenology.color.19 <- ggplot(FV_19, aes(x= week, y = Plant_Simple))+
-  geom_boxplot(aes(color = week))+
+  geom_point(aes(color = week))+
   ggtitle ("Phenology 2019")+
   xlab ("weeks")+
   ylab ("spp_Plants")
