@@ -1,4 +1,25 @@
-#abundancia de polinizadores en las diferentes plantas ----
+### aqui creamos la tabla compelta de abundancias mas visitas ----
+FV_19 <- subset(FV_16_19, Year == 2019) 
+FV_19
+Abun_19
+Abun_19$Plot <- Abun_19$plot
+Abun_19$Subplot <- Abun_19$subplot
+Abun_19$Plant_Simple <- Abun_19$Sp.Focal
+ab.19 <-Abun_19 %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.plantas = sum(Plantas))
+library(tidyverse)
+FV.19<- FV_19 %>% group_by(Plot, Subplot, Plant_Simple, Group, Order, Family, Species) %>% summarise(num.visits= sum(Visits))
+
+FINAL <- dplyr::left_join(FV.19, ab.19)
+
+## datos de visitors (numero de visitas por subplot a una planta) + abundancias plantas
+V_a_16_19
+V.19 <- subset(V_a_16_19, Year == 2019)
+V.19$Plot <- as.numeric(as.character(V.19$Plot))
+V <-V.19 %>% group_by(Plot, Subplot,Plant_Simple, Group, Order, Family, Species)%>% summarise (abun =sum(Abundances))
+abun.F <- dplyr::left_join(V, ab.19)
+
+
+#visitas de polinizadores en las diferentes plantas ----
 
 FINAL1 <- subset(FINAL,Plant_Simple %in% c("LEMA","CHFU","RAPE","ME", "HOMA","PUPA", "CHMI") & Group %in% c("Beetle", "Fly", "Butterfly","Bee"))
 pollinator <- ggplot(V) + 
@@ -13,6 +34,7 @@ boxplot(V$abun~V$Group,xlab= 'Guild', ylab= 'num.pol', main= 'Num de pol en los 
 boxplot(V$abun~V$Plot,xlab='Plots', ylab= 'num.pol', main= 'Abundancia de pol en los plots 2019')
 
 #relacion entre el numero de abundancias de plantas y el numero de visitantes que reciben, GLOBAL----
+#abun.F = base de visitors_abundances
 visitas.19 <- ggplot(abun.F, aes(x = num.plantas, y = abun))+
     geom_point()+
     geom_smooth(method = "lm")+
