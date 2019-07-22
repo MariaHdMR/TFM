@@ -1,7 +1,12 @@
 #red de las visitas de los polinizadores frente las abundancias de plantas --> data original de visitors =FINAL
+
+#load packages
 library(tidyverse)
 library(bipartite)
 library(igraph)
+
+#load data
+#(idem!)
 
 FINAL1 <- subset(FINAL,Plant_Simple %in% c("LEMA","CHFU","RAPE","ME", "HOMA","PUPA", "CHMI") & Group %in% c("Beetle", "Fly", "Butterfly","Bee"))
 red.general <- FINAL1[,c("Plant_Simple","Group","num.visits")]
@@ -12,7 +17,6 @@ red.col[is.na(red.col)] <- 0
 nombres <- list(red.col$Plant_Simple, names(red.col[,2:length(red.col)]))
 red.matrix <- as.matrix(red.col[,2:length(red.col)], dimnames = nombres)
 rownames(red.matrix) <- red.col$Plant_Simple
-library(tidyverse)
 red.igraph <- graph_from_incidence_matrix(red.matrix, weighted = TRUE)
 node.size.df <- FINAL %>% group_by(Plant_Simple) %>% summarise(size = sum(num.plantas))
 plant.size <- node.size.df$size
@@ -39,3 +43,12 @@ plot(red.igraph, vertex.color=(c("tomato","steelblue")[V(red.igraph)$type+1]),
      vertex.label.color= "gray8",
      #edge.curved=0.3,
      layout=layout_as_bipartite, main="Visitantes florales y  las plantas visitadas")
+
+#Alternativelly, you can also plot using bipartite
+library(bipartite)
+#plot.network()
+# You can also calculate easely it's modularity, for example
+computeModules()
+metaComputeModules(moduleObject, N=5)
+
+
