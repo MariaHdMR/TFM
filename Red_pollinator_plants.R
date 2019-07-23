@@ -6,12 +6,17 @@ library(bipartite)
 library(igraph)
 
 #load data
-#(idem!)
+FINAL <- read.csv("data/FV_16_19.csv", sep = ";")
+head(FINAL)
 
-FINAL1 <- subset(FINAL,Plant_Simple %in% c("LEMA","CHFU","RAPE","ME", "HOMA","PUPA", "CHMI") & Group %in% c("Beetle", "Fly", "Butterfly","Bee"))
-red.general <- FINAL1[,c("Plant_Simple","Group","num.visits")]
+#I would use only 2019 for your TFM, makes things easier to explain.
+FINAL1 <- subset(FINAL,Plant_Simple %in% c("LEMA","CHFU","RAPE","ME", 
+                                           "HOMA","PUPA", "CHMI") & 
+                   Group %in% c("Beetle", "Fly", "Butterfly","Bee") &
+                   Year == 2019)
+red.general <- FINAL1[,c("Plant_Simple","Group","Visits")]
 red.general <- red.general[which(complete.cases(red.general)),]
-red.total <- red.general %>% group_by(Group,Plant_Simple) %>% summarise (total.visitas = sum(num.visits))
+red.total <- red.general %>% group_by(Group,Plant_Simple) %>% summarise (total.visitas = sum(Visits))
 red.col <- tidyr::spread(red.total,key = Group, value = total.visitas)
 red.col[is.na(red.col)] <- 0
 nombres <- list(red.col$Plant_Simple, names(red.col[,2:length(red.col)]))
@@ -25,7 +30,7 @@ visitors.size <- rep(1000,8)
 names(visitors.size) <- nombres[[2]]
 node.size <- c(plant.size,visitors.size)
 
-
+#I can't run this code, but I am not sure I am using the right data.
 
 plot(red.igraph, vertex.color=(c("tomato","steelblue")[V(red.igraph)$type+1]),
      # vertex.label=NA,
@@ -46,9 +51,18 @@ plot(red.igraph, vertex.color=(c("tomato","steelblue")[V(red.igraph)$type+1]),
 
 #Alternativelly, you can also plot using bipartite
 library(bipartite)
-#plot.network()
+library(reshape2)
+head(FINAL1)
+ntw <- dcast(FINAL1, Plant_Simple ~ Species, fun.aggregate = sum, value.var = "Visits")
+head(ntw)
+rownames(ntw) <- ntw$Plant_Simple 
+ntw <- ntw[,-1]
+plotweb(ntw)
 # You can also calculate easely it's modularity, for example
-computeModules()
-metaComputeModules(moduleObject, N=5)
+m <- computeModules(ntw, method = "DormannStrauss")
+m@likelihood #very low modularity...
+visweb(ntw)
+networklevel(ntw) #Plants have a moderatelly high niche overlap: niche.overlap.LL: 0.6757449 
 
+#this can be the first descriptive result. plants share a lot of pollinators. BUT NA's and taxonomy may need further cleaning.
 
