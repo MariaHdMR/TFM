@@ -1,4 +1,13 @@
 ### aqui creamos la tabla compelta de abundancias mas visitas ----
+FV_16_19 <- read.csv("data/FV_16_19.csv", sep = ";")
+head(FV_16_19)
+Abun_19 <- read.csv("data/Abun_19.csv", sep = ";")
+head(Abun_19)
+
+#load librraies
+library(tidyverse)
+
+
 FV_19 <- subset(FV_16_19, Year == 2019) 
 FV_19
 Abun_19
@@ -6,13 +15,14 @@ Abun_19$Plot <- Abun_19$plot
 Abun_19$Subplot <- Abun_19$subplot
 Abun_19$Plant_Simple <- Abun_19$Sp.Focal
 ab.19 <-Abun_19 %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.plantas = sum(Plantas))
-library(tidyverse)
 FV.19<- FV_19 %>% group_by(Plot, Subplot, Plant_Simple, Group, Order, Family, Species) %>% summarise(num.visits= sum(Visits))
 
-FINAL <- dplyr::left_join(FV.19, ab.19)
+FINAL <- dplyr::left_join(FV.19, ab.19) #IB: not working in my computer.
 
 ## datos de visitors (numero de visitas por subplot a una planta) + abundancias plantas
-V_a_16_19
+V_a_16_19 <- read.csv("data/V_a_16_19.csv", sep = ";") #imagino que estos son los datos.
+head(V_a_16_19)
+
 V.19 <- subset(V_a_16_19, Year == 2019)
 V.19$Plot <- as.numeric(as.character(V.19$Plot))
 V <-V.19 %>% group_by(Plot, Subplot,Plant_Simple, Group, Order, Family, Species)%>% summarise (abun =sum(Abundances))
@@ -47,7 +57,7 @@ visitas.19
 visitors <- ggplot(abun.F, aes(x = num.plantas, y = abun, group = Group))+
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
-    x_scale1+
+    x_scale1+ #not found
     ggtitle("num de visitors segun las abundancias de plantas 2019")
 NULL
 visitors
@@ -68,7 +78,7 @@ visitas.LEMA <- ggplot(t.LEMA, aes(x = num.plantas, y = abun, group = Group))+
 visitas.LEMA
 
 #chfu----
-library(tidyverse)
+library(tidyverse) #ya cargada
 tabla.CHFU<- subset(abun.F, Plant_Simple == 'CHFU')
 visitas.CHFU <- ggplot(tabla.CHFU, aes(x = num.plantas, y = abun, group = Group))+
     geom_point(aes(color = Group))+
@@ -162,7 +172,7 @@ V.19.1$date <- paste(V.19.1$Year,"-",V.19.1$Month,"-",V.19.1$Day,sep="")
 V.19.1$week <- strftime(V.19.1$date,format = "%V")
 V.19.1$week <- strftime(V.19.1$date,format = "%V")
 
-library(tidyverse)
+library(tidyverse) #idem
 phenology.color. <- ggplot(V.19.1, aes(x= week, y = Plant_Simple))+
     geom_point(aes(color = week))+
     ggtitle ("Phenology 2019")+
@@ -223,8 +233,9 @@ m.pupa = lme(num.plantas~ abun, random=~1|Plot, #no es significativo
                  data=tabla.PUPA,
                  method="REML")   
 summary(m.pupa)
-plot(m.pupa)
-r.squaredGLMM(m.pupa)
+plot(m.pupa) #este modelo no cumple las asumpciones. No cambiara el resultado, 
+ #pero si lo usamos habria que corregir esto, e.g. hacer log's
+r.squaredGLMM(m.pupa) #fijate que plot lo explica casi todo. 
 
 #ahora solo con un grupo
 tabla.P.Co <- subset(tabla.PUPA, Group == 'Beetles')
@@ -240,6 +251,7 @@ m.P.Bee = lme(num.plantas~ abun, random=~1|Plot,
              method="REML")   
 summary(m.P.Bee)
 r.squaredGLMM(m.P.Bee) 
+plot(m.P.Bee)
 
 m.P.Bi = lme(num.plantas~ abun, random=~1|Plot, 
               data=tabla.P.Bi,
@@ -247,17 +259,22 @@ m.P.Bi = lme(num.plantas~ abun, random=~1|Plot,
 summary(m.P.Bi)
 r.squaredGLMM(m.P.Bi) 
 
-m.P.F = lme(num.plantas~ abun, random=~1|Plot, 
+m.P.F = lme(log(num.plantas+1) ~ abun, random=~1|Plot, 
              data=tabla.P.F,
              method="REML")   
 summary(m.P.F) #SIGNIFICATIVOOOOO!!!!!! PARA FLIES
+plot(m.P.F) #modelo no se ajusta a las asunciones. Añado lo por ahora.
+plot(log(tabla.P.F$num.plantas+1) ~ tabla.P.F$abun)
+abline(m.P.F$coefficients$fixed) 
+#Es significativo, pero solo hay tres puntos con abundance = 2... no me creeria yo este modelo mucho.
+
 #chfu----
 tabla.CHFU.1 <- tabla.CHFU[which(!is.na(tabla.CHFU$num.plantas)),] 
 m.chfu = lme(num.plantas~ abun, random=~1|Plot, #no es significativo
              data=tabla.CHFU.1,
              method="REML")   
 summary(m.chfu)
-plot(m.chfu)
+plot(m.chfu) #tambien hay un poco de dispersion de la variancia con la media...
 r.squaredGLMM(m.chfu)
 
 tabla.C.Co <- subset(tabla.CHFU.1, Group == 'Beetles')
@@ -279,6 +296,13 @@ m.C.Bee = lme(num.plantas~ abun, random=~1|Plot,
              data=tabla.C.Bee,
              method="REML")   
 summary(m.C.Bee) # casi sig
+plot(m.C.Bee) #buff
+m.C.Bee = lme(log(num.plantas+1) ~ abun, random=~1|Plot, 
+              data=tabla.C.Bee,
+              method="REML")   
+summary(m.C.Bee) # casi sig
+plot(m.C.Bee) #buff, no se soluciona
+tabla.C.Bee$abun #No hay varianza con esas abundancias...
 
 m.C.F = lme(num.plantas~ abun, random=~1|Plot, 
               data=tabla.C.F,
@@ -298,7 +322,7 @@ m.LEMA = lme(num.plantas~ abun, random=~1|Plot,
              data=t.LEMA,
              method="REML")   
 summary(m.LEMA)
-plot(m.LEMA)
+plot(m.LEMA) #clasioco mal modelo, habria que corregir.
 r.squaredGLMM(m.LEMA)
 
 tabla.L.Co <- subset(t.LEMA, Group == 'Beetles')
@@ -326,7 +350,7 @@ m.ME = lme(num.plantas~ abun, random=~1|Plot,
              data=tabla.ME,
              method="REML")   
 summary(m.ME)
-plot(m.ME)
+plot(m.ME) #mal modelo
 r.squaredGLMM(m.ME)
 
 
@@ -354,7 +378,7 @@ m.homa = lme(num.plantas~ abun, random=~1|Plot,
            data=tabla.HOMA,
            method="REML")   
 summary(m.homa)
-plot(m.homa)
+plot(m.homa) #mal modelo
 r.squaredGLMM(m.homa)
 
 tabla.HOMA.Co <- subset(tabla.HOMA, Group == 'Beetles')
