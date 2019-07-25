@@ -1,9 +1,12 @@
-#red de las visitas de los polinizadores frente las abundancias de plantas --> data original de visitors =FINAL
+#red de las visitas de los polinizadores frente las abundancias de plantas 
+
+#load packages
 library(tidyverse)
 library(bipartite)
 library(igraph)
 library(reshape2)
 
+#load data
 FV_16_19 <-read.table("FV_16_19.csv", header=T, sep=";")
 FV_19 <- subset(FV_16_19, Year == 2019) 
 Abun_19 <-read.table("Abun_19.csv", header=T, sep=";")
@@ -13,9 +16,16 @@ Abun_19$Plant_Simple <- Abun_19$Sp.Focal
 ab.19 <-Abun_19 %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.plantas = sum(Plantas))
 FINAL <- dplyr::left_join(FV.19, ab.19)
 FINAL <- FINAL[which(complete.cases(FINAL)),]
+head(FINAL)
 
-FINAL1 <- subset(FINAL,Plant_Simple %in% c("LEMA","CHFU","RAPE","ME", "HOMA","PUPA", "CHMI") & Group %in% c("Beetle", "Fly", "Butterfly","Bee"))
-red.general <- FINAL1[,c("Plant_Simple","Group","num.visits")]
+
+#I would use only 2019 for your TFM, makes things easier to explain.
+FINAL1 <- subset(FINAL,Plant_Simple %in% c("LEMA","CHFU","RAPE","ME", 
+                                           "HOMA","PUPA", "CHMI") & 
+                  Group %in% c("Beetle", "Fly", "Butterfly","Bee") &
+                   Year == 2019)
+#M: no sé por qué pero cambia la red al meter FINAL y FINAL1, con FINAL hay más abundancia de LEMA y CHFU ¿? 
+red.general <- FINAL[,c("Plant_Simple","Group","num.visits")]
 red.general <- red.general[which(complete.cases(red.general)),]
 red.total <- red.general %>% group_by(Group,Plant_Simple) %>% summarise (total.visitas = sum(num.visits))
 red.col <- tidyr::spread(red.total,key = Group, value = total.visitas)
@@ -24,15 +34,17 @@ nombres <- list(red.col$Plant_Simple, names(red.col[,2:length(red.col)]))
 red.matrix <- as.matrix(red.col[,2:length(red.col)], dimnames = nombres)
 rownames(red.matrix) <- red.col$Plant_Simple
 
+
 red.igraph <- graph_from_incidence_matrix(red.matrix, weighted = TRUE)
 node.size.df <- FINAL %>% group_by(Plant_Simple) %>% summarise(size = sum(num.plantas))
 plant.size <- node.size.df$size
 names(plant.size) <- node.size.df$Plant_Simple
 #visitors.size <- rep(1000,8)
-Abundancia_de_visitors <- dcast(FINAL1, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "num.visits")
+Abundancia_de_visitors <- dcast(FINAL, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "num.visits")
 visitors.size <- c(88,450,41,662)*12 #este vector lo he sacado de sumar todas las visitas de Bee, todas las de Beetle...de la matriz anterior
-names(visitors.size) <- nombres[[2]]
+names(visitors.size) <- nombres[[2]] #me da aquí un erro en los nombres, pero sigue saliendo
 node.size <- c(plant.size,visitors.size)
+
 
 
 
@@ -52,6 +64,7 @@ plot(red.igraph, vertex.color=(c("tomato","steelblue")[V(red.igraph)$type+1]),
      vertex.label.color= "gray8",
      #edge.curved=0.3,
      layout=layout_as_bipartite, main="Visitantes florales y  las plantas visitadas")
+
 #otra manera de hacerlo <- NACHO
 
 #plot.network()
@@ -69,4 +82,7 @@ m <- computeModules(ntw, method = "DormannStrauss")
 m@likelihood #very low modularity...
 visweb(ntw)
 networklevel(ntw) #Plants have a moderatelly high niche overlap: niche.overlap.LL: 0.6757449 
+
+#this can be the first descriptive result. plants share a lot of pollinators. BUT NA's and taxonomy may need further cleaning.
+
 
