@@ -25,6 +25,9 @@ FINAL1 <- subset(FINAL,Plant_Simple %in% c("LEMA","CHFU","RAPE","ME",
                   Group %in% c("Beetle", "Fly", "Butterfly","Bee") &
                    Year == 2019)
 #M: no sé por qué pero cambia la red al meter FINAL y FINAL1, con FINAL hay más abundancia de LEMA y CHFU ¿? 
+
+
+#Analysis
 red.general <- FINAL[,c("Plant_Simple","Group","num.visits")]
 red.general <- red.general[which(complete.cases(red.general)),]
 red.total <- red.general %>% group_by(Group,Plant_Simple) %>% summarise (total.visitas = sum(num.visits))
@@ -63,7 +66,7 @@ plot(red.igraph, vertex.color=(c("tomato","steelblue")[V(red.igraph)$type+1]),
      vertex.label.cex= 1.01,
      vertex.label.color= "gray8",
      #edge.curved=0.3,
-     layout=layout_as_bipartite, main="Visitantes florales y  las plantas visitadas")
+     layout=layout_as_bipartite, main="Interactions between visitors and plants")
 
 #otra manera de hacerlo <- NACHO
 
