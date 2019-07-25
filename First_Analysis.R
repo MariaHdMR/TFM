@@ -1,4 +1,4 @@
-### aqui creamos la tabla compelta de abundancias mas visitas ----
+### aqui creamos la tabla compelta de abundancias plantas mas visitas ----
 FV_19 <- subset(FV_16_19, Year == 2019) 
 FV_19
 Abun_19
@@ -11,8 +11,8 @@ FV.19<- FV_19 %>% group_by(Plot, Subplot, Plant_Simple, Group, Order, Family, Sp
 
 FINAL <- dplyr::left_join(FV.19, ab.19)
 
-## datos de visitors (numero de visitas por subplot a una planta) + abundancias plantas
-V_a_16_19
+## Abundancia de visitors (numero de visitas por subplot a una planta) + abundancias plantas
+V_a_16_19 
 V.19 <- subset(V_a_16_19, Year == 2019)
 V.19$Plot <- as.numeric(as.character(V.19$Plot))
 V <-V.19 %>% group_by(Plot, Subplot,Plant_Simple, Group, Order, Family, Species)%>% summarise (abun =sum(Abundances))
