@@ -35,9 +35,45 @@ install.packages("ade4")
 library(ade4)
 mantel.rtest(h, d.visits,nrepet = 9999)
 ################################################################### Buenos datos----
-#voy a crear una matriz con PUPA y Flies
-#primer paso: crear un subset de los datos de Flies y Pupa para todos los  Plots
 
+#crear una matriz con todos los polinizadores 
+library(tidyverse)
+
+Abun_19 <-read.table("Abun_19.csv", header=T, sep=";")
+Abun_19$Plot <- Abun_19$plot
+Abun_19$Subplot <- Abun_19$subplot
+Abun_19$Plant_Simple <- Abun_19$Sp.Focal
+ab.19 <-Abun_19 %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.plantas = sum(Plantas))
+V_a_16_19 <- read.table ("V_a_16_19.csv", header= T, sep =";")
+V.19 <- subset(V_a_16_19, Year == 2019)
+V.19$Plot <- as.numeric(as.character(V.19$Plot))
+V <-V.19 %>% group_by(Plot, Subplot,Plant_Simple, Group, Order, Family, Species)%>% summarise (abun =sum(Abundances))
+abun.F <- dplyr::left_join(V, ab.19)
+abun.F1 <- abun.F[which(complete.cases(abun.F)),]
+
+    
+
+
+abun.subplot <-abun.F1 %>% group_by(Subplot) %>% summarise (n.abun =sum(abun))
+sp.subplot <- abun.F1 %>% group_by(Subplot) %>% summarise(n.plantas = sum(num.plantas))
+total <-dplyr::left_join(abun.subplot, sp.subplot ) #no entiendo de donde sale el NA del A6, creo que porque hay spp con su abundancia que nosotros no tenemos
+total <- total[which(complete.cases(total)),]
+ac <- dist(abun.subplot, method= "euclidean", diag=T, upper=T)
+summary(ac)
+ac.matrix <- as.matrix(ac)
+
+ac1 <- dist(abun.subplot, method= "euclidean", diag=T, upper=T)
+summary(ac1)
+ac1.matrix <- as.matrix(ac1)
+
+
+ac2 <- dist(sp.subplot, method= "euclidean", diag=T, upper=T)
+p.matrix <- as.matrix(ac2)
+mantel.rtest(ac1, ac2,nrepet = 9999) 
+
+
+
+###solo con una spp de planta y 1 polinizador ----
 abun.P.F <-tabla.P.F %>% group_by(Subplot) %>% summarise(n.abun = sum(abun))
 plantas.P.F <- tabla.P.F %>% group_by(Subplot) %>% summarise(n.plantas = sum(num.plantas))
 Pupa.Flies <-dplyr::left_join(abun.P.F, plantas.P.F )
@@ -48,18 +84,45 @@ ab.matrix <- as.matrix(ab)
 #colnames(dist.matrix) <- abun.P.F[,1]
 #☺rownames(dist.matrix) <- abun.P.F[,1]
 
-
+library(geoR)
+library(gstat)
+library(aqfig)
+library(lattice)
 
 plantas1 <- dist(plantas.P.F, method= "euclidean", diag=T, upper=T)
 plantas.matrix <- as.matrix(plantas1)
 mantel.rtest(ab, plantas,nrepet = 9999)
 
 
-#str(Pupa.Flies)
-#geo_data <-Pupa.Flies[,c(3,23:46)] # no me sale, seguir investigando
-geo_data <-Pupa.Flies[,-1]
-#ph_113<-as.geodata(geo_data[1:46,], coords.col = 2:3, data.col = 3)
+#Ahora para mostrar las distancias en un mapa de calor --> script que me pasó Oscar
+geo_data <-total[,c(1,2:3)] 
+row.names(geo_data) <- geo_data[,1]#me sale error
+geo_data <-total[,-1]
+ph_113 <-as.geodata(geo_data[,1:2], coords.col = 2, data.col = 2) #asi solo tengo el numero de plantas
+ph_114 <-as.geodata(geo_data[, 2], coords.col = 1, data.col = 1)#solo consigo que me de el número de plantas, no consigo los polinizadores
+
+#estimación de parametros
+ml_ph_113 <- likfit(ph_113, ini = c(1,23), fix.nugget = T) # no entiendo 
+
+# definir la malla de análisis
+pred.grid <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
+
+# cálculos de interpolación.
+kc_ph_113 <- krige.conv(ph_113, loc = pred.grid, krige = krige.control(obj.m = ml_ph_113)) 
+
+# representacion de los datos 
+
+image(kc_ph_113, loc = pred.grid, col=rainbow(15), xlab=NA, ylab="Coordenadas Y (m)", main="plantas") 
+vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_113$predict),max(kc_ph_113$predict))) 
 
 
 
-
+##########################################
+#crear una matriz de polinizadores, coger la de abundancias plantas+abun pol
+abun.F1
+#af <-subset(abun.F1, Plot & Subplot & Group)
+af <-abun.F1 %>% group_by(Plot,Subplot,Group, Plant_Simple) %>% summarise(n.abun = sum(abun))
+af1 <- abun.F1 %>% group_by(Plot,Subplot,Group, Plant_Simple) %>% summarise(n.plantas = sum(num.plantas))
+pol.1 <-subset(af, Plot== '1')
+pol1.a <- pol.1 %>% group_by(Subplot, Plant_Simple)
+subset(pol1.a, Subplot)
