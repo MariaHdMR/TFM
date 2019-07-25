@@ -2,6 +2,7 @@
 library(tidyverse)
 library(bipartite)
 library(igraph)
+library(reshape2)
 
 FV_16_19 <-read.table("FV_16_19.csv", header=T, sep=";")
 FV_19 <- subset(FV_16_19, Year == 2019) 
@@ -51,4 +52,21 @@ plot(red.igraph, vertex.color=(c("tomato","steelblue")[V(red.igraph)$type+1]),
      vertex.label.color= "gray8",
      #edge.curved=0.3,
      layout=layout_as_bipartite, main="Visitantes florales y  las plantas visitadas")
+#otra manera de hacerlo <- NACHO
+
+#plot.network()
+
+head(FINAL1)
+ntw <- dcast(FINAL1, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "num.visits")
+head(ntw)
+rownames(ntw) <- ntw$Plant_Simple 
+ntw <- ntw[,-1]
+plotweb(ntw)
+# You can also calculate easely it's modularity, for example
+computeModules()
+metaComputeModules(moduleObject, N=5)
+m <- computeModules(ntw, method = "DormannStrauss")
+m@likelihood #very low modularity...
+visweb(ntw)
+networklevel(ntw) #Plants have a moderatelly high niche overlap: niche.overlap.LL: 0.6757449 
 
