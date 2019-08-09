@@ -1,142 +1,110 @@
-#matriz espacial
-#coordenadas ----
-sitios <- data.frame(name = c("1A","2A","3A","4A","5A","6A","1B","2B", "3B", "4B", "5B","6B","1C","2C","3C","4C","5C","6C","1D","2D","3D","4D","5D","6D","1E","2E","3E","4E", "5E","6E","1F","2F","3F","4F","5F","6F"),lat= c(0.5,0.5,0.5,0.5,0.5,0.5,2,2,2,2,2,2,3.5,3.5,3.5,3.5,3.5,3.5,5,5,5,5,5,5,6.5,6.5,6.5,6.5,6.5,6.5,8,8,8,8,8,8), lng= c(0.5,2,3.5,5,6.5,8,0.5,2,3.5,5,6.5,8,0.5,2,3.5,5,6.5,8,0.5,2,3.5,5,6.5,8,0.5,2,3.5,5,6.5,8,0.5,2,3.5,5,6.5,8))
-<<<<<<< HEAD
-h <- dist(sitios[,c(2,3)], method= "euclidean", diag=T, upper=T)
-# h2 <- dist(sitios, method= "euclidean", diag=T, upper=T)
-
-summary(h)
-dist.matrix <- as.matrix(h)
-colnames(dist.matrix) <- sitios[,1]
-rownames(dist.matrix) <- sitios[,1]
-
+library(vegan)
 library(tidyverse)
-tabla.completa.19$Plot <- as.factor(tabla.completa.19$Plot)
-tabla.completa.19$Subplot <- as.factor(tabla.completa.19$Subplot)
-t.19<- tabla.completa.19[which(!is.na(tabla.completa.19$Plot)),] 
-t.19.1 <- t.19[which(!is.na(t.19$Subplot)),]
-
-#para hacerlo con la tabla de visitors abundances
-r.1.b <- subset(V, Plot=='1')
-
-b <- r.1.b%>%group_by(Subplot, )%>% summarise(ab = sum(abun))
-d.visits <- dist(b [,c(2)], method = "euclidean", diag = T, upper = T)
-d.visits.matrix <- as.matrix(d.visits)
-
-
-
-#ahora tendria que hacer lo mismo con las abundancias
-r.1.b <- subset(ab.19, Plot=='1')
-b <- r.1.b%>%group_by(Subplot)%>% summarise(ab = sum(abun))
-d.visits <- dist(b [,c(2)], method = "euclidean", diag = T, upper = T)
-d.visits.matrix <- as.matrix(d.visits)
-
-
-install.packages("ade4")
 library(ade4)
-mantel.rtest(h, d.visits,nrepet = 9999)
-################################################################### Buenos datos----
-
-#crear una matriz con todos los polinizadores 
-library(tidyverse)
-
-Abun_19 <-read.table("Abun_19.csv", header=T, sep=";")
-Abun_19$Plot <- Abun_19$plot
-Abun_19$Subplot <- Abun_19$subplot
-Abun_19$Plant_Simple <- Abun_19$Sp.Focal
-ab.19 <-Abun_19 %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.plantas = sum(Plantas))
-V_a_16_19 <- read.table ("V_a_16_19.csv", header= T, sep =";")
-V.19 <- subset(V_a_16_19, Year == 2019)
-V.19$Plot <- as.numeric(as.character(V.19$Plot))
-V <-V.19 %>% group_by(Plot, Subplot,Plant_Simple, Group, Order, Family, Species)%>% summarise (abun =sum(Abundances))
-abun.F <- dplyr::left_join(V, ab.19)
-abun.F1 <- abun.F[which(complete.cases(abun.F)),]
-
-    
-
-
-abun.subplot <-abun.F1 %>% group_by(Subplot) %>% summarise (n.abun =sum(abun))
-sp.subplot <- abun.F1 %>% group_by(Subplot) %>% summarise(n.plantas = sum(num.plantas))
-total <-dplyr::left_join(abun.subplot, sp.subplot ) #no entiendo de donde sale el NA del A6, creo que porque hay spp con su abundancia que nosotros no tenemos
-total <- total[which(complete.cases(total)),]
-ac <- dist(abun.subplot, method= "euclidean", diag=T, upper=T)
-summary(ac)
-ac.matrix <- as.matrix(ac)
-
-ac1 <- dist(abun.subplot, method= "euclidean", diag=T, upper=T)
-summary(ac1)
-ac1.matrix <- as.matrix(ac1)
-
-
-ac2 <- dist(sp.subplot, method= "euclidean", diag=T, upper=T)
-p.matrix <- as.matrix(ac2)
-mantel.rtest(ac1, ac2,nrepet = 9999) 
-
-
-
-###solo con una spp de planta y 1 polinizador ----
-abun.P.F <-tabla.P.F %>% group_by(Subplot) %>% summarise(n.abun = sum(abun))
-plantas.P.F <- tabla.P.F %>% group_by(Subplot) %>% summarise(n.plantas = sum(num.plantas))
-Pupa.Flies <-dplyr::left_join(abun.P.F, plantas.P.F )
-
-ab <- dist(abun.P.F, method= "euclidean", diag=T, upper=T)
-summary(ab)
-ab.matrix <- as.matrix(ab)
-#colnames(dist.matrix) <- abun.P.F[,1]
-#☺rownames(dist.matrix) <- abun.P.F[,1]
-
 library(geoR)
 library(gstat)
 library(aqfig)
 library(lattice)
+#load data
+visitor.abun <- read.table("V_a_16_19.csv", header=T, sep= ";")
 
-plantas1 <- dist(plantas.P.F, method= "euclidean", diag=T, upper=T)
-plantas.matrix <- as.matrix(plantas1)
-mantel.rtest(ab, plantas,nrepet = 9999)
+#preparacion del data
+head(visitor.abun)
+v.abun.19 <- subset(visitor.abun, Year== "2019")
+
+#escarabajos ----
+#quiero sacar la B-diversidad de los escarabajos por plots, y luego hacer el mantel test. 
+pol.9 <- v.abun.19 %>% group_by(Plot, Subplot, Group) %>% summarise (num.visitors = sum(Abundances))
+pol.9 <-pol.9[which(complete.cases(pol.9)),]
+pol.9 <- subset(pol.9, Plot != "OUT")
+pol.beetle9 <- subset(pol.9, Group == "Beetles")
+pol.beetle9$Plot <- as.numeric(as.character(pol.beetle9$Plot))
+pol.beetle.B <- pol.beetle9[,c("Plot", "Subplot", "num.visitors")] #total
+BEETLES <- tidyr::spread(pol.beetle.B,key = Plot, value = num.visitors)
+BEETLES[is.na(BEETLES)] <- 0
+#beetles.matrix <- as.matix(BEETLES)
+
+d.beetles.0 <- dist(BEETLES [,c(3:11)], method = "euclidean", diag = F, upper = F)
+
+nombres1 <- list(BEETLES$Subplot, names(BEETLES[,2:length(BEETLES)]))
+BEETLE.matrix <- as.matrix(BEETLES[,2:length(BEETLES)], dimnames = nombres1)
+vegdist(d.beetles.0, method="morisita", binary=FALSE, diag= F, upper=T,
+        na.rm = FALSE) #esta es la B-diversidad de cada plot a su vez dividida en subplots de BEETLES (total)
 
 
-#Ahora para mostrar las distancias en un mapa de calor --> script que me pasó Oscar
-geo_data <-total[,c(1,2:3)] 
-row.names(geo_data) <- geo_data[,1]#me sale error
-geo_data <-total[,-1]
-ph_113 <-as.geodata(geo_data[,1:2], coords.col = 2, data.col = 2) #asi solo tengo el numero de plantas
-ph_114 <-as.geodata(geo_data[, 2], coords.col = 1, data.col = 1)#solo consigo que me de el número de plantas, no consigo los polinizadores
+
+#plot1 -> saco la b-diversidad de los escarabajos en plot 1
+beetle.prueba <- BEETLES [,c( "Subplot","1")]
+dist.1 <-dist(beetle.prueba [,c(2)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (d.beetles.0, h)
+
+nombres.beetle.plot1 <- list(beetle.prueba$Subplot, names(beetle.prueba[,2:length(beetle.prueba)]))
+BEETLE1.matrix <- as.matrix(beetle.prueba[,1:length(beetle.prueba)], dimnames = nombres.beetle.plot1)
+
+vegdist(dist.1, method="morisita", binary=FALSE, diag= F, upper=T,
+        na.rm = FALSE) 
+
+str(beetle.prueba)
+
+Beetle2 <- BEETLES[,c("Subplot", "2")]
+d.beetles.2 <- dist( Beetle2[,c(2)], method = "euclidean", diag = T, upper = T)
+
+
+
+mantel.rtest(dist.1, d.beetles.2,nrepet = 9999) 
+
+########## script oscar para mapa de calor ----
+
+#data
+sitios <- read.table("caracolesplotposition.csv", header=T, sep=";") #hay un error en el csv pero que se corrige con lo sitguiente
+sitios <- sitios[which(complete.cases(sitios)),]
+sitios$Subplot <- sitios$position
+visitor.abun <- read.table("V_a_16_19.csv", header=T, sep= ";")
+#preparacion del data
+head(visitor.abun)
+v.abun.19 <- subset(visitor.abun, Year== "2019")
+
+#escarabajos ----
+#escarabajos total plots
+pol.beetle9$Plot <- as.numeric(as.character(pol.beetle9$Plot))
+pol.beetle.B <- pol.beetle9[,c("Plot", "Subplot", "num.visitors")]
+BEETLES <- tidyr::spread(pol.beetle.B,key = Plot, value = num.visitors)
+BEETLES[is.na(BEETLES)] <- 0
+
+#Analysis
+BEETLES$'1'<-as.numeric(BEETLES$'1')
+BEETLES$'2'<-as.numeric(BEETLES$'2')
+BEETLES$'3'<-as.numeric(BEETLES$'3')
+BEETLES$'4'<-as.numeric(BEETLES$'4')
+BEETLES$'5'<-as.numeric(BEETLES$'5')
+sitios$plot <- as.numeric(sitios$plot)
+sitios$x_coor <- as.numeric(sitios$x_coor)
+sitios$y_coor <- as.numeric(sitios$y_coor)
+sitios$position <- as.character(sitios$position)
+sitios$cell <- as.numeric(sitios$cell)
+completa.beetles <- dplyr::left_join(BEETLES, sitios) #todo el rato me aparece NA¿¿??, esto es para tener las coordenadas dentro de mismo data que el num de visitors
+
+geo_data_BEETLES.1 <-BEETLES[,c(1,3)] #aqui selecciono solo un plot (pero tendre que usar completa.beetles)
+row.names(geo_data_BEETLES.1) <- geo_data_BEETLES.1[,1] #no me deja ponerle los nombres de los subplots (usar completa.beetles)
+geo_data1 <-geo_data_BEETLES.1[,-1] #(usar completa.beetles)
+
+
+#resto del script 
+ph_113 <-as.geodata(geo_data[1:36,], coords.col = 1:2, data.col = 3)
 
 #estimación de parametros
-ml_ph_113 <- likfit(ph_113, ini = c(1,23), fix.nugget = T) # no entiendo 
+ml_ph_113 <- likfit(ph_113, ini = c(1,0.5), fix.nugget = T)
 
 # definir la malla de análisis
 pred.grid <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
 
 # cálculos de interpolación.
-kc_ph_113 <- krige.conv(ph_113, loc = pred.grid, krige = krige.control(obj.m = ml_ph_113)) 
+kc_ph_113 <- krige.conv(ph_113, loc = pred.grid, krige = krige.control(obj.m = ml_ph_113))
 
-# representacion de los datos 
+# representacion de los datos de pH
 
-image(kc_ph_113, loc = pred.grid, col=rainbow(15), xlab=NA, ylab="Coordenadas Y (m)", main="plantas") 
-vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_113$predict),max(kc_ph_113$predict))) 
-
-
-=======
-row.names(sitios) <- sitios$name
-sitios <- sitios[,-1] #quito el nombre, y dejo solo lat long
-h <- dist(sitios, method= "euclidean", diag=T, upper=T) 
-summary(h)
-#h es la matriz de distancias de todos a los sitios a todos los sitios. Lista para ser usada.
-
-plot(sitios$lat~sitios$lng)
-plot(h)# ni idea de lo que esta pasando aqui 
-#IB: ploteas distancias (h), en funcion del numero de celdas. No relevante.
+image(kc_ph_113, loc = pred.grid, col=rainbow(15), xlab=NA, ylab="Coordenadas Y (m)", main="pH P113")
+vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_113$predict),max(kc_ph_113$predict)))
 
 
->>>>>>> 155c47957f48989c86557b9b4954d5a2887a5d21
 
-##########################################
-#crear una matriz de polinizadores, coger la de abundancias plantas+abun pol
-abun.F1
-#af <-subset(abun.F1, Plot & Subplot & Group)
-af <-abun.F1 %>% group_by(Plot,Subplot,Group, Plant_Simple) %>% summarise(n.abun = sum(abun))
-af1 <- abun.F1 %>% group_by(Plot,Subplot,Group, Plant_Simple) %>% summarise(n.plantas = sum(num.plantas))
-pol.1 <-subset(af, Plot== '1')
-pol1.a <- pol.1 %>% group_by(Subplot, Plant_Simple)
-subset(pol1.a, Subplot)
