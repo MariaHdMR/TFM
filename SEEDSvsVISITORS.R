@@ -10,15 +10,15 @@ abun.pol.19 <- subset(ABUNDANCES.pol, Year=='2019')
 abun.pol.19 <- subset(abun.pol.19, Plot != "OUT")
 
 
-P <- abun.pol.19.simplex %>% group_by(Plot, Subplot, Group,Plant_Simple) %>% summarise (abun.pol = sum(Abundances))
-P<- subset(P, Plant_Simple %in% c('CHFU', 'HOMA', 'LEMA', 'ME', 'PUPA', 'POMA') & Group %in% c('Bees','Beetles','Butterflies','Flies'))
+P <- abun.pol.19 %>% group_by(Plot, Subplot, Group,Plant_Simple) %>% summarise (abun.pol = sum(Abundances))
+P<- subset(P, Plant_Simple %in% c('CHFU', 'HOMA', 'LEMA', 'ME', 'PUPA', 'POMA','CHMI') & Group %in% c('Bees','Beetles','Butterflies','Flies'))
 P <-P[which(complete.cases(P)),]
 juntos <- dplyr::left_join(SEEDS,P)
 str(juntos)
 juntos$Group <- as.character(juntos$Group)
-juntos[is.na(juntos)] <- 0
+#juntos[is.na(juntos)] <- 0
 head(juntos)
-juntos.b <- subset(juntos, Plant_Simple %in% c('CHFU', 'HOMA', 'LEMA', 'ME', 'PUPA', 'POMA') & Group  %in% c('Bees','Beetles','Butterflies','Flies'))
+juntos.b <- subset(juntos, Plant_Simple %in% c('CHFU', 'HOMA', 'LEMA', 'ME', 'PUPA', 'POMA','CHMI') & Group  %in% c('Bees','Beetles','Butterflies','Flies'))
 
 #Analysis
 #globales ----
@@ -125,6 +125,22 @@ S.ME
 GLM.ME<- glm(cbind(Seed.ME$Seed,Seed.ME$abun.pol) ~ Seed.ME$Group, 
                family = "binomial")
 summary(GLM.ME) #aparece que le afectan las abejas, pero en la gráfica parece que es la menos determinantem ya que se queda estable, Hmmm...extraño
+
+Seed.CHMI<- subset(juntos.b, Plant_Simple=="CHMI")
+x_scale10 <- scale_x_continuous(limits = c(0,400))
+S.CHMI <- ggplot(Seed.CHMI, aes(x = Seed, y = abun.pol))+ 
+    geom_point(aes(color = Group))+
+    geom_smooth(method = "lm", aes(color = Group))+
+    ggtitle('Relacion del numero de semillas de CHMI y la abundancia de polinizadores 2019')+
+    ylab("Number of visitors")+
+    xlab("Number of CHMI's seeds")+
+    x_scale9+
+    NULL
+S.CHMI
+
+GLM.CHMI<- glm(cbind(Seed.CHMI$Seed,Seed.CHMI$abun.pol) ~ Seed.CHMI$Group, 
+             family = "binomial")
+summary(GLM.CHMI)#no tiene sentido tener en cuenta CHMI por las dos visitas que tiene en las que no hay semillas registradas
 
 #resultados: 
     # SEGUN LOS GRAFICOS :en las especies CHFU,LEMA,PUPA,ME,HOMA se ve que los coleopteros afectan negativamente a la producción de semillas. 
