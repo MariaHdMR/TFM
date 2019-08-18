@@ -1,10 +1,10 @@
 # seed set --> selfing 
 
-#load libraries:
+#load library:
 library(tidyverse)
 
 #load data
-SF_2019 <- read.table("SF_19.csv", header= T, sep= ";")
+SF_2019 <- read.table("data/SF_19.csv", header= T, sep= ";")
 head(SF_2019)
 
 
@@ -39,7 +39,7 @@ head(SF_2019)
 #chfu----
 SF_CHFU <- subset(SF_2019, PLANT== 'CHFU')
 boxplot(SF_CHFU$VIABLES_SEEDS~SF_CHFU$SELFING, xlab= ('Selfing'), 
-        ylab = ('viable seeds'), main = ('Viable seeds vs selfing: CHFU'),
+        ylab = ('Viable seeds'), main = ('Relation between viable seeds and selfing experiment: CHFU'),
         col=c("blue4", "chartreuse"), las = 1)
 m <- lm(VIABLES_SEEDS ~ SELFING, data = SF_CHFU)
 summary(m)
@@ -49,19 +49,19 @@ plot(m) #check residuals. The model is not perfect, but is good enough.
 #alternative analysis
 SF_CHFU$TOTAL_SEEDS <- as.numeric(as.character(SF_CHFU$TOTAL_SEEDS))
 boxplot((SF_CHFU$VIABLES_SEEDS/SF_CHFU$TOTAL_SEEDS)~SF_CHFU$SELFING, 
-        xlab= ('selfing'), ylab = ('% of viable seeds'), 
-        main = ('Viable seeds vs selfing: CHFU'), 
+        xlab= ('Selfing'), ylab = ('% of viable seeds'), 
+        main = ('Relation between viable seeds (%) and selfing experiment: CHFU'), 
         las = 1, col=c("blue4", "chartreuse"))
 n3 <- glm(cbind(SF_CHFU$VIABLES_SEEDS,SF_CHFU$NO_VIABLES_SEEDS) ~ SF_CHFU$SELFING, 
-          family = "binomial") #no funciona ; IB a mi sí.
+          family = "binomial") 
 summary(n3)
 
 
 #LEMA ----
 SF_LEMA <- subset(SF_2019, PLANT== 'LEMA')
 boxplot(SF_LEMA$VIABLES_SEEDS~SF_LEMA$SELFING, xlab= ('Selfing'), 
-        ylab = ('viable seeds'), 
-        main = ('Viable seeds vs selfing: LEMA'),
+        ylab = ('Viable seeds'), 
+        main = ('Relation between viable seeds and selfing experiment: LEMA'),
         col=c("blue4", "chartreuse"), las = 1)
 n <- lm(VIABLES_SEEDS ~ SELFING, data = SF_LEMA)
 summary(n)
@@ -72,7 +72,7 @@ plot(n) #this is completely fine.
 SF_LEMA$TOTAL_SEEDS <- as.numeric(as.character(SF_LEMA$TOTAL_SEEDS))
 boxplot((SF_LEMA$VIABLES_SEEDS/SF_LEMA$TOTAL_SEEDS)~SF_LEMA$SELFING, 
         xlab= ('Selfing'), ylab = ('% of viable seeds'), 
-        main = ('Viable seeds vs selfing: LEMA'), las = 1, 
+        main = ('Relation between viable seeds (%) and selfing experiment: LEMA'), las = 1, 
         col=c("blue4", "chartreuse"))
 n1 <- glm(cbind(SF_LEMA$VIABLES_SEEDS,SF_LEMA$NO_VIABLES_SEEDS) ~ SF_LEMA$SELFING, family = "binomial")
 summary(n1)
@@ -85,8 +85,8 @@ summary(n1)
 #pupa ----
 SF_PUPA <- subset(SF_2019, PLANT== 'PUPA')
 boxplot(SF_PUPA$VIABLES_SEEDS~SF_PUPA$SELFING, xlab= ('Selfing'), 
-        ylab = ('viable seeds'), outline= F, las=1, 
-        main = ('Viable seeds vs selfing: PUPA'),col=c("blue4", "chartreuse"))
+        ylab = ('Viable seeds'), outline= F, las=1, 
+        main = ('Relation between viable seeds and selfing experiment: PUPA'),col=c("blue4", "chartreuse"))
 #aov(VIABLES_SEEDS ~ SELFING, data = SF_PUPA)
 O <- lm(VIABLES_SEEDS ~ SELFING, data = SF_PUPA)
 summary(O)
@@ -94,7 +94,7 @@ plot(O)#good model.
 
 #alternative analysis
 SF_PUPA$TOTAL_SEEDS <- as.numeric(as.character(SF_PUPA$TOTAL_SEEDS))
-boxplot((SF_PUPA$VIABLES_SEEDS/SF_PUPA$TOTAL_SEEDS)~SF_PUPA$SELFING, xlab= ('Selfing'), ylab = ('% of viable seeds'), main = ('Viable seeds vs selfing: PUPA'), las = 1, col=c("blue4", "chartreuse"), outline=F)
+boxplot((SF_PUPA$VIABLES_SEEDS/SF_PUPA$TOTAL_SEEDS)~SF_PUPA$SELFING, xlab= ('Selfing'), ylab = ('% of viable seeds'), main = ('Relation between viable seeds (%) and selfing experiment: PUPA'), las = 1, col=c("blue4", "chartreuse"), outline=F)
 n2 <- glm(cbind(SF_PUPA$VIABLES_SEEDS,SF_PUPA$NO_VIABLES_SEEDS) ~ SF_PUPA$SELFING, family = "binomial")
 summary(n2)
 
