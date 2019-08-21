@@ -4,7 +4,7 @@ library(tidyverse)
 SEEDS <- read.table("data/simplex_competencia_SEEDS_2019.csv", header= T, sep= ";")
 head(SEEDS)
 str(SEEDS)
-ABUNDANCES.pol <- read.table("V_a_16_19.csv", header= T, sep= ";")
+ABUNDANCES.pol <- read.table("data/V_a_16_19.csv", header= T, sep= ";")
 #preparar datos
 abun.pol.19 <- subset(ABUNDANCES.pol, Year=='2019')
 abun.pol.19 <- subset(abun.pol.19, Plot != "OUT")
@@ -61,7 +61,11 @@ GLM.chfu<- glm(cbind(Seed.chfu$Seed,Seed.chfu$abun.pol) ~ Seed.chfu$Group,
           family = "binomial")
 summary(GLM.chfu) # las moscas y las abejas afectan a la cantidad de semillas en CHFU
 
-
+#IB: Yo creo que este GLM esta mal especificado. 
+GLM.chfu<- glm(Seed.chfu$Seed ~ Seed.chfu$abun.pol, family = "quasipoisson", 
+              subset = Seed.chfu$Group == "Flies")
+plot(GLM.chfu)
+summary(GLM.chfu) #tendencia positva, pero ns para flies. 
 
 Seed.LEMA <- subset(juntos.b, Plant_Simple=="LEMA")
 x_scale6 <- scale_x_continuous(limits = c(0,900))
@@ -77,6 +81,7 @@ S.LEMA
 GLM.LEMA<- glm(cbind(Seed.LEMA$Seed,Seed.LEMA$abun.pol) ~ Seed.LEMA$Group, 
                      family = "binomial")
 summary(GLM.LEMA) #todas las especies afectan a la cantidad de semillas!!!
+#IDEM
 
 Seed.PUPA <- subset(juntos.b, Plant_Simple=="PUPA")
 x_scale7 <- scale_x_continuous(limits = c(0,600))
@@ -90,10 +95,13 @@ S.PUPA <- ggplot(Seed.PUPA, aes(x = Seed, y = abun.pol))+
     NULL
 S.PUPA
 
+
 GLM.PUPA<- glm(cbind(Seed.PUPA$Seed,Seed.PUPA$abun.pol) ~ Seed.PUPA$Group, 
                family = "binomial")
 summary(GLM.PUPA) #las abejas son las únicas que afectan
+#IDEM
 
+#IB: HOMA no tiene pollinators, no? Hordeum es una graminea que va por viento...
 Seed.Homa <- subset(juntos.b, Plant_Simple=="HOMA")
 x_scale8 <- scale_x_continuous(limits = c(0,40))
 S.Homa <- ggplot(Seed.Homa, aes(x = Seed, y = abun.pol))+ 
@@ -125,6 +133,7 @@ S.ME
 GLM.ME<- glm(cbind(Seed.ME$Seed,Seed.ME$abun.pol) ~ Seed.ME$Group, 
                family = "binomial")
 summary(GLM.ME) #aparece que le afectan las abejas, pero en la gráfica parece que es la menos determinantem ya que se queda estable, Hmmm...extraño
+#IDEM
 
 Seed.CHMI<- subset(juntos.b, Plant_Simple=="CHMI")
 x_scale10 <- scale_x_continuous(limits = c(0,400))
@@ -141,6 +150,7 @@ S.CHMI
 GLM.CHMI<- glm(cbind(Seed.CHMI$Seed,Seed.CHMI$abun.pol) ~ Seed.CHMI$Group, 
              family = "binomial")
 summary(GLM.CHMI)#no tiene sentido tener en cuenta CHMI por las dos visitas que tiene en las que no hay semillas registradas
+#IDEM
 
 #resultados: 
     # SEGUN LOS GRAFICOS :en las especies CHFU,LEMA,PUPA,ME,HOMA se ve que los coleopteros afectan negativamente a la producción de semillas. 
