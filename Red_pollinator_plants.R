@@ -35,9 +35,13 @@ node.size.df <- F.3 %>% group_by(Plant_Simple) %>% summarise(size = sum(num.plan
 plant.size <- node.size.df$size*7
 names(plant.size) <- node.size.df$Plant_Simple
 #visitors.size <- rep(1000,8)
-Abundancia.d.visitors <- dcast(F.3, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "num.visits")
-visitors.size.1 <- c(88,450,41,662)*50 #este vector lo he sacado de sumar todas las visitas de Bee, todas las de Beetle...de la matriz anterior
-names(visitors.size.1) <- nombres[[2]]
+
+Abun.poliniz <- F.3 %>% group_by(Plant_Simple, Group) %>% summarise (abundancia = n())
+Abundancia.d.visitors <- dcast(Abun.poliniz, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "sum")
+visitors.size.1 <- c(62,205,22,335)*100
+#Abundancia.d.visitors <- dcast(F.3, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "num.visits") #esto me contabilizaba las visitas, no abundancias
+#visitors.size.1 <- c(88,450,41,662)*50 #este vector lo he sacado de sumar todas las visitas de Bee, todas las de Beetle...de la matriz anterior
+names(visitors.size.1) <- nombres.1[[2]]
 node.size.1 <- c(plant.size,visitors.size.1)
 
 
@@ -56,7 +60,7 @@ plot(red_igraph, vertex.color=(c("tomato","steelblue")[V(red_igraph)$type+1]),
      vertex.label.cex= 1.01,
      vertex.label.color= "gray8",
      #edge.curved=0.3,
-     layout=layout_as_bipartite, main=" Relacion entre los visitantes florales y las plantas")
+     layout=layout_as_bipartite, main=" Relation between floral visitors and plants")
 
 
 #otra manera  <- NACHO
