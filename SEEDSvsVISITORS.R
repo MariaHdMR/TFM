@@ -4,155 +4,183 @@ library(tidyverse)
 SEEDS <- read.table("data/simplex_competencia_SEEDS_2019.csv", header= T, sep= ";")
 head(SEEDS)
 str(SEEDS)
-ABUNDANCES.pol <- read.table("data/V_a_16_19.csv", header= T, sep= ";")
+ABUNDANCES.pol <- read.table("data/FV_16_19.csv", header= T, sep= ";")#data de VISITS de polinizadores
 #preparar datos
 abun.pol.19 <- subset(ABUNDANCES.pol, Year=='2019')
 abun.pol.19 <- subset(abun.pol.19, Plot != "OUT")
 
 
-P <- abun.pol.19 %>% group_by(Plot, Subplot, Group,Plant_Simple) %>% summarise (abun.pol = sum(Abundances))
-P<- subset(P, Plant_Simple %in% c('CHFU', 'HOMA', 'LEMA', 'ME', 'PUPA', 'POMA','CHMI') & Group %in% c('Bees','Beetles','Butterflies','Flies'))
+P <- abun.pol.19 %>% group_by(Plot, Subplot, Group,Plant_Simple) %>% summarise (total.visits = sum(Visits))
+P1<- subset(P, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA') & Group %in% c('Bee','Beetle','Butterfly','Fly'))
 P <-P[which(complete.cases(P)),]
+SEEDS$Plot <- as.numeric(SEEDS$Plot)
+P$Plot <- as.numeric(P$Plot)
 juntos <- dplyr::left_join(SEEDS,P)
-str(juntos)
-juntos$Group <- as.character(juntos$Group)
+head(juntos)
+#str(juntos)
+#juntos$Group <- as.character(juntos$Group)
 #juntos[is.na(juntos)] <- 0
 head(juntos)
-juntos.b <- subset(juntos, Plant_Simple %in% c('CHFU', 'HOMA', 'LEMA', 'ME', 'PUPA', 'POMA','CHMI') & Group  %in% c('Bees','Beetles','Butterflies','Flies'))
+juntos.b <- subset(juntos, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA') & Group  %in% c('Bee','Beetle','Butterfly','Fly'))
 
 #Analysis
 #globales ----
-x_scale3 <- scale_x_continuous(limits = c(0,700))
-global <- ggplot(juntos.b, aes(x = Seed, y = abun.pol, group = Group))+
+x_scale3 <- scale_x_continuous(limits = c(0,1000))
+global <- ggplot(juntos.b, aes(x = Seed, y = total.visits, group = Group))+
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     x_scale3+ 
-    ylab("Number of visitors")+
+    ylab("Number of visits")+
     xlab("Number of seeds")+
-    ggtitle("Seeds vs abun pol")
+    ggtitle("Seeds vs pollinator visits")
     NULL
 global
 x_scale4 <- scale_x_continuous(limits = c(0,600))
-dos <- ggplot(juntos.b, aes(x = Seed, y= abun.pol))+ #GRAFICO GLOBAL PERO SEPARADO POR GUILD Y PLANTA
+dos <- ggplot(juntos.b, aes(x = Seed, y= total.visits))+ #GRAFICO GLOBAL PERO SEPARADO POR GUILD Y PLANTA
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     facet_wrap(Plant_Simple~Group)+
-    ggtitle('Relacion del numero de semillas y la abundancia de polinizadores 2019')+
-    ylab("Number of visitors")+
+    ggtitle('Relation between the number of visits per plant species and their seeds')+
+    ylab("Number of visits")+
     xlab("Number of seeds")+
     x_scale4+
     NULL
-dos #este gráfico muestra que en LEMA los coleopteros hacen que haya menos semillas! Confirmado!
+dos #este gráfico muestra que en LEMA los coleopteros hacen que haya menos semillas! 
 #ahora graficos separados por especies de planta ----
+
+##chfu ----
+
 Seed.chfu <- subset(juntos.b, Plant_Simple == "CHFU")
 x_scale5 <- scale_x_continuous(limits = c(0,900))
-S.chfu <- ggplot(Seed.chfu, aes(x = Seed, y = abun.pol))+ 
+S.chfu <- ggplot(Seed.chfu, aes(x = Seed, y = total.visits))+ 
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
-    ggtitle('Relacion del numero de semillas  de CHFU y la abundancia de polinizadores 2019')+
-    ylab("Number of visitors")+
+    ggtitle('Relation between the number of CHFU visits and the seeds')+
+    ylab("Number of visits")+
     xlab("Number of CHFU's seeds")+
     x_scale5+
     NULL
 S.chfu
 
 #glm por spp de visitor para comprobar la relacion
-GLM.chfu<- glm(cbind(Seed.chfu$Seed,Seed.chfu$abun.pol) ~ Seed.chfu$Group, 
-          family = "binomial")
-summary(GLM.chfu) # las moscas y las abejas afectan a la cantidad de semillas en CHFU
 
-#IB: Yo creo que este GLM esta mal especificado. 
-GLM.chfu<- glm(Seed.chfu$Seed ~ Seed.chfu$abun.pol, family = "quasipoisson", 
-              subset = Seed.chfu$Group == "Flies")
-plot(GLM.chfu)
-summary(GLM.chfu) #tendencia positva, pero ns para flies. 
 
+GLM.chfu.flies<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
+              subset = Seed.chfu$Group == "Fly")
+plot(GLM.chfu.flies)
+summary(GLM.chfu.flies) #tendencia positva, pero ns para flies. 
+GLM.chfu.bees<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
+                     subset = Seed.chfu$Group == "Bee")
+plot(GLM.chfu.bees)
+summary(GLM.chfu.bees) #tendencia positiva pero no para bees
+
+GLM.chfu.beetles<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
+                    subset = Seed.chfu$Group == "Beetle")
+plot(GLM.chfu.beetles)
+summary(GLM.chfu.beetles) #tendencia positiva pero no para beetles
+
+#lema ----
 Seed.LEMA <- subset(juntos.b, Plant_Simple=="LEMA")
 x_scale6 <- scale_x_continuous(limits = c(0,900))
-S.LEMA <- ggplot(Seed.LEMA, aes(x = Seed, y = abun.pol))+ 
+S.LEMA <- ggplot(Seed.LEMA, aes(x = Seed, y = total.visits))+ 
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
-    ggtitle('Relacion del numero de semillas  de LEMA y la abundancia de polinizadores 2019')+
-    ylab("Number of visitors")+
+    ggtitle('Reltaion between the LEMA visits and seeds')+
+    ylab("Number of visits")+
     xlab("Number of LEMA's seeds")+
     x_scale6+
     NULL
 S.LEMA
-GLM.LEMA<- glm(cbind(Seed.LEMA$Seed,Seed.LEMA$abun.pol) ~ Seed.LEMA$Group, 
-                     family = "binomial")
-summary(GLM.LEMA) #todas las especies afectan a la cantidad de semillas!!!
-#IDEM
+GLM.LEMA.flies<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoisson", 
+               subset = Seed.LEMA$Group == "Fly")
+plot(GLM.LEMA.flies)
+summary(GLM.LEMA.flies) #tendencia positiva pero no para flies
+
+GLM.LEMA.beetles<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoisson", 
+                     subset = Seed.LEMA$Group == "Beetle")
+plot(GLM.LEMA.beetles)
+summary(GLM.LEMA.beetles) #tendencia positiva pero no para beetles
+
+GLM.LEMA.bees<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoisson", 
+                       subset = Seed.LEMA$Group == "Bee")
+plot(GLM.LEMA.bees)
+summary(GLM.LEMA.bees) #tendencia positiva pero no para bees
+
+
+
+#pupa----
+
 
 Seed.PUPA <- subset(juntos.b, Plant_Simple=="PUPA")
 x_scale7 <- scale_x_continuous(limits = c(0,600))
-S.PUPA <- ggplot(Seed.PUPA, aes(x = Seed, y = abun.pol))+ 
+S.PUPA <- ggplot(Seed.PUPA, aes(x = Seed, y = total.visits))+ 
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
-    ggtitle('Relacion del numero de semillas de PUPA y la abundancia de polinizadores 2019')+
-    ylab("Number of visitors")+
+    ggtitle('Relation betwwen PUPA visits and the seeds')+
+    ylab("Number of visits")+
     xlab("Number of PUPA's seeds")+
     x_scale7+
     NULL
-S.PUPA
+S.PUPA #especie de planta donde mas error hay en las regresiones lineales 
 
 
-GLM.PUPA<- glm(cbind(Seed.PUPA$Seed,Seed.PUPA$abun.pol) ~ Seed.PUPA$Group, 
-               family = "binomial")
-summary(GLM.PUPA) #las abejas son las únicas que afectan
-#IDEM
+GLM.PUPA.flies<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
+                     subset = Seed.PUPA$Group == "Fly")
 
-#IB: HOMA no tiene pollinators, no? Hordeum es una graminea que va por viento...
-Seed.Homa <- subset(juntos.b, Plant_Simple=="HOMA")
-x_scale8 <- scale_x_continuous(limits = c(0,40))
-S.Homa <- ggplot(Seed.Homa, aes(x = Seed, y = abun.pol))+ 
-    geom_point(aes(color = Group))+
-    geom_smooth(method = "lm", aes(color = Group))+
-    ggtitle('Relacion del numero de semillas de HOMA y la abundancia de polinizadores 2019')+
-    ylab("Number of visitors")+
-    xlab("Number of HOMA's seeds")+
-    x_scale8+
-    NULL
-S.Homa
+plot(GLM.PUPA.flies)
+summary(GLM.PUPA.flies)#tendencia positiva pero no para flies
 
-GLM.HOMA<- glm(cbind(Seed.Homa$Seed,Seed.Homa$abun.pol) ~ Seed.Homa$Group, 
-               family = "binomial")
-summary(GLM.HOMA) #le afectan los coleopteros, pero hay muy pocos datos de visitas de polinizadores a HOMA
+
+GLM.PUPA.bee<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
+                     subset = Seed.PUPA$Group == "Bee")
+
+plot(GLM.PUPA.bee)
+summary(GLM.PUPA.bee) #tendencia positiva pero no para bee
+
+GLM.PUPA.beetle<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
+                   subset = Seed.PUPA$Group == "Beetle") #solo hay 3 datos de pupa con beetle 
+
+plot(GLM.PUPA.beetle)
+summary(GLM.PUPA.beetle)
+
+
+GLM.PUPA.butterfly<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
+                      subset = Seed.PUPA$Group == "Butterfly")
+
+plot(GLM.PUPA.butterfly)
+summary(GLM.PUPA.butterfly)#tendencia positiva pero no para butterflies
+
+##me ----
 
 Seed.ME<- subset(juntos.b, Plant_Simple=="ME")
 x_scale9 <- scale_x_continuous(limits = c(0,400))
-S.ME <- ggplot(Seed.ME, aes(x = Seed, y = abun.pol))+ 
+S.ME <- ggplot(Seed.ME, aes(x = Seed, y = total.visits))+ 
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
-    ggtitle('Relacion del numero de semillas de ME y la abundancia de polinizadores 2019')+
-    ylab("Number of visitors")+
+    ggtitle('Relation between the number of visits of ME and the seeds')+
+    ylab("Number of visits")+
     xlab("Number of ME's seeds")+
     x_scale9+
     NULL
 S.ME
 
-GLM.ME<- glm(cbind(Seed.ME$Seed,Seed.ME$abun.pol) ~ Seed.ME$Group, 
-               family = "binomial")
-summary(GLM.ME) #aparece que le afectan las abejas, pero en la gráfica parece que es la menos determinantem ya que se queda estable, Hmmm...extraño
-#IDEM
+GLM.ME.bee <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson", 
+                         subset = Seed.ME$Group == "Bee")
 
-Seed.CHMI<- subset(juntos.b, Plant_Simple=="CHMI")
-x_scale10 <- scale_x_continuous(limits = c(0,400))
-S.CHMI <- ggplot(Seed.CHMI, aes(x = Seed, y = abun.pol))+ 
-    geom_point(aes(color = Group))+
-    geom_smooth(method = "lm", aes(color = Group))+
-    ggtitle('Relacion del numero de semillas de CHMI y la abundancia de polinizadores 2019')+
-    ylab("Number of visitors")+
-    xlab("Number of CHMI's seeds")+
-    x_scale9+
-    NULL
-S.CHMI
+plot(GLM.ME.bee )
+summary(GLM.ME.bee) #!!! Something strange! NAs appeared in the analysis
 
-GLM.CHMI<- glm(cbind(Seed.CHMI$Seed,Seed.CHMI$abun.pol) ~ Seed.CHMI$Group, 
-             family = "binomial")
-summary(GLM.CHMI)#no tiene sentido tener en cuenta CHMI por las dos visitas que tiene en las que no hay semillas registradas
-#IDEM
+GLM.ME.beetle <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson", 
+                  subset = Seed.ME$Group == "Beetle")
 
-#resultados: 
-    # SEGUN LOS GRAFICOS :en las especies CHFU,LEMA,PUPA,ME,HOMA se ve que los coleopteros afectan negativamente a la producción de semillas. 
-    #parece que a estas mismas especies(salvo PUPA), las moscas afectan positivamente (de manera ligera) a la producción de semillas
-    #segun los glm solo en LEMA afectan todos los visitantes florales a la produccion de semillas.  
+plot(GLM.ME.beetle )
+summary(GLM.ME.beetle ) #!!! Something strange! NAs appeared in the analysis
+
+
+GLM.ME.fly <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson", 
+                     subset = Seed.ME$Group == "Fly")
+
+plot(GLM.ME.fly )
+summary(GLM.ME.fly ) #tendencia positiva salvo para flies
+
+
