@@ -6,7 +6,9 @@ library(gstat)
 library(aqfig)
 library(lattice)
 #load data
-visitor.abun <- read.table("V_a_16_19.csv", header=T, sep= ";")
+visitor.abun <- read.table("data/FV_16_19.csv", header=T, sep= ";")#aunque ponga visitor abundance, son los datos de visitas
+sitios <- read.table("data/caracolesplotposition.csv", header=T, sep= ";")#hay un error en el csv pero que se corrige en el siguiente paso
+sitios <-sitios[which(complete.cases(sitios)),]
 
 #preparacion del data
 head(visitor.abun)
@@ -14,55 +16,61 @@ v.abun.19 <- subset(visitor.abun, Year== "2019")
 
 #escarabajos ----
 #quiero sacar la B-diversidad de los escarabajos por plots, y luego hacer el mantel test. 
-pol.9 <- v.abun.19 %>% group_by(Plot, Subplot, Group) %>% summarise (num.visitors = sum(Abundances))
+pol.9 <- v.abun.19 %>% group_by(Plot, Subplot, Group) %>% summarise (num.visitors = sum(Visits))
 pol.9 <-pol.9[which(complete.cases(pol.9)),]
 pol.9 <- subset(pol.9, Plot != "OUT")
-pol.beetle9 <- subset(pol.9, Group == "Beetles")
+pol.9 <- subset(pol.9, Subplot != "OUT")
+pol.beetle9 <- subset(pol.9, Group == "Beetle")
 pol.beetle9$Plot <- as.numeric(as.character(pol.beetle9$Plot))
 pol.beetle.B <- pol.beetle9[,c("Plot", "Subplot", "num.visitors")] #total
 BEETLES <- tidyr::spread(pol.beetle.B,key = Plot, value = num.visitors)
 BEETLES[is.na(BEETLES)] <- 0
 #beetles.matrix <- as.matix(BEETLES)
 
-d.beetles.0 <- dist(BEETLES [,c(3:11)], method = "euclidean", diag = F, upper = F)
+d.beetles.0 <- dist(BEETLES [,c(2:10)], method = "euclidean", diag = T, upper = T)
 
-nombres1 <- list(BEETLES$Subplot, names(BEETLES[,2:length(BEETLES)]))
+nombres1 <- list(BEETLES$Subplot, names(BEETLES[,1:length(BEETLES)]))
 BEETLE.matrix <- as.matrix(BEETLES[,2:length(BEETLES)], dimnames = nombres1)
-vegdist(d.beetles.0, method="morisita", binary=FALSE, diag= F, upper=T,
+vegdist(BEETLE.matrix, method="morisita", binary=FALSE, diag= F, upper=T,
         na.rm = FALSE) #esta es la B-diversidad de cada plot a su vez dividida en subplots de BEETLES (total)
 
-
+h <- dist(sitios[,c(2,3)], method= "euclidean", diag=T, upper=T)#matriz de las distancias entre los subplots de un plot
 
 #plot1 -> saco la b-diversidad de los escarabajos en plot 1
-beetle.prueba <- BEETLES [,c( "Subplot","1")]
-dist.1 <-dist(beetle.prueba [,c(2)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (d.beetles.0, h)
 
-nombres.beetle.plot1 <- list(beetle.prueba$Subplot, names(beetle.prueba[,2:length(beetle.prueba)]))
-BEETLE1.matrix <- as.matrix(beetle.prueba[,1:length(beetle.prueba)], dimnames = nombres.beetle.plot1)
+beetle.plot1 <- BEETLES [,c( "Subplot","1")]
+m.beetle.plot1 <- as.matrix(beetle.plot1)
+dist.1 <-dist(beetle.plot1 [,c(2)], method= "euclidean", diag =T, upper =T)
 
-vegdist(dist.1, method="morisita", binary=FALSE, diag= F, upper=T,
+
+nombres.beetle.plot1 <- list(beetle.plot1$Subplot, names(beetle.plot1[,2:length(beetle.plot1)]))
+BEETLE1.matrix <- as.matrix(beetle.plot1[,1:length(beetle.plot1)], dimnames = nombres.beetle.plot1)
+
+vegdist(dist.1, method="morisita", binary=FALSE, diag= T, upper=T,
         na.rm = FALSE) 
 
-str(beetle.prueba)
+str(beetle.plot1)
+mantel.rtest (dist.1, h, nrepet = 9999, graph = TRUE)
+sitios$Subplot <- sitios$position
+sitios$Plot <- sitios$plot
+all <- dplyr::left_join(pol.beetle.B, sitios) #DUDA, no me sale la matriz. quiero tener todo en el mismo data para graficarlo
 
+
+
+#hacer ggplot para graficarlo (algo así)
+# ggplot(all, aes(x_coor, y_coor )) +
+#geom_tile(aes(fill = num.visitors), color = "white") +
+ #   scale_fill_gradient(low = "white", high = "steelblue") +
+  #  ylab("y") +
+   # xlab("x")
+
+#plot 2 Beetles
 Beetle2 <- BEETLES[,c("Subplot", "2")]
 d.beetles.2 <- dist( Beetle2[,c(2)], method = "euclidean", diag = T, upper = T)
-
-
-
-mantel.rtest(dist.1, d.beetles.2,nrepet = 9999) 
+mantel.rtest(d.beetles.2, h,nrepet = 9999) 
 
 ########## script oscar para mapa de calor ----
 
-#data
-sitios <- read.table("caracolesplotposition.csv", header=T, sep=";") #hay un error en el csv pero que se corrige con lo sitguiente
-sitios <- sitios[which(complete.cases(sitios)),]
-sitios$Subplot <- sitios$position
-visitor.abun <- read.table("V_a_16_19.csv", header=T, sep= ";")
-#preparacion del data
-head(visitor.abun)
-v.abun.19 <- subset(visitor.abun, Year== "2019")
 
 #escarabajos ----
 #escarabajos total plots
@@ -82,6 +90,7 @@ sitios$x_coor <- as.numeric(sitios$x_coor)
 sitios$y_coor <- as.numeric(sitios$y_coor)
 sitios$position <- as.character(sitios$position)
 sitios$cell <- as.numeric(sitios$cell)
+sitios$Subplot <- sitios$position
 completa.beetles <- dplyr::left_join(BEETLES, sitios) #todo el rato me aparece NA¿¿??, esto es para tener las coordenadas dentro de mismo data que el num de visitors
 
 geo_data_BEETLES.1 <-BEETLES[,c(1,3)] #aqui selecciono solo un plot (pero tendre que usar completa.beetles)
