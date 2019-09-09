@@ -31,31 +31,30 @@ d.beetles.0 <- dist(BEETLES [,c(2:10)], method = "euclidean", diag = T, upper = 
 
 nombres1 <- list(BEETLES$Subplot, names(BEETLES[,1:length(BEETLES)]))
 BEETLE.matrix <- as.matrix(BEETLES[,2:length(BEETLES)], dimnames = nombres1)
-vegdist(BEETLE.matrix, method="morisita", binary=FALSE, diag= F, upper=T,
-        na.rm = FALSE) #esta es la B-diversidad de cada plot a su vez dividida en subplots de BEETLES (total)
+#vegdist(BEETLE.matrix, method="morisita", binary=FALSE, diag= F, upper=T,
+     #   na.rm = FALSE) #esta es la B-diversidad de cada plot a su vez dividida en subplots de BEETLES (total) -> no sentido tener todo junto
 
-h <- dist(sitios[,c(2,3)], method= "euclidean", diag=T, upper=T)#matriz de las distancias entre los subplots de un plot
+h <- dist(sitios[,c(4,5)], method= "euclidean", diag=T, upper=T)#matriz de las distancias entre los subplots de un plot
+      #me sale 72x72 el doble que la matriz de visitors
 
-#plot1 -> saco la b-diversidad de los escarabajos en plot 1
+#plot1 -> saco la b-diversidad de los escarabajos en plot 1 ----
 
-beetle.plot1 <- BEETLES [,c( "Subplot","1")]
+beetle.plot1 <- BEETLES [,c( "Subplot","1","2")]
 m.beetle.plot1 <- as.matrix(beetle.plot1)
-dist.1 <-dist(beetle.plot1 [,c(2)], method= "euclidean", diag =T, upper =T)
+dist.1 <-dist(beetle.plot1 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 
 
 nombres.beetle.plot1 <- list(beetle.plot1$Subplot, names(beetle.plot1[,2:length(beetle.plot1)]))
-BEETLE1.matrix <- as.matrix(beetle.plot1[,1:length(beetle.plot1)], dimnames = nombres.beetle.plot1)
+BEETLE1.matrix <- as.matrix(beetle.plot1[,1:length(beetle.plot1)], dimnames = nombres.beetle.plot1) #36x36 
 
-vegdist(dist.1, method="morisita", binary=FALSE, diag= T, upper=T,
+bdiversity.B.plot.1 <- vegdist(dist.1, method="morisita", binary=FALSE, diag= T, upper=T,
         na.rm = FALSE) 
 
 str(beetle.plot1)
-mantel.rtest (dist.1, h, nrepet = 9999, graph = TRUE)
-sitios$Subplot <- sitios$position
-sitios$Plot <- sitios$plot
-all <- dplyr::left_join(pol.beetle.B, sitios) #DUDA, no me sale la matriz. quiero tener todo en el mismo data para graficarlo
+mantel.rtest (dist.1, h)
 
 
+o <- subset(pol.beetle.B, Plot== "1")
 
 #hacer ggplot para graficarlo (algo así)
 # ggplot(all, aes(x_coor, y_coor )) +
@@ -91,7 +90,9 @@ sitios$y_coor <- as.numeric(sitios$y_coor)
 sitios$position <- as.character(sitios$position)
 sitios$cell <- as.numeric(sitios$cell)
 sitios$Subplot <- sitios$position
-completa.beetles <- dplyr::left_join(BEETLES, sitios) #todo el rato me aparece NA¿¿??, esto es para tener las coordenadas dentro de mismo data que el num de visitors
+ o <- subset(pol.beetle.B, Plot== "1")
+c.beetles <- merge(o, sitios, by= "Subplot", all= T)
+c.beetles[is.na(c.beetles)] <- 0 #escarabajos del plot 1 con coordenadas
 
 geo_data_BEETLES.1 <-BEETLES[,c(1,3)] #aqui selecciono solo un plot (pero tendre que usar completa.beetles)
 row.names(geo_data_BEETLES.1) <- geo_data_BEETLES.1[,1] #no me deja ponerle los nombres de los subplots (usar completa.beetles)
