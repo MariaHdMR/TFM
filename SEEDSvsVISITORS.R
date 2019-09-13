@@ -1,5 +1,8 @@
 #load library
 library(tidyverse)
+library(MuMIn)
+library(nlme)
+library(lme4)
 #cargar datos
 SEEDS <- read.table("data/simplex_competencia_SEEDS_2019.csv", header= T, sep= ";")
 head(SEEDS)
@@ -25,25 +28,27 @@ juntos.b <- subset(juntos, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA') & G
 
 #Analysis
 #globales ----
-x_scale3 <- scale_x_continuous(limits = c(0,1000))
-global <- ggplot(juntos.b, aes(x = Seed, y = total.visits, group = Group))+
+x_scale3 <- scale_x_continuous(limits = c(0,8))
+global <- ggplot(juntos.b, aes(x = total.visits, y = Seed, group = Group))+
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     x_scale3+ 
-    ylab("Number of visits")+
-    xlab("Number of seeds")+
+    ylab("Number of seeds")+
+    xlab("Number of visits")+
     ggtitle("Seeds vs pollinator visits")
     NULL
 global
-x_scale4 <- scale_x_continuous(limits = c(0,600))
-dos <- ggplot(juntos.b, aes(x = Seed, y= total.visits))+ #GRAFICO GLOBAL PERO SEPARADO POR GUILD Y PLANTA
+x_scale4 <- scale_x_continuous(limits = c(0,7))
+y_scale4 <- scale_y_continuous(limits = c(-100,1200))
+dos <- ggplot(juntos.b, aes(x = total.visits, y= Seed))+ #GRAFICO GLOBAL PERO SEPARADO POR GUILD Y PLANTA
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     facet_wrap(Plant_Simple~Group)+
     ggtitle('Relation between the number of visits per plant species and their seeds')+
-    ylab("Number of visits")+
-    xlab("Number of seeds")+
+    ylab("Number of seeds")+
+    xlab("Number of visits")+
     x_scale4+
+    y_scale4+
     NULL
 dos #este gráfico muestra que en LEMA los coleopteros hacen que haya menos semillas! 
 #ahora graficos separados por especies de planta ----
@@ -51,13 +56,13 @@ dos #este gráfico muestra que en LEMA los coleopteros hacen que haya menos semi
 ##chfu ----
 
 Seed.chfu <- subset(juntos.b, Plant_Simple == "CHFU")
-x_scale5 <- scale_x_continuous(limits = c(0,900))
-S.chfu <- ggplot(Seed.chfu, aes(x = Seed, y = total.visits))+ 
+x_scale5 <- scale_x_continuous(limits = c(0,6))
+S.chfu <- ggplot(Seed.chfu, aes(x = total.visits, y = Seed))+ 
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     ggtitle('Relation between the number of CHFU visits and the seeds')+
-    ylab("Number of visits")+
-    xlab("Number of CHFU's seeds")+
+    ylab("Number of CHFU's seeds")+
+    xlab("Number of visits")+
     x_scale5+
     NULL
 S.chfu
@@ -66,7 +71,7 @@ S.chfu
 
 
 GLM.chfu.flies<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
-              subset = Seed.chfu$Group == "Fly")
+              subset = Seed.chfu$Group == "Fly") 
 plot(GLM.chfu.flies)
 summary(GLM.chfu.flies) #tendencia positva, pero ns para flies. 
 GLM.chfu.bees<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
@@ -81,13 +86,13 @@ summary(GLM.chfu.beetles) #tendencia positiva pero no para beetles
 
 #lema ----
 Seed.LEMA <- subset(juntos.b, Plant_Simple=="LEMA")
-x_scale6 <- scale_x_continuous(limits = c(0,900))
-S.LEMA <- ggplot(Seed.LEMA, aes(x = Seed, y = total.visits))+ 
+x_scale6 <- scale_x_continuous(limits = c(0,8))
+S.LEMA <- ggplot(Seed.LEMA, aes(x = total.visits, y = Seed))+ 
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     ggtitle('Reltaion between the LEMA visits and seeds')+
-    ylab("Number of visits")+
-    xlab("Number of LEMA's seeds")+
+    ylab("Number of LEMA's seeds")+
+    xlab("Number of visits")+
     x_scale6+
     NULL
 S.LEMA
@@ -96,7 +101,15 @@ GLM.LEMA.flies<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoi
 plot(GLM.LEMA.flies)
 summary(GLM.LEMA.flies) #tendencia positiva pero no para flies
 
-GLM.LEMA.beetles<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoisson", 
+##dharma package ----
+library(DHARMa)
+simulationOutput <- simulateResiduals(fittedModel = GLM.PUPA.flies, n = 250)
+simulationOutput$scaledResiduals
+plot(simulationOutput)
+testResiduals(simulationOutput)
+testUniformity(simulationOutput = simulationOutput)
+###
+GLM.LEMA.beetles<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits +(Seed.LEMA$total.visits)^2, family = "poisson", 
                      subset = Seed.LEMA$Group == "Beetle")
 plot(GLM.LEMA.beetles)
 summary(GLM.LEMA.beetles) #tendencia positiva pero no para beetles
@@ -112,20 +125,25 @@ summary(GLM.LEMA.bees) #tendencia positiva pero no para bees
 
 
 Seed.PUPA <- subset(juntos.b, Plant_Simple=="PUPA")
-x_scale7 <- scale_x_continuous(limits = c(0,600))
-S.PUPA <- ggplot(Seed.PUPA, aes(x = Seed, y = total.visits))+ 
+x_scale7 <- scale_x_continuous(limits = c(0,4.5))
+y_scale7 <- scale_y_continuous(limits = c(-1,800))
+S.PUPA <- ggplot(Seed.PUPA, aes(x = total.visits, y = Seed))+ 
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     ggtitle('Relation betwwen PUPA visits and the seeds')+
-    ylab("Number of visits")+
-    xlab("Number of PUPA's seeds")+
+    ylab("Number of PUPA's seeds")+
+    xlab("Number of visits")+
     x_scale7+
+    y_scale7+
     NULL
 S.PUPA #especie de planta donde mas error hay en las regresiones lineales 
 
 
-GLM.PUPA.flies<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
+GLM.PUPA.flies<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "poisson", 
                      subset = Seed.PUPA$Group == "Fly")
+RsquareAdj(GLM.PUPA.flies) #no me sale ---
+
+
 
 plot(GLM.PUPA.flies)
 summary(GLM.PUPA.flies)#tendencia positiva pero no para flies
@@ -153,13 +171,13 @@ summary(GLM.PUPA.butterfly)#tendencia positiva pero no para butterflies
 ##me ----
 
 Seed.ME<- subset(juntos.b, Plant_Simple=="ME")
-x_scale9 <- scale_x_continuous(limits = c(0,400))
-S.ME <- ggplot(Seed.ME, aes(x = Seed, y = total.visits))+ 
+x_scale9 <- scale_x_continuous(limits = c(0,5))
+S.ME <- ggplot(Seed.ME, aes(x = total.visits, y = Seed))+ 
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     ggtitle('Relation between the number of visits of ME and the seeds')+
-    ylab("Number of visits")+
-    xlab("Number of ME's seeds")+
+    ylab("Number of ME's seeds")+
+    xlab("Number of visits")+
     x_scale9+
     NULL
 S.ME
@@ -183,4 +201,45 @@ GLM.ME.fly <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson",
 plot(GLM.ME.fly )
 summary(GLM.ME.fly ) #tendencia positiva salvo para flies
 
+####################### Glm globales por especie de planta -> Nuevo----
 
+juntos.b$Plot <- as.numeric(juntos.b$Plot)
+mod1 <- glm (data = juntos.b, Seed ~ Plant_Simple + total.visits + Group + 
+                 (1|Plot)) # Error, no pilla las abejas ni a CHFU----
+summary(mod1)#este es un glm global.
+
+#mod2 <- glm (data = juntos.b, Seed ~ total.visits +
+ #                (1|Plot)) # Error,plot como NA
+#summary(mod2) #este es un glm global.
+#mod3 <- lm (data = Seed.ME, Seed ~  total.visits + Group + 
+#         (1|Plot))
+#summary(mod3)
+#mod4 <- glm (data = Seed.PUPA, Seed ~  total.visits + Group + 
+#                 (1|Plot))
+#summary(mod4)
+#r.squaredGLMM(mod4)
+#mod5 <- lmer(data = Seed.chfu, Seed ~  total.visits + Group+
+#                 (1|Plot))
+#summary(mod5)
+#r.squaredGLMM(mod5)
+
+
+t1 <- lme(Seed~ total.visits + Group, random=~1|Plot, 
+    data=Seed.chfu,
+    method="REML") #me siguen sin salir los datos de bees al añadir los grupos----
+summary(t1)
+r.squaredGLMM(t1)
+plot(t1)
+t2 <- lme(Seed~ total.visits*Group, random=~1|Plot, 
+          data=Seed.PUPA,
+          method="REML") #me siguen sin salir los datos de bees al añadir los grupos----
+summary(t2)
+r.squaredGLMM(t2)#este se ajusta mejor que el siguiente
+plot(t2)
+anova(t2)
+t3 <- lme(Seed~ total.visits + Group, random=~1|Plot, 
+          data=Seed.PUPA,
+          method="REML")
+summary(t3)
+r.squaredGLMM(t3)
+anova(t3)
