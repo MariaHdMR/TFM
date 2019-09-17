@@ -1,22 +1,27 @@
-library(vegan)
+#LIBRERIAS
+library(vegan) #me sirve para bioenv
 library(tidyverse)
-library(ade4)
-library(geoR)
+library(ade4) #este es el paquete para el mantel test que he usado
+library(geoRmantel)
 library(gstat)
 library(aqfig)
 library(lattice)
+#datos
 va <- read.table("data/FV_16_19.csv", header=T, sep= ";")
 sitios <- read.table("data/caracolesplotposition.csv", header=T, sep= ";")
 sitios <-sitios[which(complete.cases(sitios)),]
 sitios$Subplot <- sitios$position
-
 head(va)
+plantas <- read.table("data/Abun_19.csv", header=T, sep= ";")
+
 va19 <- subset(va, Year== "2019")
 pol.9 <- va19 %>% group_by(Plot, Subplot, Group) %>% summarise (num.visitors = sum(Visits))
 pol.9 <-pol.9[which(complete.cases(pol.9)),]
 pol.9 <- subset(pol.9, Plot != "OUT")
 h <- dist(sitios[,c(4,5)], method= "euclidean", diag=T, upper=T)
-#ABUNDANCIAS ----
+
+#analisis
+#ABUNDANCIAS BICHOS ----
 #Beetles ----
 pol.beetle9 <- subset(pol.9, Group == "Beetle")
 pol.beetle9$Plot <- as.numeric(as.character(pol.beetle9$Plot))
@@ -29,7 +34,9 @@ BEETLES[is.na(BEETLES)] <- 0
 #datos del plot 1 de beetles y posiciones
 beetle.plot1 <- BEETLES [,c( "Subplot","1")]
 dist.1 <-dist(beetle.plot1 [,c(2)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (dist.1, h,nrepet = 9999) #no es sig el plot 1 con beetles
+mantel.rtest (dist.1, h,nrepet = 9999) #no es sig el plot 1 con beetles 
+#mantel(dist.1, h, method="pearson", permutations=999, strata = NULL,na.rm = FALSE, parallel = getOption("mc.cores"))
+#vale, comprobado que los dos mantel test dan lo mismo, esta bien hecho mantel.rtest, con paquete ADE4
 #plot 2 y beetles
 beetle.plot2 <- BEETLES [,c( "Subplot","2")]
 dist.2 <-dist(beetle.plot2 [,c(2)], method= "euclidean", diag =T, upper =T)
@@ -63,7 +70,7 @@ beetle.plot9 <- BEETLES [,c( "Subplot","9")]
 dist.9 <-dist(beetle.plot9 [,c(2)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (dist.9, h,nrepet = 9999)
 #ahora voy a plotear con el mapa de calor aquellos que han dado significativos o casi significativos
-#que son: plot 3, plot 5 y plot 6
+#que son: plot 3
 #plot 3 y beetles
 p3 <- subset(pol.beetle.B, Plot== "3")
 t3 <- merge(p3, sitios, by= "Subplot", all= T)
@@ -75,28 +82,6 @@ pred.grid3 <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
 kc_ph_1133 <- krige.conv(geo_data3, loc = pred.grid3, krige = krige.control(obj.m = vis3))
 image(kc_ph_1133, loc = pred.grid3, col=rainbow(15), xlab=" Coordenadas X (m)", ylab="Coordenadas Y (m)", main="Beetles abundance distribution in plot 3")
 vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_1133$predict),max(kc_ph_1133$predict))) #este es el unico con valores significativos, el resto se aproximan a la significacion
-#plot 5 y beetles
-p5 <- subset(pol.beetle.B, Plot== "5")
-t5 <- merge(p5, sitios, by= "Subplot", all= T)
-t5$Plot[is.na(t5$Plot)] <- 5#en el siguiente paso elijo mi primer grupo
-t5[is.na(t5)] <- 0
-geo_data5 <- as.geodata(t5[1:36,], coords.col = 7:8, data.col = 3)
-vis5 <- likfit(geo_data5, ini = c(1,0.5), fix.nugget = T)
-pred.grid5 <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
-kc_ph_113.5 <- krige.conv(geo_data5, loc = pred.grid5, krige = krige.control(obj.m = vis5))
-image(kc_ph_113.5, loc = pred.grid5, col=rainbow(15), xlab=" Coordenadas X (m)", ylab="Coordenadas Y (m)", main="Beetlesabundance distribution in plot 5")
-vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_113.5$predict),max(kc_ph_113.5$predict)))
-#plot 6 y beetles
-p6 <- subset(pol.beetle.B, Plot== "6")
-t6 <- merge(p6, sitios, by= "Subplot", all= T)
-t6$Plot[is.na(t6$Plot)] <- 6
-t6[is.na(t6)] <- 0
-geo_data6 <- as.geodata(t6[1:36,], coords.col = 7:8, data.col = 3)
-vis6 <- likfit(geo_data6, ini = c(1,0.5), fix.nugget = T)
-pred.grid6 <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
-kc_ph_113.6 <- krige.conv(geo_data6, loc = pred.grid6, krige = krige.control(obj.m = vis6))
-image(kc_ph_113.6, loc = pred.grid6, col=rainbow(15), xlab=" Coordenadas X (m)", ylab="Coordenadas Y (m)", main="Beetles abundance distribution in plot 6")
-vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_113.6$predict),max(kc_ph_113.6$predict)))
 
 #flies ----
 f.t <- subset(pol.9, Group == "Fly")
@@ -294,7 +279,48 @@ d.bu8 <-dist(bu8sim [,c(2)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (d.bu8, h,nrepet = 9999) 
 #no hay mapas de calor porque ninguno ha salido significativo
 ####
-#B-diversidad/composicion ----
+###Abundancias plantas ----
+pl.1 <- subset(plantas, plot == "1")
+#ahora voy a coger CHFU
+pl.1.chfu <- subset(pl.1, Sp.Focal == "CHFU")
+sub.1.chfu <- pl.1.chfu [,c( "Sp.Focal","Plantas")]
+dist.1.chfu <-dist(sub.1.chfu [,c(2)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (dist.1.chfu, h,nrepet = 9999)
+#pupa
+pl.1.pupa <- subset(pl.1, Sp.Focal == "PUPA")
+sub.1.pupa <- pl.1.pupa [,c( "Sp.Focal","Plantas")]
+dist.1.pupa <-dist(sub.1.pupa [,c(2)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (dist.1.pupa, h,nrepet = 9999) #todo son 0
+#lema
+pl.1.lema <- subset(pl.1, Sp.Focal == "LEMA")
+sub.1.lema <- pl.1.lema [,c( "Sp.Focal","Plantas")]
+dist.1.lema <-dist(sub.1.lema [,c(2)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (dist.1.lema, h,nrepet = 9999)
+#ME
+
+pl.1.me <- subset(pl.1, Sp.Focal == "ME")
+pl.1.me.completa <- pl.1.me %>% group_by(subplot, Sp.Focal) %>% summarise (num.plantas = sum(Plantas))
+#
+sub.1.me <- pl.1.me.completa[,c( "Sp.Focal","Plantas")]
+dist.1.me <-dist(pl.1.me.completa [,c(3)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (dist.1.me, h,nrepet = 9999)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#B-diversidad/composicion bichos----
 p <- va19 %>% group_by(Plot, Subplot, Group,Family, Species) %>% summarise (num.visitors = sum(Visits))
 #pol.9 <-pol.9[which(complete.cases(pol.9)),]
 p$Family <- as.character(p$Family)
@@ -393,8 +419,8 @@ m.bbe4 <- vegdist(d.bbe4, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
 
 l4<-  dplyr::left_join (sitios1,bbe4sim)
-k4 <-dist(l4 [,c(4)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.bbe4, k4,nrepet = 9999) 
+k4 <-dist(l4 [,c(2,3)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.bbe4, k4,nrepet = 9999) #corregido
 mean(m.bbe4) #0.0819
 sd(m.bbe4) # 0.157
 #plot 5+beetle
@@ -416,8 +442,8 @@ m.bbe5 <- vegdist(d.bbe5, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
 
 l5<-  dplyr::left_join (sitios1,bbe5sim)
-k5 <-dist(l5 [,c(4)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.bbe5, k5,nrepet = 9999) 
+k5 <-dist(l5 [,c(2,3)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.bbe5, k5,nrepet = 9999) #corregido
 mean(m.bbe5) #0.023
 sd(m.bbe5) # 0.069
 #plot 6+beetle
@@ -440,8 +466,8 @@ m.bbe6 <- vegdist(d.bbe6, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
 
 l6<-  dplyr::left_join (sitios1,bbe6sim)
-k6 <-dist(l6 [,c(4)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.bbe6, k6,nrepet = 9999) 
+k6 <-dist(l6 [,c(2,3)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.bbe6, k6,nrepet = 9999) #corregido
 mean(m.bbe6) #0.0031
 sd(m.bbe6) # 0.016
 #plot 7+beetle
@@ -464,8 +490,8 @@ m.bbe7 <- vegdist(d.bbe7, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
 
 l7<-  dplyr::left_join (sitios1,bbe7sim)
-k7 <-dist(l7 [,c(4)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.bbe7, k7,nrepet = 9999) 
+k7 <-dist(l7 [,c(2,3)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.bbe7, k7,nrepet = 9999) #corregido
 mean(m.bbe7) #0.0788
 sd(m.bbe7) # 0.16
 #plot 8+beetle
@@ -488,7 +514,7 @@ m.bbe8 <- vegdist(d.bbe8, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
 
 l8<-  dplyr::left_join (sitios1,bbe8sim)
-k8 <-dist(l8 [,c(4)], method= "euclidean", diag =T, upper =T)
+k8 <-dist(l8 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.bbe8, k8,nrepet = 9999) 
 mean(m.bbe8) #0.086
 sd(m.bbe8) # 0.19
@@ -512,8 +538,8 @@ m.bbe9 <- vegdist(d.bbe9, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
 
 l9<-  dplyr::left_join (sitios1,bbe9sim)
-k9 <-dist(l9 [,c(4)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.bbe9, k9,nrepet = 9999) 
+k9 <-dist(l9 [,c(2,3)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.bbe9, k9,nrepet = 9999) #corregido
 mean(m.bbe9) #0.14
 sd(m.bbe8) # 0.19
 #flies ----
@@ -531,13 +557,13 @@ bf1sim <- bf1t [,c( "Subplot","visits")]
 d.df1 <-dist(bf1sim [,c(2)], method= "euclidean", diag =T, upper =T)
 
 m.bf1 <- vegdist(d.df1, method="morisita", binary=FALSE, diag= T, upper=T,
-                  na.rm = FALSE) 
+                  na.rm = FALSE) #matriz de 0
 
 u1<-  dplyr::left_join (sitios1,bf1sim)
-m1 <-dist(u1 [,c(4)], method= "euclidean", diag =T, upper =T)
+m1 <-dist(u1 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.bf1, m1,nrepet = 9999) #no works, me pide valores de true o false ----
-#mean(m.bf1) #0.086
-#sd(m.bf1) # 0.19
+#mean(m.bf1) 
+#sd(m.bf1) 
 
 #plot 2+flies
 bf2 <- subset (p.2, Group == "Fly")
@@ -556,7 +582,7 @@ m.bf2 <- vegdist(d.df2, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
 
 u2<-  dplyr::left_join (sitios1,bf2sim)
-m2 <-dist(u2 [,c(4)], method= "euclidean", diag =T, upper =T)
+m2 <-dist(u2 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.bf2, m2,nrepet = 9999)
 mean(m.bf2) #0.025
 sd(m.bf2) # 0.077
@@ -577,7 +603,7 @@ m.bf3 <- vegdist(d.df3, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
 
 u3<-  dplyr::left_join (sitios1,bf3sim)
-m3 <-dist(u3 [,c(4)], method= "euclidean", diag =T, upper =T)
+m3 <-dist(u3 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.bf3, m3,nrepet = 9999)
 mean(m.bf3) #0.036
 sd(m.bf3) # 0.094
@@ -620,10 +646,10 @@ m.bf5 <- vegdist(d.df5, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
 
 u5<-  dplyr::left_join (sitios1,bf5sim)
-m5 <-dist(u5 [,c(4)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.bf5, m5,nrepet = 9999) # no works, me pide values de true/false ----
-mean(m.bf5) 
-sd(m.bf5) 
+m5 <-dist(u5 [,c(2,3)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.bf5, m5,nrepet = 9999) 
+mean(m.bf5) #0.041
+sd(m.bf5) #0.1
 #plot 6+flies
 bf6 <- subset (p.6, Group == "Fly")
 bf6t <- dplyr::left_join (sitios1,bf6)
@@ -640,7 +666,7 @@ d.df6 <-dist(bf6sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.bf6 <- vegdist(d.df6, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
 u6<-  dplyr::left_join (sitios1,bf6sim)
-m6 <-dist(u6 [,c(4)], method= "euclidean", diag =T, upper =T)
+m6 <-dist(u6 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.bf6, m6,nrepet = 9999) 
 mean(m.bf6)#0.0095 
 sd(m.bf6) #0.027
@@ -660,7 +686,7 @@ d.df7 <-dist(bf7sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.bf7 <- vegdist(d.df7, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
 u7<-  dplyr::left_join (sitios1,bf7sim)
-m7 <-dist(u7 [,c(4)], method= "euclidean", diag =T, upper =T)
+m7 <-dist(u7 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.bf7, m7,nrepet = 9999) 
 mean(m.bf7)#0.11 
 sd(m.bf7) #0.21
@@ -679,7 +705,7 @@ d.df8 <-dist(bf8sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.bf8 <- vegdist(d.df8, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
 u8<-  dplyr::left_join (sitios1,bf8sim)
-m8 <-dist(u8 [,c(4)], method= "euclidean", diag =T, upper =T)
+m8 <-dist(u8 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.bf8, m8,nrepet = 9999) 
 mean(m.bf8)#0.12 
 sd(m.bf8) #0.22
@@ -698,7 +724,7 @@ d.df9 <-dist(bf9sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.bf9 <- vegdist(d.df9, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
 u9<-  dplyr::left_join (sitios1,bf9sim)
-m9 <-dist(u9 [,c(4)], method= "euclidean", diag =T, upper =T)
+m9 <-dist(u9 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.bf9, m9,nrepet = 9999) 
 mean(m.bf9)#0.089 
 sd(m.bf9) #0.18
@@ -757,7 +783,7 @@ m.dbees2 <- vegdist(d.dbees2, method="morisita", binary=FALSE, diag= T, upper=T,
                     na.rm = FALSE) #problem <- matriz con NAs ----
 
 p.2.bee<-  dplyr::left_join (sitios1,bbees2sim)
-dis.bee2 <-dist(p.2.bee [,c(4)], method= "euclidean", diag =T, upper =T)
+dis.bee2 <-dist(p.2.bee [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.dbees2, dis.bee2,nrepet = 9999) #no works ----
 #mean(m.dbees2) 
 #sd(m.dbees2) 
@@ -774,10 +800,10 @@ d.dbees3 <-dist(bbees3sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.dbees3 <- vegdist(d.dbees3, method="morisita", binary=FALSE, diag= T, upper=T,
                     na.rm = FALSE)
 p.3.bee<-  dplyr::left_join (sitios1,bbees3sim)
-dis.bee3 <-dist(p.3.bee [,c(4)], method= "euclidean", diag =T, upper =T)
+dis.bee3 <-dist(p.3.bee [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.dbees3, dis.bee3,nrepet = 9999) 
-mean(m.dbees3) 
-sd(m.dbees3) 
+mean(m.dbees3) #0.14
+sd(m.dbees3) #0.29
 #plot 4+bees
 bbees4 <- subset (p.4, Group == "Bee")
 bbees4t <- dplyr::left_join (sitios1,bbees4)
@@ -792,10 +818,10 @@ m.dbees4 <- vegdist(d.dbees4, method="morisita", binary=FALSE, diag= T, upper=T,
                     na.rm = FALSE) 
 
 p.4.bee<-  dplyr::left_join (sitios1,bbees4sim)
-dis.bee4 <-dist(p.4.bee [,c(4)], method= "euclidean", diag =T, upper =T)
+dis.bee4 <-dist(p.4.bee [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.dbees4, dis.bee4,nrepet = 9999) 
-mean(m.dbees4) 
-sd(m.dbees4) 
+mean(m.dbees4) #0.17
+sd(m.dbees4) # 0.28
 #plot 5+bees
 bbees5 <- subset (p.5, Group == "Bee") #solo hay un dato
 bbees5t <- dplyr::left_join (sitios1,bbees5)
@@ -809,8 +835,8 @@ d.dbees5 <-dist(bbees5sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.dbees5 <- vegdist(d.dbees5, method="morisita", binary=FALSE, diag= T, upper=T,
                     na.rm = FALSE) #matriz de Nas , no works ----
 p.5.bee<-  dplyr::left_join (sitios1,bbees5sim)
-dis.bee5 <-dist(p.5.bee [,c(4)], method= "euclidean", diag =T, upper =T)
-#mantel.rtest (m.dbees5, dis.bee5,nrepet = 9999) #no works ----
+dis.bee5 <-dist(p.5.bee [,c(2,3)], method= "euclidean", diag =T, upper =T)
+#mantel.rtest (m.dbees5, dis.bee5,nrepet = 9999) # no works, me pide una matriz de true y false ----
 #mean(m.dbees5) 
 #sd(m.dbees5) 
 #plot 6+bees
@@ -826,7 +852,7 @@ d.dbees6 <-dist(bbees6sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.dbees6 <- vegdist(d.dbees6, method="morisita", binary=FALSE, diag= T, upper=T,
                     na.rm = FALSE) 
 p.6.bee<-  dplyr::left_join (sitios1,bbees6sim)
-dis.bee6 <-dist(p.6.bee [,c(4)], method= "euclidean", diag =T, upper =T)
+dis.bee6 <-dist(p.6.bee [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.dbees6, dis.bee6,nrepet = 9999) 
 mean(m.dbees6) #0.17
 sd(m.dbees6) #0.30
@@ -843,7 +869,7 @@ d.dbees7 <-dist(bbees7sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.dbees7 <- vegdist(d.dbees7, method="morisita", binary=FALSE, diag= T, upper=T,
                     na.rm = FALSE) 
 p.7.bee<-  dplyr::left_join (sitios1,bbees7sim)
-dis.bee7 <-dist(p.7.bee [,c(4)], method= "euclidean", diag =T, upper =T)
+dis.bee7 <-dist(p.7.bee [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.dbees7, dis.bee7,nrepet = 9999) 
 mean(m.dbees7) #0.17
 sd(m.dbees7) #0.27
@@ -860,7 +886,7 @@ d.dbees8 <-dist(bbees8sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.dbees8 <- vegdist(d.dbees8, method="morisita", binary=FALSE, diag= T, upper=T,
                     na.rm = FALSE) 
 p.8.bee<-  dplyr::left_join (sitios1,bbees8sim)
-dis.bee8 <-dist(p.8.bee [,c(4)], method= "euclidean", diag =T, upper =T)
+dis.bee8 <-dist(p.8.bee [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.dbees8, dis.bee8,nrepet = 9999) 
 mean(m.dbees8) #0.39
 sd(m.dbees8) #0.09
@@ -877,8 +903,8 @@ d.dbees9 <-dist(bbees9sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.dbees9 <- vegdist(d.dbees9, method="morisita", binary=FALSE, diag= T, upper=T,
                     na.rm = FALSE) #no works, ceros y NAs ----
 p.9.bee<-  dplyr::left_join (sitios1,bbees9sim)
-dis.bee9 <-dist(p.9.bee [,c(4)], method= "euclidean", diag =T, upper =T)
-#mantel.rtest (m.dbees9, dis.bee9,nrepet = 9999) 
+dis.bee9 <-dist(p.9.bee [,c(2,3)], method= "euclidean", diag =T, upper =T)
+#mantel.rtest (m.dbees9, dis.bee9,nrepet = 9999) # Nas en la matriz
 #mean(m.dbees9) 
 #sd(m.dbees9) 
 ####
@@ -896,8 +922,8 @@ d.dbu7 <-dist(bbu7sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.dbu7 <- vegdist(d.dbu7, method="morisita", binary=FALSE, diag= T, upper=T,
                     na.rm = FALSE) #me salen NAs ----
 p.7.bu<-  dplyr::left_join (sitios1,bbu7sim)
-d.dbu7 <-dist(p.7.bu [,c(4)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.dbu7, d.dbu7,nrepet = 9999) #no works
+d.dbu7 <-dist(p.7.bu [,c(2,3)], method= "euclidean", diag =T, upper =T)
+#mantel.rtest (m.dbu7, d.dbu7,nrepet = 9999) #no works
 #mean(m.dbu7) 
 #sd(m.dbu7) 
 #plot 8 + butterflies, solo mariposas en plot 7 y 8
@@ -913,8 +939,8 @@ d.dbu8 <-dist(bbu8sim [,c(2)], method= "euclidean", diag =T, upper =T)
 m.dbu8 <- vegdist(d.dbu8, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) #me salen NAs ----
 p.8.bu<-  dplyr::left_join (sitios1,bbu8sim)
-d.dbu8 <-dist(p.8.bu [,c(4)], method= "euclidean", diag =T, upper =T)
- i <-mantel.rtest (m.dbu8, d.dbu8,nrepet = 9999) 
+d.dbu8 <-dist(p.8.bu [,c(2,3)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.dbu8, d.dbu8,nrepet = 9999) 
 mean(m.dbu8) 
 sd(m.dbu8) 
 
@@ -931,3 +957,16 @@ d.sitios <-dist(y1 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.abeja, d.sitios,nrepet = 9999) 
 mean(m.abeja) 
 sd(m.abeja) 
+t <- dcast(ab.19, Plot +Subplot ~ Plant_Simple,fun.aggregate = sum, value.var = "num.plantas")
+####bioenv : quiero comparar las matrices de distancias de visitantes florales y las de B-diversidad de los mismos visitantes
+# florales con los vectores de las abundancias de las spp de plantas. 
+#beetles en el plot 1 
+
+t.1 <- subset(t, Plot == "1")
+r <- bioenv(dist.1 ~m.bbe1 + t$CHFU +t$LEMA+t$PUPA +t$ME )
+
+read.table
+
+
+    
+    
