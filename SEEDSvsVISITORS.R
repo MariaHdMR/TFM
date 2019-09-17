@@ -3,6 +3,8 @@ library(tidyverse)
 library(MuMIn)
 library(nlme)
 library(lme4)
+library(DHARMa)
+
 #cargar datos
 SEEDS <- read.table("data/simplex_competencia_SEEDS_2019.csv", header= T, sep= ";")
 head(SEEDS)
@@ -22,9 +24,9 @@ juntos <- dplyr::left_join(SEEDS,P)
 head(juntos)
 #str(juntos)
 #juntos$Group <- as.character(juntos$Group)
-#juntos[is.na(juntos)] <- 0
+juntos[is.na(juntos)] <- 0
 head(juntos)
-juntos.b <- subset(juntos, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA') & Group  %in% c('Bee','Beetle','Butterfly','Fly'))
+juntos.b <- subset(juntos, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA'))
 
 #Analysis
 #globales ----
@@ -69,7 +71,36 @@ S.chfu
 
 #glm por spp de visitor para comprobar la relacion
 
+#Nacho redoes the model.
+Seed.chfu2 <- dcast(Seed.chfu, Plot + Subplot + Plant_Simple + Fruit + Seed ~ Group, 
+                    fun.aggregate = mean, value.var = "total.visits")
+Seed.chfu2[is.na(Seed.chfu2)] <- 0
+head(Seed.chfu2)
+colSums(Seed.chfu2[6:10])
+#Los cero fruits, en realidad es que no hay planta, los quitamos
+Seed.chfu2$Seed[which(Seed.chfu2$Seed == 0)] <- NA
 
+GLM.chfu <- lm(Seed.chfu2$Seed ~ Seed.chfu2$Fly + Seed.chfu2$Beetle + Seed.chfu2$Bee)
+#plot(GLM.chfu) #bad
+
+GLM.chfu <- glm(Seed.chfu2$Seed ~ Seed.chfu2$Fly + Seed.chfu2$Beetle + Seed.chfu2$Bee, 
+                family = "poisson")
+vignette("DHARMa", package="DHARMa")
+simulationOutput <- simulateResiduals(fittedModel = GLM.chfu, n = 250)
+plot(simulationOutput)
+
+GLM.chfu <- glm(Seed.chfu2$Seed ~ Seed.chfu2$Fly + Seed.chfu2$Beetle + Seed.chfu2$Bee, 
+                family = "quasipoisson")
+simulationOutput <- simulateResiduals(fittedModel = GLM.chfu, n = 250)
+plot(simulationOutput)
+summary(GLM.chfu)
+
+plot(Seed.chfu2$Seed ~ jitter(Seed.chfu2$Fly), las = 1)
+abline(a = exp(GLM.chfu$coefficients[1])/1+exp(GLM.chfu$coefficients[1]),
+       b = exp(GLM.chfu$coefficients[2])/1+exp(GLM.chfu$coefficients[2]), col = "red")
+#No estoy seguro de que lalinea este bien. 
+
+#Maria's models.
 GLM.chfu.flies<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
               subset = Seed.chfu$Group == "Fly") 
 plot(GLM.chfu.flies)
