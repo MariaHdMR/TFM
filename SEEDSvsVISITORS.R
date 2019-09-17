@@ -74,16 +74,24 @@ GLM.chfu.flies<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoi
               subset = Seed.chfu$Group == "Fly") 
 plot(GLM.chfu.flies)
 summary(GLM.chfu.flies) #tendencia positva, pero ns para flies. 
+r.squaredGLMM(GLM.chfu.flies)
 GLM.chfu.bees<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
                      subset = Seed.chfu$Group == "Bee")
 plot(GLM.chfu.bees)
 summary(GLM.chfu.bees) #tendencia positiva pero no para bees
-
+r.squaredGLMM(GLM.chfu.bees)
 GLM.chfu.beetles<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
                     subset = Seed.chfu$Group == "Beetle")
 plot(GLM.chfu.beetles)
 summary(GLM.chfu.beetles) #tendencia positiva pero no para beetles
+r.squaredGLMM(GLM.chfu.beetles)
 
+chfu.t <- lme(Seed~ total.visits*Group, random=~1|Plot, 
+          data=Seed.chfu,
+          method="REML")
+plot(chfu.t)
+summary(chfu.t)
+r.squaredGLMM(chfu.t)
 #lema ----
 Seed.LEMA <- subset(juntos.b, Plant_Simple=="LEMA")
 x_scale6 <- scale_x_continuous(limits = c(0,8))
@@ -100,25 +108,23 @@ GLM.LEMA.flies<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoi
                subset = Seed.LEMA$Group == "Fly")
 plot(GLM.LEMA.flies)
 summary(GLM.LEMA.flies) #tendencia positiva pero no para flies
+r.squaredGLMM(GLM.LEMA.flies)
 
-##dharma package ----
-library(DHARMa)
-simulationOutput <- simulateResiduals(fittedModel = GLM.PUPA.flies, n = 250)
-simulationOutput$scaledResiduals
-plot(simulationOutput)
-testResiduals(simulationOutput)
-testUniformity(simulationOutput = simulationOutput)
-###
-GLM.LEMA.beetles<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits +(Seed.LEMA$total.visits)^2, family = "poisson", 
+GLM.LEMA.beetles<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoisson", 
                      subset = Seed.LEMA$Group == "Beetle")
 plot(GLM.LEMA.beetles)
 summary(GLM.LEMA.beetles) #tendencia positiva pero no para beetles
-
+r.squaredGLMM(GLM.LEMA.beetles)
 GLM.LEMA.bees<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoisson", 
                        subset = Seed.LEMA$Group == "Bee")
 plot(GLM.LEMA.bees)
 summary(GLM.LEMA.bees) #tendencia positiva pero no para bees
-
+r.squaredGLMM(GLM.LEMA.bees)
+lema.t <- lme(Seed~ total.visits*Group, random=~1|Plot, 
+              data=Seed.LEMA,
+              method="REML")
+summary(lema.t)
+r.squaredGLMM(lema.t)
 
 
 #pupa----
@@ -139,35 +145,37 @@ S.PUPA <- ggplot(Seed.PUPA, aes(x = total.visits, y = Seed))+
 S.PUPA #especie de planta donde mas error hay en las regresiones lineales 
 
 
-GLM.PUPA.flies<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "poisson", 
+GLM.PUPA.flies<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
                      subset = Seed.PUPA$Group == "Fly")
-RsquareAdj(GLM.PUPA.flies) #no me sale ---
-
-
-
 plot(GLM.PUPA.flies)
 summary(GLM.PUPA.flies)#tendencia positiva pero no para flies
-
+r.squaredGLMM(GLM.PUPA.flies)
 
 GLM.PUPA.bee<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
                      subset = Seed.PUPA$Group == "Bee")
 
 plot(GLM.PUPA.bee)
 summary(GLM.PUPA.bee) #tendencia positiva pero no para bee
-
+r.squaredGLMM(GLM.PUPA.bee)
 GLM.PUPA.beetle<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
                    subset = Seed.PUPA$Group == "Beetle") #solo hay 3 datos de pupa con beetle 
 
 plot(GLM.PUPA.beetle)
 summary(GLM.PUPA.beetle)
-
+r.squaredGLMM(GLM.PUPA.beetle)
 
 GLM.PUPA.butterfly<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
                       subset = Seed.PUPA$Group == "Butterfly")
 
 plot(GLM.PUPA.butterfly)
 summary(GLM.PUPA.butterfly)#tendencia positiva pero no para butterflies
+r.squaredGLMM(GLM.PUPA.butterfly)
 
+pupa.t <- lme(Seed~ total.visits*Group, random=~1|Plot, 
+              data=Seed.PUPA,
+              method="REML")
+summary(pupa.t)
+r.squaredGLMM(pupa.t)
 ##me ----
 
 Seed.ME<- subset(juntos.b, Plant_Simple=="ME")
@@ -186,8 +194,8 @@ GLM.ME.bee <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson",
                          subset = Seed.ME$Group == "Bee")
 
 plot(GLM.ME.bee )
-summary(GLM.ME.bee) #!!! Something strange! NAs appeared in the analysis
-
+summary(GLM.ME.bee) #!!! Something strange! NAs appeared in the analysis ----
+r.squaredGLMM(GLM.ME.bee)
 GLM.ME.beetle <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson", 
                   subset = Seed.ME$Group == "Beetle")
 
@@ -200,7 +208,12 @@ GLM.ME.fly <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson",
 
 plot(GLM.ME.fly )
 summary(GLM.ME.fly ) #tendencia positiva salvo para flies
-
+r.squaredGLMM(GLM.ME.fly)
+me.t <- lme(Seed~ total.visits*Group, random=~1|Plot, 
+              data=Seed.ME,
+              method="REML")#no works ----
+summary(me.t)
+r.squaredGLMM(me.t)
 ####################### Glm globales por especie de planta -> Nuevo----
 
 juntos.b$Plot <- as.numeric(juntos.b$Plot)
@@ -243,3 +256,11 @@ t3 <- lme(Seed~ total.visits + Group, random=~1|Plot,
 summary(t3)
 r.squaredGLMM(t3)
 anova(t3)
+##dharma package ----
+library(DHARMa)
+simulationOutput <- simulateResiduals(fittedModel = GLM.PUPA.flies, n = 250)
+simulationOutput$scaledResiduals
+plot(simulationOutput)
+testResiduals(simulationOutput)
+testUniformity(simulationOutput = simulationOutput)
+###
