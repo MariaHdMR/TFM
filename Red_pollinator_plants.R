@@ -37,7 +37,7 @@ names(plant.size) <- node.size.df$Plant_Simple
 #visitors.size <- rep(1000,8)
 
 Abun.poliniz <- F.3 %>% group_by(Plant_Simple, Group) %>% summarise (abundancia = n())
-Abundancia.d.visitors <- dcast(Abun.poliniz, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "sum")
+Abundancia.d.visitors <- dcast(Abun.poliniz, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "abundancia")
 visitors.size.1 <- c(62,205,22,335)*100
 #Abundancia.d.visitors <- dcast(F.3, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "num.visits") #esto me contabilizaba las visitas, no abundancias
 #visitors.size.1 <- c(88,450,41,662)*50 #este vector lo he sacado de sumar todas las visitas de Bee, todas las de Beetle...de la matriz anterior
