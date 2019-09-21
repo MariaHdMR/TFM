@@ -4,7 +4,7 @@ library(MuMIn)
 library(nlme)
 library(lme4)
 library(DHARMa)
-
+library(reshape2)
 #cargar datos
 SEEDS <- read.table("data/simplex_competencia_SEEDS_2019.csv", header= T, sep= ";")
 head(SEEDS)
@@ -13,25 +13,29 @@ ABUNDANCES.pol <- read.table("data/FV_16_19.csv", header= T, sep= ";")#data de V
 #preparar datos
 abun.pol.19 <- subset(ABUNDANCES.pol, Year=='2019')
 abun.pol.19 <- subset(abun.pol.19, Plot != "OUT")
+seeds1<- subset(SEEDS, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA'))
 
 
 P <- abun.pol.19 %>% group_by(Plot, Subplot, Group,Plant_Simple) %>% summarise (total.visits = sum(Visits))
-P1<- subset(P, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA') & Group %in% c('Bee','Beetle','Butterfly','Fly'))
-P <-P[which(complete.cases(P)),]
-SEEDS$Plot <- as.numeric(SEEDS$Plot)
-P$Plot <- as.numeric(P$Plot)
-juntos <- dplyr::left_join(SEEDS,P)
-head(juntos)
+simple<- subset(P, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA') & Group %in% c('Bee','Beetle','Butterfly','Fly'))
+simple <-simple[which(complete.cases(simple)),]
+seeds1$Plot <- as.numeric(seeds1$Plot)
+simple$Plot <- as.numeric(simple$Plot)
+todo <- dplyr::left_join(seeds1,simple)
+head(todo)
 #str(juntos)
 #juntos$Group <- as.character(juntos$Group)
-juntos[is.na(juntos)] <- 0
-head(juntos)
-juntos.b <- subset(juntos, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA'))
+todo$total.visits[is.na(todo$total.visits)] <- 0
+head(todo)
+#todo1 <- subset(todo, Plant_Simple %in% c('CHFU', 'LEMA', 'ME', 'PUPA'))
+todo$Seed[which(todo$Seed == 0)] <- NA
+todo$Fruit[which(todo$Fruit == 0)] <- NA
+todo$total.visits[is.na(todo$total.visits)] <- 0
 
 #Analysis
 #globales ----
 x_scale3 <- scale_x_continuous(limits = c(0,8))
-global <- ggplot(juntos.b, aes(x = total.visits, y = Seed, group = Group))+
+global <- ggplot(todo, aes(x = total.visits, y = Seed, group = Group))+
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     x_scale3+ 
@@ -42,7 +46,7 @@ global <- ggplot(juntos.b, aes(x = total.visits, y = Seed, group = Group))+
 global
 x_scale4 <- scale_x_continuous(limits = c(0,7))
 y_scale4 <- scale_y_continuous(limits = c(-100,1200))
-dos <- ggplot(juntos.b, aes(x = total.visits, y= Seed))+ #GRAFICO GLOBAL PERO SEPARADO POR GUILD Y PLANTA
+dos <- ggplot(todo, aes(x = total.visits, y= Seed))+ #GRAFICO GLOBAL PERO SEPARADO POR GUILD Y PLANTA
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     facet_wrap(Plant_Simple~Group)+
@@ -57,7 +61,7 @@ dos #este gráfico muestra que en LEMA los coleopteros hacen que haya menos semi
 
 ##chfu ----
 
-Seed.chfu <- subset(juntos.b, Plant_Simple == "CHFU")
+Seed.chfu <- subset(todo, Plant_Simple == "CHFU")
 x_scale5 <- scale_x_continuous(limits = c(0,6))
 S.chfu <- ggplot(Seed.chfu, aes(x = total.visits, y = Seed))+ 
     geom_point(aes(color = Group))+
@@ -76,9 +80,10 @@ Seed.chfu2 <- dcast(Seed.chfu, Plot + Subplot + Plant_Simple + Fruit + Seed ~ Gr
                     fun.aggregate = mean, value.var = "total.visits")
 Seed.chfu2[is.na(Seed.chfu2)] <- 0
 head(Seed.chfu2)
-colSums(Seed.chfu2[6:10])
+colSums(Seed.chfu2[6:9])
 #Los cero fruits, en realidad es que no hay planta, los quitamos
 Seed.chfu2$Seed[which(Seed.chfu2$Seed == 0)] <- NA
+Seed.chfu2$Fruit[which(Seed.chfu2$Fruit == 0)] <- NA
 
 GLM.chfu <- lm(Seed.chfu2$Seed ~ Seed.chfu2$Fly + Seed.chfu2$Beetle + Seed.chfu2$Bee)
 #plot(GLM.chfu) #bad
@@ -90,41 +95,53 @@ simulationOutput <- simulateResiduals(fittedModel = GLM.chfu, n = 250)
 plot(simulationOutput)
 
 GLM.chfu <- glm(Seed.chfu2$Seed ~ Seed.chfu2$Fly + Seed.chfu2$Beetle + Seed.chfu2$Bee, 
-                family = "quasipoisson")
+                family = "quasipoisson") #bueno
 simulationOutput <- simulateResiduals(fittedModel = GLM.chfu, n = 250)
 plot(simulationOutput)
 summary(GLM.chfu)
+r.squaredGLMM(GLM.chfu)
 
 plot(Seed.chfu2$Seed ~ jitter(Seed.chfu2$Fly), las = 1)
 abline(a = exp(GLM.chfu$coefficients[1])/1+exp(GLM.chfu$coefficients[1]),
        b = exp(GLM.chfu$coefficients[2])/1+exp(GLM.chfu$coefficients[2]), col = "red")
 #No estoy seguro de que lalinea este bien. 
+plot(Seed.chfu2$Seed ~ jitter(Seed.chfu2$Beetle), las = 1)
+abline(a = exp(GLM.chfu$coefficients[1])/1+exp(GLM.chfu$coefficients[1]),
+       b = exp(GLM.chfu$coefficients[2])/1+exp(GLM.chfu$coefficients[2]), col = "red")
+#No estoy seguro de que lalinea este bien. 
+plot(Seed.chfu2$Seed ~ jitter(Seed.chfu2$Bee), las = 1)
+abline(a = exp(GLM.chfu$coefficients[1])/1+exp(GLM.chfu$coefficients[1]),
+       b = exp(GLM.chfu$coefficients[2])/1+exp(GLM.chfu$coefficients[2]), col = "red")
+#No estoy seguro de que lalinea este bien. 
+
+
 
 #Maria's models.
-GLM.chfu.flies<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
-              subset = Seed.chfu$Group == "Fly") 
-plot(GLM.chfu.flies)
-summary(GLM.chfu.flies) #tendencia positva, pero ns para flies. 
-r.squaredGLMM(GLM.chfu.flies)
-GLM.chfu.bees<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
-                     subset = Seed.chfu$Group == "Bee")
-plot(GLM.chfu.bees)
-summary(GLM.chfu.bees) #tendencia positiva pero no para bees
-r.squaredGLMM(GLM.chfu.bees)
-GLM.chfu.beetles<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
-                    subset = Seed.chfu$Group == "Beetle")
-plot(GLM.chfu.beetles)
-summary(GLM.chfu.beetles) #tendencia positiva pero no para beetles
-r.squaredGLMM(GLM.chfu.beetles)
+#GLM.chfu.flies<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
+ #             subset = Seed.chfu$Group == "Fly") 
+#plot(GLM.chfu.flies)
+#summary(GLM.chfu.flies) #tendencia positva, pero ns para flies. 
+#r.squaredGLMM(GLM.chfu.flies)
+#GLM.chfu.bees<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
+ #                    subset = Seed.chfu$Group == "Bee")
+#plot(GLM.chfu.bees)
+#summary(GLM.chfu.bees) #tendencia positiva pero no para bees
+#r.squaredGLMM(GLM.chfu.bees)
+#GLM.chfu.beetles<- glm(Seed.chfu$Seed ~ Seed.chfu$total.visits, family = "quasipoisson", 
+ #                   subset = Seed.chfu$Group == "Beetle")
+#plot(GLM.chfu.beetles)
+#summary(GLM.chfu.beetles) #tendencia positiva pero no para beetles
+#r.squaredGLMM(GLM.chfu.beetles)
 
-chfu.t <- lme(Seed~ total.visits*Group, random=~1|Plot, 
-          data=Seed.chfu,
-          method="REML")
-plot(chfu.t)
-summary(chfu.t)
-r.squaredGLMM(chfu.t)
+#chfu.t <- lme(Seed~ total.visits*Group, random=~1|Plot, 
+ #         data=Seed.chfu,
+  #        method="REML")
+#plot(chfu.t)
+#summary(chfu.t)
+#r.squaredGLMM(chfu.t)
+####
 #lema ----
-Seed.LEMA <- subset(juntos.b, Plant_Simple=="LEMA")
+Seed.LEMA <- subset(todo, Plant_Simple=="LEMA")
 x_scale6 <- scale_x_continuous(limits = c(0,8))
 S.LEMA <- ggplot(Seed.LEMA, aes(x = total.visits, y = Seed))+ 
     geom_point(aes(color = Group))+
@@ -135,33 +152,38 @@ S.LEMA <- ggplot(Seed.LEMA, aes(x = total.visits, y = Seed))+
     x_scale6+
     NULL
 S.LEMA
-GLM.LEMA.flies<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoisson", 
-               subset = Seed.LEMA$Group == "Fly")
-plot(GLM.LEMA.flies)
-summary(GLM.LEMA.flies) #tendencia positiva pero no para flies
-r.squaredGLMM(GLM.LEMA.flies)
 
-GLM.LEMA.beetles<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoisson", 
-                     subset = Seed.LEMA$Group == "Beetle")
-plot(GLM.LEMA.beetles)
-summary(GLM.LEMA.beetles) #tendencia positiva pero no para beetles
-r.squaredGLMM(GLM.LEMA.beetles)
-GLM.LEMA.bees<- glm(Seed.LEMA$Seed ~ Seed.LEMA$total.visits, family = "quasipoisson", 
-                       subset = Seed.LEMA$Group == "Bee")
-plot(GLM.LEMA.bees)
-summary(GLM.LEMA.bees) #tendencia positiva pero no para bees
-r.squaredGLMM(GLM.LEMA.bees)
-lema.t <- lme(Seed~ total.visits*Group, random=~1|Plot, 
-              data=Seed.LEMA,
-              method="REML")
-summary(lema.t)
-r.squaredGLMM(lema.t)
+Seed.lema2 <- dcast(Seed.LEMA, Plot + Subplot + Plant_Simple + Fruit + Seed ~ Group, 
+                   fun.aggregate = mean, value.var = "total.visits")
+Seed.lema2[is.na(Seed.lema2)] <- 0
+head(Seed.lema2)
+colSums(Seed.lema2[6:9])
+Seed.lema2$Seed[which(Seed.lema2$Seed == 0)] <- NA
+Seed.lema2$Fruit[which(Seed.lema2$Fruit == 0)] <- NA
+GLM.lema <- glm(Seed.lema2$Seed ~ Seed.lema2$Fly + Seed.lema2$Beetle + Seed.lema2$Bee, 
+                family = "quasipoisson")
+summary(GLM.lema)
+r.squaredGLMM(GLM.lema)
+
+plot(Seed.lema2$Seed ~ jitter(Seed.lema2$Fly), las = 1)
+abline(a = exp(GLM.lema$coefficients[1])/1+exp(GLM.lema$coefficients[1]),
+       b = exp(GLM.lema$coefficients[2])/1+exp(GLM.lema$coefficients[2]), col = "red")
+#No estoy seguro de que lalinea este bien. 
+plot(Seed.lema2$Seed ~ jitter(Seed.lema2$Beetle), las = 1)
+abline(a = exp(GLM.lema$coefficients[1])/1+exp(GLM.lema$coefficients[1]),
+       b = exp(GLM.lema$coefficients[2])/1+exp(GLM.lema$coefficients[2]), col = "red")
+#No estoy seguro de que lalinea este bien. 
+plot(Seed.lema2$Seed ~ jitter(Seed.lema2$Bee), las = 1)
+abline(a = exp(GLM.lema$coefficients[1])/1+exp(GLM.lema$coefficients[1]),
+       b = exp(GLM.lema$coefficients[2])/1+exp(GLM.lema$coefficients[2]), col = "red")
+#No estoy seguro de que lalinea este bien. 
 
 
 #pupa----
 
 
-Seed.PUPA <- subset(juntos.b, Plant_Simple=="PUPA")
+Seed.PUPA <- subset(todo, Plant_Simple=="PUPA")
+
 x_scale7 <- scale_x_continuous(limits = c(0,4.5))
 y_scale7 <- scale_y_continuous(limits = c(-1,800))
 S.PUPA <- ggplot(Seed.PUPA, aes(x = total.visits, y = Seed))+ 
@@ -174,42 +196,38 @@ S.PUPA <- ggplot(Seed.PUPA, aes(x = total.visits, y = Seed))+
     y_scale7+
     NULL
 S.PUPA #especie de planta donde mas error hay en las regresiones lineales 
+Seed.pupa2 <- dcast(Seed.PUPA, Plot + Subplot + Plant_Simple + Fruit + Seed ~ Group, 
+                    fun.aggregate = mean, value.var = "total.visits")
+Seed.pupa2[is.na(Seed.pupa2)] <- 0
+head(Seed.pupa2)
+colSums(Seed.pupa2[6:9])
+Seed.pupa2$Seed[which(Seed.pupa2$Seed == 0)] <- NA
+Seed.pupa2$Fruit[which(Seed.pupa2$Fruit == 0)] <- NA
+GLM.pupa <- glm(Seed.pupa2$Seed ~ Seed.pupa2$Fly + Seed.pupa2$Beetle + Seed.pupa2$Bee+ Seed.pupa2$Butterfly, 
+                family = "quasipoisson")
+summary(GLM.pupa)
+r.squaredGLMM(GLM.pupa)
+plot(Seed.lema2$Seed ~ jitter(Seed.lema2$Fly), las = 1)
+abline(a = exp(GLM.lema$coefficients[1])/1+exp(GLM.lema$coefficients[1]),
+       b = exp(GLM.lema$coefficients[2])/1+exp(GLM.lema$coefficients[2]), col = "red")
+
+plot(Seed.lema2$Seed ~ jitter(Seed.lema2$Beetle), las = 1)
+abline(a = exp(GLM.lema$coefficients[1])/1+exp(GLM.lema$coefficients[1]),
+       b = exp(GLM.lema$coefficients[2])/1+exp(GLM.lema$coefficients[2]), col = "red")
+
+plot(Seed.lema2$Seed ~ jitter(Seed.lema2$Bee), las = 1)
+abline(a = exp(GLM.lema$coefficients[1])/1+exp(GLM.lema$coefficients[1]),
+       b = exp(GLM.lema$coefficients[2])/1+exp(GLM.lema$coefficients[2]), col = "red")
+
+plot(Seed.lema2$Seed ~ jitter(Seed.lema2$Butterfly), las = 1)
+abline(a = exp(GLM.lema$coefficients[1])/1+exp(GLM.lema$coefficients[1]),
+       b = exp(GLM.lema$coefficients[2])/1+exp(GLM.lema$coefficients[2]), col = "red")
 
 
-GLM.PUPA.flies<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
-                     subset = Seed.PUPA$Group == "Fly")
-plot(GLM.PUPA.flies)
-summary(GLM.PUPA.flies)#tendencia positiva pero no para flies
-r.squaredGLMM(GLM.PUPA.flies)
 
-GLM.PUPA.bee<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
-                     subset = Seed.PUPA$Group == "Bee")
-
-plot(GLM.PUPA.bee)
-summary(GLM.PUPA.bee) #tendencia positiva pero no para bee
-r.squaredGLMM(GLM.PUPA.bee)
-GLM.PUPA.beetle<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
-                   subset = Seed.PUPA$Group == "Beetle") #solo hay 3 datos de pupa con beetle 
-
-plot(GLM.PUPA.beetle)
-summary(GLM.PUPA.beetle)
-r.squaredGLMM(GLM.PUPA.beetle)
-
-GLM.PUPA.butterfly<- glm(Seed.PUPA$Seed ~ Seed.PUPA$total.visits, family = "quasipoisson", 
-                      subset = Seed.PUPA$Group == "Butterfly")
-
-plot(GLM.PUPA.butterfly)
-summary(GLM.PUPA.butterfly)#tendencia positiva pero no para butterflies
-r.squaredGLMM(GLM.PUPA.butterfly)
-
-pupa.t <- lme(Seed~ total.visits*Group, random=~1|Plot, 
-              data=Seed.PUPA,
-              method="REML")
-summary(pupa.t)
-r.squaredGLMM(pupa.t)
 ##me ----
 
-Seed.ME<- subset(juntos.b, Plant_Simple=="ME")
+Seed.ME<- subset(todo, Plant_Simple=="ME")
 x_scale9 <- scale_x_continuous(limits = c(0,5))
 S.ME <- ggplot(Seed.ME, aes(x = total.visits, y = Seed))+ 
     geom_point(aes(color = Group))+
@@ -221,77 +239,26 @@ S.ME <- ggplot(Seed.ME, aes(x = total.visits, y = Seed))+
     NULL
 S.ME
 
-GLM.ME.bee <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson", 
-                         subset = Seed.ME$Group == "Bee")
 
-plot(GLM.ME.bee )
-summary(GLM.ME.bee) #!!! Something strange! NAs appeared in the analysis ----
-r.squaredGLMM(GLM.ME.bee)
-GLM.ME.beetle <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson", 
-                  subset = Seed.ME$Group == "Beetle")
+Seed.me2 <- dcast(Seed.ME, Plot + Subplot + Plant_Simple + Fruit + Seed ~ Group, 
+                    fun.aggregate = mean, value.var = "total.visits")
+Seed.me2[is.na(Seed.me2)] <- 0
+head(Seed.me2)
+colSums(Seed.me2[6:9])
+Seed.me2$Seed[which(Seed.me2$Seed == 0)] <- NA
+Seed.me2$Fruit[which(Seed.me2$Fruit == 0)] <- NA
+GLM.me <- glm(Seed.me2$Seed ~ Seed.me2$Fly + Seed.me2$Beetle + Seed.me2$Bee, 
+                family = "quasipoisson")
+summary(GLM.me)
+r.squaredGLMM(GLM.me)
+plot(Seed.me2$Seed ~ jitter(Seed.me2$Fly), las = 1)
+abline(a = exp(GLM.me$coefficients[1])/1+exp(GLM.me$coefficients[1]),
+       b = exp(GLM.me$coefficients[2])/1+exp(GLM.me$coefficients[2]), col = "red")
 
-plot(GLM.ME.beetle )
-summary(GLM.ME.beetle ) #!!! Something strange! NAs appeared in the analysis
+plot(Seed.me2$Seed ~ jitter(Seed.me2$Beetle), las = 1)
+abline(a = exp(GLM.me$coefficients[1])/1+exp(GLM.me$coefficients[1]),
+       b = exp(GLM.me$coefficients[2])/1+exp(GLM.me$coefficients[2]), col = "red")
 
-
-GLM.ME.fly <- glm(Seed.ME$Seed ~ Seed.ME$total.visits, family = "quasipoisson", 
-                     subset = Seed.ME$Group == "Fly")
-
-plot(GLM.ME.fly )
-summary(GLM.ME.fly ) #tendencia positiva salvo para flies
-r.squaredGLMM(GLM.ME.fly)
-me.t <- lme(Seed~ total.visits*Group, random=~1|Plot, 
-              data=Seed.ME,
-              method="REML")#no works ----
-summary(me.t)
-r.squaredGLMM(me.t)
-####################### Glm globales por especie de planta -> Nuevo----
-
-juntos.b$Plot <- as.numeric(juntos.b$Plot)
-mod1 <- glm (data = juntos.b, Seed ~ Plant_Simple + total.visits + Group + 
-                 (1|Plot)) # Error, no pilla las abejas ni a CHFU----
-summary(mod1)#este es un glm global.
-
-#mod2 <- glm (data = juntos.b, Seed ~ total.visits +
- #                (1|Plot)) # Error,plot como NA
-#summary(mod2) #este es un glm global.
-#mod3 <- lm (data = Seed.ME, Seed ~  total.visits + Group + 
-#         (1|Plot))
-#summary(mod3)
-#mod4 <- glm (data = Seed.PUPA, Seed ~  total.visits + Group + 
-#                 (1|Plot))
-#summary(mod4)
-#r.squaredGLMM(mod4)
-#mod5 <- lmer(data = Seed.chfu, Seed ~  total.visits + Group+
-#                 (1|Plot))
-#summary(mod5)
-#r.squaredGLMM(mod5)
-
-
-t1 <- lme(Seed~ total.visits + Group, random=~1|Plot, 
-    data=Seed.chfu,
-    method="REML") #me siguen sin salir los datos de bees al añadir los grupos----
-summary(t1)
-r.squaredGLMM(t1)
-plot(t1)
-t2 <- lme(Seed~ total.visits*Group, random=~1|Plot, 
-          data=Seed.PUPA,
-          method="REML") #me siguen sin salir los datos de bees al añadir los grupos----
-summary(t2)
-r.squaredGLMM(t2)#este se ajusta mejor que el siguiente
-plot(t2)
-anova(t2)
-t3 <- lme(Seed~ total.visits + Group, random=~1|Plot, 
-          data=Seed.PUPA,
-          method="REML")
-summary(t3)
-r.squaredGLMM(t3)
-anova(t3)
-##dharma package ----
-library(DHARMa)
-simulationOutput <- simulateResiduals(fittedModel = GLM.PUPA.flies, n = 250)
-simulationOutput$scaledResiduals
-plot(simulationOutput)
-testResiduals(simulationOutput)
-testUniformity(simulationOutput = simulationOutput)
-###
+plot(Seed.me2$Seed ~ jitter(Seed.me2$Bee), las = 1)
+abline(a = exp(GLM.me$coefficients[1])/1+exp(GLM.me$coefficients[1]),
+       b = exp(GLM.me$coefficients[2])/1+exp(GLM.me$coefficients[2]), col = "red")
