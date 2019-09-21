@@ -2,7 +2,7 @@
 
 library(reshape2)
 library(devtools)
-install_github("ibartomeus/betalink", ref = "new_features") #just once
+#install_github("ibartomeus/betalink", ref = "new_features") #just once
 library(betalink)
 library(vegan)
 library(ade4)
@@ -18,7 +18,7 @@ head(va)
 levels(va$Plant)
 ntw <- list()
 for (i in 1:9){
-  temp <- subset(va, Plot == i & Year == 2019 & Plant %in% c("BEMA", "CHFU",
+  temp <- subset(va, Plot == i & Year == 2019 & Plant %in% c("LEMA", "CHFU",
                                                              "CHMI", "PUPA", "HOMA", "ME"))
   temp <- droplevels(temp)
   comm <- dcast(temp, Plant ~ Group, fun.aggregate = sum, value.var = "Visits")
@@ -97,22 +97,150 @@ mantel.rtest(partitionWN, spatial, nrepet = 9999)
 # Hay una gran estructuracion de la interacciones
 
 partitionOS <- as.dist(partitionOS)
-mantel.rtest(partitionOS, spatial, nrepet = 9999)
+mantel.rtest(partitionOS, spatial, nrepet = 9999) #creo que esto era las interacciones comunes
 #Pero debido a especies (BetaOS muy)
 
-partitionL <- as.dist(partitionL)
+partitionL <- as.dist(partitionL)#plantas
 mantel.rtest(partitionL, spatial, nrepet = 9999)
 
-partitionU <- as.dist(partitionU)
+partitionU <- as.dist(partitionU)#polinizadores
 mantel.rtest(partitionU, spatial, nrepet = 9999)
 
 #plot
+partitionU.1<-as.matrix(partitionU)
+Bichos.df <-as.data.frame(partitionU.1)
 
 #Not tested becasue I dont have XQuartz
-geo_data3 <- as.geodata(partitionWN, coords.col = 7:8, data.col = 3)
+partitionWN1 <- as.matrix(partitionWN)
+geo_data3 <- as.geodata(partitionWN1, coords.col = , data.col = 3)
 vis3 <- likfit(geo_data3, ini = c(1,0.5), fix.nugget = T)
 pred.grid3 <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
 kc_ph_1133 <- krige.conv(geo_data3, loc = pred.grid3, krige = krige.control(obj.m = vis3))
 image(kc_ph_1133, loc = pred.grid3, col=rainbow(15), xlab=" Coordenadas X (m)", ylab="Coordenadas Y (m)", main="Beetles abundance distribution in plot 3")
 vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_1133$predict),max(kc_ph_1133$predict))) #este es el unico con valores significativos, el resto se aproximan a la significacion
+#plantas
+#partitionWN1 <- as.matrix(partitionWN)
+partitionL1 <- as.matrix(partitionL)
+geo_data4 <- as.geodata(partitionL1, coords.col = 7:8, data.col = 3)
+vis4 <- likfit(geo_data4, ini = c(1,0.5), fix.nugget = T) ## problem ----
+#pred.grid4 <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
+#kc_ph_1134 <- krige.conv(geo_data4, loc = pred.grid4, krige = krige.control(obj.m = vis4))
+#image(kc_ph_1134, loc = pred.grid4, col=rainbow(15), xlab=" Coordenadas X (m)", ylab="Coordenadas Y (m)", main="Beetles abundance distribution in plot 3")
+#vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_1134$predict),max(kc_ph_1134$predict))) #este es el unico con valores significativos, el resto se aproximan a la significacion
 
+#visitors
+partitionU1 <- as.matrix(partitionU)
+geo_dataU <- as.geodata(partitionU1, coords.col = spatial, data.col = c(1:9,1:9))
+visU <- likfit(geo_dataU, ini = c(1,0.5), fix.nugget = T)#problem ----
+
+#pred.gridU <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
+#kc_ph_113U <- krige.conv(geo_dataU, loc = pred.gridU, krige = krige.control(obj.m = visU))
+#image(kc_ph_113U, loc = pred.gridU, col=rainbow(15), xlab=" Coordenadas X (m)", ylab="Coordenadas Y (m)", main="Beetles abundance distribution in plot 3")
+#vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_113U$predict),max(kc_ph_113U$predict)))
+
+
+#prueba: otro metodo para obtener los data frames de los visitantes across plots 
+#voy a sacar todas las visitas
+#pol.9
+pol.9$plot <- pol.9$Plot
+pol.9$plot <- as.numeric(pol.9$plot)
+bichos <- dplyr::left_join(dist2,pol.9)
+bichos[is.na(bichos)] <- 0
+Vgeo_data <- as.geodata(bichos[1:778,], coords.col = 4:5, data.col = 10)
+Vvis <- likfit(Vgeo_data, ini = c(1,0.5), fix.nugget = T)#aqui hay un problema----
+#Vpred.grid <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
+#kc_V<- krige.conv(t.butgeo_data3, loc = Vpred.grid, krige = krige.control(obj.m = Vvis)) 
+#image(kc_V, loc = Vpred.grid, col=rainbow(15), xlab=" Coordenadas X (m)", ylab="Coordenadas Y (m)", main="Distribution of Visitor abundances across plots")
+#vertical.image.legend(col=rainbow(15),zlim=c(min(kc_V$predict),max(kc_V$predict)))
+
+
+
+
+#landscape level ----
+# BEETLES: primero tengo que obtener una matriz de distancias de todos los beetles a nivel de plot, tengo que unirle
+#los datos llamados dis. Calcular B-diversidad, y luego hacer Bioenv.
+library(reshape2)
+va <- read.table("data/FV_16_19.csv", header=T, sep= ";")
+va19 <- subset(va, Year== "2019")
+pol.9 <- va19 %>% group_by(Plot, Subplot, Group, Species) %>% summarise (num.visitors = sum(Visits))
+#pol.9 <-pol.9[which(complete.cases(pol.9)),]
+pol.9 <- subset(pol.9, Plot != "OUT")
+
+dist2<-dis[,c( "plot","cell", "position", "x_coor2", "y_coor2")]
+dist2$Subplot <- dist2$position
+#beetles
+pol.beetle9 <- subset(pol.9, Group == "Beetle")
+beetles.total <- pol.beetle9 %>% group_by(Plot, Subplot, Species) %>% summarise (visits = sum(num.visitors))
+columnsbet.total <- dcast(beetles.total, Plot+ Subplot ~ Species, fun.aggregate = sum, value.var = "visits")
+columnsbet.total$plot <- columnsbet.total$Plot
+columnsbet.total$plot <- as.numeric(columnsbet.total$plot)
+sitios.be.t <- dplyr::left_join (dist2,columnsbet.total)
+sitios.be.t[is.na(sitios.be.t)] <- 0
+
+
+
+d.beetle.total <-dist(sitios.be.t [,c(8:16)], method= "euclidean", diag =T, upper =T)
+
+m.beetle.total <- vegdist(d.beetle.total, method="morisita", binary=FALSE, diag= T, upper=T,
+                  na.rm = FALSE) 
+sites.beet <-dist(sitios.be.t [,c(4,5)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.beetle.total, sites.beet,nrepet = 9999)
+#fly
+pol.fly9 <- subset(pol.9, Group == "Fly")
+fly.total <- pol.fly9 %>% group_by(Plot, Subplot, Species) %>% summarise (visits = sum(num.visitors))
+columnsfly.total <- dcast(fly.total, Plot+ Subplot ~ Species, fun.aggregate = sum, value.var = "visits")
+columnsfly.total$plot <- columnsfly.total$Plot
+columnsfly.total$plot <- as.numeric(columnsfly.total$plot)
+sitios.fly.t <- dplyr::left_join (dist2,columnsfly.total)
+sitios.fly.t[is.na(sitios.fly.t)] <- 0
+
+
+d.fly.total <-dist(sitios.fly.t [,c(8:25)], method= "euclidean", diag =T, upper =T)
+
+m.fly.total <- vegdist(d.fly.total, method="morisita", binary=FALSE, diag= T, upper=T,
+                          na.rm = FALSE) 
+sites.flyt <-dist(sitios.fly.t [,c(4,5)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.fly.total, sites.flyt,nrepet = 9999)
+#bee
+pol.bees9 <- subset(pol.9, Group == "Bee")
+Bees.total <- pol.bees9 %>% group_by(Plot, Subplot, Species) %>% summarise (visits = sum(num.visitors))
+columnsbees.total <- dcast(Bees.total, Plot+ Subplot ~ Species, fun.aggregate = sum, value.var = "visits")
+columnsbees.total$plot <- columnsbees.total$Plot
+columnsbees.total$plot <- as.numeric(columnsbees.total$plot)
+sitios.bees.t <- dplyr::left_join (dist2,columnsbees.total)
+sitios.bees.t[is.na(sitios.bees.t)] <- 0
+
+
+d.bees.total <-dist(sitios.bees.t [,c(8:12)], method= "euclidean", diag =T, upper =T)
+
+m.bees.total <- vegdist(d.bees.total, method="morisita", binary=FALSE, diag= T, upper=T,
+                       na.rm = FALSE) 
+sites.beest <-dist(sitios.bees.t [,c(4,5)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.bees.total, sites.beest,nrepet = 9999)
+#butterfly
+pol.but9 <- subset(pol.9, Group == "Butterfly")
+But.total <- pol.but9 %>% group_by(Plot, Subplot, Species) %>% summarise (visits = sum(num.visitors))
+columnsbut.total <- dcast(But.total, Plot+ Subplot ~ Species, fun.aggregate = sum, value.var = "visits")
+columnsbut.total$plot <- columnsbut.total$Plot
+columnsbut.total$plot <- as.numeric(columnsbut.total$plot)
+sitios.but.t <- dplyr::left_join (dist2,columnsbut.total)
+sitios.but.t[is.na(sitios.but.t)] <- 0
+
+d.but.total <-dist(sitios.but.t [,c(8:11)], method= "euclidean", diag =T, upper =T)
+
+m.but.total <- vegdist(d.but.total, method="morisita", binary=FALSE, diag= T, upper=T,
+                        na.rm = FALSE) 
+sites.butt <-dist(sitios.but.t [,c(4,5)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.but.total, sites.butt,nrepet = 9999)
+But.total$plot <- But.total$Plot
+But.total$plot <- as.numeric(But.total$plot)
+prueba <- dplyr::left_join(dist2,But.total)
+prueba[is.na(prueba)] <- 0
+
+t.butgeo_data3 <- as.geodata(prueba[1:330,], coords.col = 4:5, data.col = 9)
+t.butvis3 <- likfit(t.butgeo_data3, ini = c(1,0.5), fix.nugget = T)#aqui hay un problema----
+t.butpred.grid3 <-  expand.grid(seq(0,8.5, l=40), seq(0,8.5, l=40))
+kc_but_3<- krige.conv(t.butgeo_data3, loc = butpred.gri32, krige = krige.control(obj.m = t.butvis3)) #no works mapa de calor ----
+image(kc_but_3, loc = butpred.grid3, col=rainbow(15), xlab=" Coordenadas X (m)", ylab="Coordenadas Y (m)", main="Flies abundance distribution in plot 7")
+vertical.image.legend(col=rainbow(15),zlim=c(min(kc_but_3$predict),max(kc_but_3$predict)))
+###############
