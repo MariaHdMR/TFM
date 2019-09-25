@@ -952,6 +952,7 @@ summary(bees1)
 #bees y plot 3
 bees3 <- bioenv(m.dbees3 ~ t.3$CHFU +t.3$LEMA+t.3$PUPA +t.3$ME, method= "spearman" )
 summary(bees3) #0.23 correlacion
+
 #bees y plot 4
 bees4 <- bioenv(m.dbees4 ~ t.4$CHFU +t.4$LEMA+t.4$PUPA +t.4$ME, method= "spearman" )
 summary(bees4) #0.4 correlacion
