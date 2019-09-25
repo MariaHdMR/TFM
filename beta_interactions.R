@@ -363,3 +363,67 @@ m.but.plot <- vegdist(d.but.plot, method="morisita", binary=FALSE, diag= T, uppe
                        na.rm = FALSE) 
 sites.butt.1 <-dist(sitios.but.t.1 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.but.plot, sites.butt.1,nrepet = 9999)
+#ahora lo uqe voy a hacer es la b-diversidad total por guild (es decir sin spp) en binario con el metodo betadiver
+#betadiver 
+library(tidyverse)
+library(reshape2)
+#primero una matriz de todos los coleopteros 
+#beetles.total.h <- pol.9 %>% group_by(Plot, Species) %>% summarise (visits = sum(num.visitors))
+c.1 <- dcast(pol.9, Plot+Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
+c.1$plot <- c.1$Plot
+c.1$plot <- as.numeric(c.1$plot)
+#t.c1.1 <- subset(c.1, plot== "1")
+
+sitios.be.t.h <- dplyr::left_join (dist2,c.1)
+sitios.be.t.h[is.na(sitios.be.t.h)] <- 0
+
+rowSums(sitios.be.t.h [,c(8:40)])
+d.beetle.total.1 <-dist(sitios.be.t.h [,c(8:40)], method= "euclidean", diag =T, upper =T)
+
+#m.beetle.total.h <-
+ #betadiver(sipoo) 
+m.todo.plot1 <- betadiver(sitios.be.t.h[,c(8:40)], method=15) 
+sites.beet.h <-dist(sitios.be.t.h [,c(4,5)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.todo.plot1 , sites.beet.h,nrepet = 9999)
+as.numeric(m.todo.plot1)
+#######buenoooo----
+c.1.1 <- dcast(pol.9, Plot +Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
+c.1.1$plot <- c.1.1$Plot
+c.1.1$plot <- as.numeric(c.1.1$plot)
+t.c1.1.2<- subset(c.1.1, plot== "1")
+uno <- subset(dist2, plot =="1")
+sitios.be.t.h.2 <- dplyr::left_join (uno,t.c1.1.2)
+sitios.be.t.h.2[is.na(sitios.be.t.h.2)] <- 0
+
+d.beetle.total.1 <-dist(sitios.be.t.h.2 [,c(8:40)], method= "euclidean", diag =T, upper =T)
+
+temp <- sitios.be.t.h.2[which(rowSums(sitios.be.t.h.2 [,c(8:40)]) != 0),8:40]
+rowSums(temp)#bueno, esto es sin 0!!!
+de <-sitios.be.t.h.2[which(rowSums(sitios.be.t.h.2 [,c(8:40)]) != 0),4:5]
+
+m.todo. <- betadiver(temp [,c(1:30)], method=15) 
+
+#colSums(sitios.be.t.h.2[,c(8:40)])
+sites.beet.h.2 <-dist(de [,c(1,2)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.todo. , sites.beet.h.2,nrepet = 9999)
+#as.numeric(m.todo.plot1)
+####################
+plot2.t<- subset(c.1.1, plot== "2")
+dos <- subset(dist2, plot =="2")
+plot2.sitios <- dplyr::left_join (dos,plot2.t)
+plot2.sitios[is.na(plot2.sitios)] <- 0
+
+# <-dist(plot2.sitios [,c(8:40)], method= "euclidean", diag =T, upper =T)
+
+temp2 <- plot2.sitios[which(rowSums(plot2.sitios [,c(8:40)]) != 0),8:40]
+
+rowSums(plot2.sitios [,c(8:40)])
+
+de.2 <-plot2.sitios[which(rowSums(plot2.sitios [,c(8:40)]) != 0),4:5]
+
+m.todo.2 <- betadiver(temp2 [,c(1:30)], method=15) 
+
+
+#colSums(sitios.be.t.h.2[,c(8:40)])
+sites.2 <-dist(de.2 [,c(1,2)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.todo.2 , sites.2,nrepet = 9999)
