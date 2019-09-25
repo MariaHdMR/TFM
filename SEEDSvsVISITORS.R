@@ -102,8 +102,8 @@ summary(GLM.chfu)
 r.squaredGLMM(GLM.chfu)
 
 plot(Seed.chfu2$Seed ~ jitter(Seed.chfu2$Fly), las = 1)
-abline(a = exp(GLM.chfu$coefficients[1])/1+exp(GLM.chfu$coefficients[1]),
-       b = exp(GLM.chfu$coefficients[2])/1+exp(GLM.chfu$coefficients[2]), col = "red")
+abline(a = exp(GLM.chfu$coefficients[1]),
+       b = exp(GLM.chfu$coefficients[2]), col = "red")
 #No estoy seguro de que lalinea este bien. 
 plot(Seed.chfu2$Seed ~ jitter(Seed.chfu2$Beetle), las = 1)
 abline(a = exp(GLM.chfu$coefficients[1])/1+exp(GLM.chfu$coefficients[1]),
