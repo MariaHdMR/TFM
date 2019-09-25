@@ -982,6 +982,59 @@ summary(buter8)
 #analizar las abundancias de especies de visitantes por plot, frente los vectores de abundancias de las plantas
 #para ello se puede hacer un glmm normal
 #glm abundancias ----
+head(va19)
+pol.9 <- va19 %>% group_by(Plot, Subplot, Group, Plant_Simple) %>% summarise (num.visitors = sum(Visits))
+head(pol.9)
+head(plantas)
+plantas <- subset(plantas, select = c("plot", "subplot", "Sp.Focal", "Plantas"))
+colnames(plantas) <- c("Plot", "Subplot", "Plant_Simple", "abundancia")
+dat <- merge(pol.9, plantas, by = c("Plot", "Subplot", "Plant_Simple"), all = TRUE)
+head(dat)
+#add abundance at plot level
+library(reshape2)
+plot_abund <- dcast(plantas, Plot + Plant_Simple ~ ., fun.aggregate = sum, value.var = "abundancia")
+plot_abund
+colnames(plot_abund)[3] <- "abundancia_plot"
+#merge
+dat2 <- merge(dat, plot_abund, by = c("Plot", "Plant_Simple"), all.x = TRUE)
+head(dat2)
+#clean empty ones.
+dat2[which(dat2$abundancia == 0),]
+dat2[which((is.na(dat2$Group) & dat2$abundancia >0)),]
+dat2[which((!is.na(dat2$Group) & dat2$abundancia == 0)),"abundancia"] <- 1
+#ESTO es una asumpcion bestia. 
+#modelo para flies
+flyCHUFU <- subset(dat2, Group == "Fly" & Plant_Simple == "CHFU")
+#flyOthers <- subset(dat2, Group == "Fly" & Plant_Simple != "CHFU")
+#flyOthers$Plant_Simple #eliminar HOMA, y no sincronicas.
+flyOthers <- subset(dat2, Group == "Fly" & Plant_Simple %in% c("LEMA", "ME"))
+temp1 <- dcast(flyOthers, Plot ~ ., fun.aggregate = sum, value.var = "abundancia_plot") #7 has NA, REMOVE OR FIX:
+colnames(temp1)[2] <- "abundance_plot_inter"
+temp2<- dcast(flyOthers, Plot + Subplot ~ ., fun.aggregate = sum, value.var = "abundancia")
+colnames(temp2)[3] <- "abundance_inter"
+head(temp2)
+temp3 <- merge(temp2, temp1)
+head(flyCHUFU)
+flyCHUFU2 <- merge(flyCHUFU, temp3)
+head(flyCHUFU2)
+
+m1 <- lm(num.visitors ~ abundancia + abundance_inter + abundancia_plot + abundance_plot_inter, data = flyCHUFU2)
+plot(m1)
+summary(m1)
+m2 <- glm(num.visitors ~ abundancia + abundance_inter + abundancia_plot + abundance_plot_inter, 
+          data = flyCHUFU2, family = "poisson")
+hist(flyCHUFU2$num.visitors)
+library(DHARMa)
+simulationOutput <- simulateResiduals(fittedModel = m2, n = 250)
+plot(simulationOutput)
+performance::check_overdispersion(m2)
+summary(m2)
+
+
+
+
+
+
 visitors <- tidyr::spread(pol.9, key=Group, value =num.visitors)
 visitors[is.na(visitors)] <- 0
 visitors$plot <- visitors$Plot
