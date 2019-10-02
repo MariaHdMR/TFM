@@ -9,6 +9,7 @@ library(ade4)
 library(gstat)
 library(lattice)
 library(aqfig)
+library(tidyverse)
 
 
 va <- read.table("data/FV_16_19.csv", header=T, sep= ";")
@@ -139,57 +140,9 @@ visU <- likfit(geo_dataU, ini = c(1,0.5), fix.nugget = T)#problem ----
 #image(kc_ph_113U, loc = pred.gridU, col=rainbow(15), xlab=" Coordenadas X (m)", ylab="Coordenadas Y (m)", main="Beetles abundance distribution in plot 3")
 #vertical.image.legend(col=rainbow(15),zlim=c(min(kc_ph_113U$predict),max(kc_ph_113U$predict)))
 
-#subplot level
-#build a list of matrices of plants per visits for each plot
-levels(va$Plant_Simple)
-ntw.1 <- list()
-for (i in 1:9){
-  temp.1 <- subset(va, Plot == i & Year == 2019 & Plant_Simple %in% c("LEMA", "CHFU",
-                                                                    "PUPA", "ME"))
-  temp.1 <- droplevels(temp.1)
-  comm.1 <- dcast(temp.1, Plant_Simple ~ Group, fun.aggregate = sum, value.var = "Visits")
-  rownames(comm.1) <- comm$Plant_Simple
-  ntw.1[[i]] <- comm.1[,-1, drop = FALSE]
-}
-
-betalink.dist
-
-W <- ntw
-partitionOS <- matrix(NA, 9,9)
-for (i in c(1:(length(W) - 1))) {
-  for (j in c((i + 1):(length(W)))) {
-    partitionOS[j,i] <- betalink(W[[i]], W[[j]])$OS
-  }
-}
-
-partitionWN <- matrix(NA, 9,9)
-for (i in c(1:(length(W) - 1))) {
-  for (j in c((i + 1):(length(W)))) {
-    partitionWN[j,i] <- betalink(W[[i]], W[[j]])$WN
-  }
-}
-
-#MARIA, para sacar la beta de plantas: $L, polinizadores $U.
-partitionL <- matrix(NA, 9,9)
-for (i in c(1:(length(W) - 1))) {
-  for (j in c((i + 1):(length(W)))) {
-    partitionL[j,i] <- betalink(W[[i]], W[[j]])$L
-  }
-}
-
-partitionU <- matrix(NA, 9,9)
-for (i in c(1:(length(W) - 1))) {
-  for (j in c((i + 1):(length(W)))) {
-    partitionU[j,i] <- betalink(W[[i]], W[[j]])$U
-  }
-}
 
 
 
-
-#dis
-espacio <- dist(dis [,c(8,9)], method= "euclidean", diag =T, upper =T)
-mantel.rtest(partitionWN, espacio, nrepet = 9999)
 
 
 #prueba: otro metodo para obtener los data frames de los visitantes across plots 
@@ -363,67 +316,6 @@ m.but.plot <- vegdist(d.but.plot, method="morisita", binary=FALSE, diag= T, uppe
                        na.rm = FALSE) 
 sites.butt.1 <-dist(sitios.but.t.1 [,c(2,3)], method= "euclidean", diag =T, upper =T)
 mantel.rtest (m.but.plot, sites.butt.1,nrepet = 9999)
-#ahora lo uqe voy a hacer es la b-diversidad total por guild (es decir sin spp) en binario con el metodo betadiver
-#betadiver 
-library(tidyverse)
-library(reshape2)
-#primero una matriz de todos los coleopteros 
-#beetles.total.h <- pol.9 %>% group_by(Plot, Species) %>% summarise (visits = sum(num.visitors))
-c.1 <- dcast(pol.9, Plot+Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
-c.1$plot <- c.1$Plot
-c.1$plot <- as.numeric(c.1$plot)
-#t.c1.1 <- subset(c.1, plot== "1")
-
-sitios.be.t.h <- dplyr::left_join (dist2,c.1)
-sitios.be.t.h[is.na(sitios.be.t.h)] <- 0
-
-rowSums(sitios.be.t.h [,c(8:40)])
-d.beetle.total.1 <-dist(sitios.be.t.h [,c(8:40)], method= "euclidean", diag =T, upper =T)
-
-#m.beetle.total.h <-
- #betadiver(sipoo) 
-m.todo.plot1 <- betadiver(sitios.be.t.h[,c(8:40)], method=15) 
-sites.beet.h <-dist(sitios.be.t.h [,c(4,5)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.todo.plot1 , sites.beet.h,nrepet = 9999)
-as.numeric(m.todo.plot1)
-#######buenoooo----
-c.1.1 <- dcast(pol.9, Plot +Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
-c.1.1$plot <- c.1.1$Plot
-c.1.1$plot <- as.numeric(c.1.1$plot)
-t.c1.1.2<- subset(c.1.1, plot== "1")
-uno <- subset(dist2, plot =="1")
-sitios.be.t.h.2 <- dplyr::left_join (uno,t.c1.1.2)
-sitios.be.t.h.2[is.na(sitios.be.t.h.2)] <- 0
-
-d.beetle.total.1 <-dist(sitios.be.t.h.2 [,c(8:40)], method= "euclidean", diag =T, upper =T)
-
-temp <- sitios.be.t.h.2[which(rowSums(sitios.be.t.h.2 [,c(8:40)]) != 0),8:40]
-rowSums(temp)#bueno, esto es sin 0!!!
-de <-sitios.be.t.h.2[which(rowSums(sitios.be.t.h.2 [,c(8:40)]) != 0),4:5]
-
-m.todo. <- betadiver(temp [,c(1:30)], method=15) 
-
-#colSums(sitios.be.t.h.2[,c(8:40)])
-sites.beet.h.2 <-dist(de [,c(1,2)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.todo. , sites.beet.h.2,nrepet = 9999)
-#as.numeric(m.todo.plot1)
-####################
-plot2.t<- subset(c.1.1, plot== "2")
-dos <- subset(dist2, plot =="2")
-plot2.sitios <- dplyr::left_join (dos,plot2.t)
-plot2.sitios[is.na(plot2.sitios)] <- 0
-
-# <-dist(plot2.sitios [,c(8:40)], method= "euclidean", diag =T, upper =T)
-
-temp2 <- plot2.sitios[which(rowSums(plot2.sitios [,c(8:40)]) != 0),8:40]
-
-rowSums(plot2.sitios [,c(8:40)])
-
-de.2 <-plot2.sitios[which(rowSums(plot2.sitios [,c(8:40)]) != 0),4:5]
-
-m.todo.2 <- betadiver(temp2 [,c(1:30)], method=15) 
 
 
-#colSums(sitios.be.t.h.2[,c(8:40)])
-sites.2 <-dist(de.2 [,c(1,2)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.todo.2 , sites.2,nrepet = 9999)
+
