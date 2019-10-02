@@ -2,7 +2,7 @@
 library(vegan) #me sirve para bioenv
 library(tidyverse)
 library(ade4) #este es el paquete para el mantel test que he usado
-library(geoRmantel)
+library(geoR)
 library(gstat)
 library(aqfig)
 library(lattice)
@@ -297,7 +297,6 @@ columnsbe1 <- dcast(bbet1, Subplot ~ Species, fun.aggregate = sum, value.var = "
 bet1t <- dplyr::left_join (sitios1,columnsbe1)
 bet1t[is.na(bet1t)] <- 0
 
-
 #bbe1t$Plot[is.na(bbe1t$Plot)] <- 1
 #bbe1t$Group[is.na(bbe1t$Group)] <- "Beetle"
 #bbe1t$num.visitors[is.na(bbe1t$num.visitors)] <- 0
@@ -306,7 +305,7 @@ bet1t[is.na(bet1t)] <- 0
 #t1 <- bbe1t %>% group_by(Subplot, Group, Family, Species) %>% summarise (visits = sum(num.visitors)) 
 
 #bbe1sim <- bbe1t [,c( "Subplot","num.visitors")]
-d.bbe1 <-dist(bet1t [,c(4:6)], method= "euclidean", diag =T, upper =T)
+d.bbe1 <-dist(bet1t [,c(4:5)], method= "euclidean", diag =T, upper =T)
 
 m.bbe1 <- vegdist(d.bbe1, method="morisita", binary=FALSE, diag= T, upper=T,
         na.rm = FALSE) 
@@ -334,10 +333,10 @@ columnsbet2 <- dcast(bbet2, Subplot ~ Species, fun.aggregate = sum, value.var = 
 bet2t <- dplyr::left_join (sitios1,columnsbet2)
 bet2t[is.na(bet2t)] <- 0
 
-bbe2.bueno <- dplyr::left_join (sitios1,bbet2)
-bbe2.bueno$num.visitors[is.na(bbe2.bueno$num.visitors)] <- 0
+#bbe2.bueno <- dplyr::left_join (sitios1,bbet2)
+#bbe2.bueno$num.visitors[is.na(bbe2.bueno$num.visitors)] <- 0
 
-d.bbe2 <-dist(bet2t [,c(4:8)], method= "euclidean", diag =T, upper =T)
+d.bbe2 <-dist(bet2t [,c(4:7)], method= "euclidean", diag =T, upper =T)
 
 m.bbe2 <- vegdist(d.bbe2, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
@@ -358,7 +357,7 @@ sitios.bbet3$num.visitors[is.na(sitios.bbet3$num.visitors)] <- 0
 columnsbet3 <- dcast(bbet3, Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
 bet3t <- dplyr::left_join (sitios1,columnsbet3)
 bet3t[is.na(bet3t)] <- 0
-d.bbe3 <-dist(bet3t [,c(4:8)], method= "euclidean", diag =T, upper =T)
+d.bbe3 <-dist(bet3t [,c(4:7)], method= "euclidean", diag =T, upper =T)
 
 m.bbe3 <- vegdist(d.bbe3, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
@@ -385,7 +384,7 @@ bbe4 <- subset (p.4, Group == "Beetle")
 columnsbet4 <- dcast(bbe4, Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
 bet4t <- dplyr::left_join (sitios1,columnsbet4)
 bet4t[is.na(bet4t)] <- 0
-d.bbe4 <-dist(bet4t [,c(4:6)], method= "euclidean", diag =T, upper =T)
+d.bbe4 <-dist(bet4t [,c(4:5)], method= "euclidean", diag =T, upper =T)
 
 m.bbe4 <- vegdist(d.bbe4, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
@@ -401,7 +400,7 @@ bbe5 <- subset (p.5, Group == "Beetle")
 columnsbet5 <- dcast(bbe5, Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
 bet5t <- dplyr::left_join (sitios1,columnsbet5)
 bet5t[is.na(bet5t)] <- 0
-d.bbe5 <-dist(bet5t [,c(4:7)], method= "euclidean", diag =T, upper =T)
+d.bbe5 <-dist(bet5t [,c(4:6)], method= "euclidean", diag =T, upper =T)
 
 m.bbe5 <- vegdist(d.bbe5, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
@@ -420,7 +419,7 @@ columnsbet6 <- dcast(bbe6, Subplot ~ Species, fun.aggregate = sum, value.var = "
 bet6t <- dplyr::left_join (sitios1,columnsbet6)
 bet6t[is.na(bet6t)] <- 0
 
-d.bbe6 <-dist(bet6t [,c(4:6)], method= "euclidean", diag =T, upper =T)
+d.bbe6 <-dist(bet6t [,c(4:5)], method= "euclidean", diag =T, upper =T)
 
 m.bbe6 <- vegdist(d.bbe6, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
@@ -438,7 +437,7 @@ bbe7 <- subset (p.7, Group == "Beetle")
 columnsbet7 <- dcast(bbe7, Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
 bet7t <- dplyr::left_join (sitios1,columnsbet7)
 bet7t[is.na(bet7t)] <- 0
-d.bbe7 <-dist(bet7t [,c(4:6)], method= "euclidean", diag =T, upper =T)
+d.bbe7 <-dist(bet7t [,c(4:5)], method= "euclidean", diag =T, upper =T)
 
 m.bbe7 <- vegdist(d.bbe7, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
@@ -457,7 +456,7 @@ columnsbet8 <- dcast(bbe8, Subplot ~ Species, fun.aggregate = sum, value.var = "
 bet8t <- dplyr::left_join (sitios1,columnsbet8)
 bet8t[is.na(bet8t)] <- 0
 
-d.bbe8 <-dist(bet8t [,c(4:7)], method= "euclidean", diag =T, upper =T)
+d.bbe8 <-dist(bet8t [,c(4:6)], method= "euclidean", diag =T, upper =T)
 
 m.bbe8 <- vegdist(d.bbe8, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
@@ -476,7 +475,7 @@ columnsbet9 <- dcast(bbe9, Subplot ~ Species, fun.aggregate = sum, value.var = "
 bet9t <- dplyr::left_join (sitios1,columnsbet9)
 bet9t[is.na(bet9t)] <- 0
 
-d.bbe9 <-dist(bet9t [,c(4:8)], method= "euclidean", diag =T, upper =T)
+d.bbe9 <-dist(bet9t [,c(4:7)], method= "euclidean", diag =T, upper =T)
 
 m.bbe9 <- vegdist(d.bbe9, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) 
@@ -494,7 +493,7 @@ bf1 <- subset (p.1, Group == "Fly")
 columnsbf1 <- dcast(bf1, Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
 bf1t <- dplyr::left_join (sitios1,columnsbf1)
 bf1t[is.na(bf1t)] <- 0
-d.df1 <-dist(bf1t [,c(4:12)], method= "euclidean", diag =T, upper =T)
+d.df1 <-dist(bf1t [,c(4:11)], method= "euclidean", diag =T, upper =T)
 
 m.bf1 <- vegdist(d.df1, method="morisita", binary=FALSE, diag= T, upper=T,
                   na.rm = FALSE) #matriz de 0
@@ -512,7 +511,7 @@ bf2t <- dplyr::left_join (sitios1,bf2)
 columnsfl2 <- dcast(bf2t, Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
 fl2t <- dplyr::left_join (sitios1,columnsfl2)
 fl2t[is.na(fl2t)] <- 0
-d.df2 <-dist(fl2t [,c(4:8)], method= "euclidean", diag =T, upper =T)
+d.df2 <-dist(fl2t [,c(4:7)], method= "euclidean", diag =T, upper =T)
 
 m.bf2 <- vegdist(d.df2, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
@@ -530,7 +529,7 @@ columnsfl3 <- dcast(bf3t, Subplot ~ Species, fun.aggregate = sum, value.var = "n
 fl3t <- dplyr::left_join (sitios1,columnsfl3)
 fl3t[is.na(fl3t)] <- 0
 
-d.df3 <-dist(fl3t [,c(4:8)], method= "euclidean", diag =T, upper =T)
+d.df3 <-dist(fl3t [,c(4:7)], method= "euclidean", diag =T, upper =T)
 
 m.bf3 <- vegdist(d.df3, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
@@ -548,7 +547,7 @@ bf4t <- dplyr::left_join (sitios1,bf4)
 columnsfl4 <- dcast(bf4t, Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
 fl4t <- dplyr::left_join (sitios1,columnsfl4)
 fl4t[is.na(fl4t)] <- 0
-d.df4 <-dist(fl4t [,c(4:10)], method= "euclidean", diag =T, upper =T)
+d.df4 <-dist(fl4t [,c(4:9)], method= "euclidean", diag =T, upper =T)
 
 m.bf4 <- vegdist(d.df4, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
@@ -566,7 +565,7 @@ columnsfl5 <- dcast(bf5t, Subplot ~ Species, fun.aggregate = sum, value.var = "n
 fl5t <- dplyr::left_join (sitios1,columnsfl5)
 fl5t[is.na(fl5t)] <- 0
 
-d.df5 <-dist(fl5t [,c(4:11)], method= "euclidean", diag =T, upper =T)
+d.df5 <-dist(fl5t [,c(4:10)], method= "euclidean", diag =T, upper =T)
 
 m.bf5 <- vegdist(d.df5, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
@@ -584,7 +583,7 @@ columnsfl6 <- dcast(bf6t, Subplot ~ Species, fun.aggregate = sum, value.var = "n
 fl6t <- dplyr::left_join (sitios1,columnsfl6)
 fl6t[is.na(fl6t)] <- 0
 
-d.df6 <-dist(fl6t [,c(4:12)], method= "euclidean", diag =T, upper =T)
+d.df6 <-dist(fl6t [,c(4:11)], method= "euclidean", diag =T, upper =T)
 
 m.bf6 <- vegdist(d.df6, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
@@ -603,7 +602,7 @@ fl7t <- dplyr::left_join (sitios1,columnsfl7)
 fl7t[is.na(fl7t)] <- 0
 
 
-d.df7 <-dist(fl7t [,c(4:10)], method= "euclidean", diag =T, upper =T)
+d.df7 <-dist(fl7t [,c(4:9)], method= "euclidean", diag =T, upper =T)
 
 m.bf7 <- vegdist(d.df7, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
@@ -620,7 +619,7 @@ columnsfl8 <- dcast(bf8t, Subplot ~ Species, fun.aggregate = sum, value.var = "n
 fl8t <- dplyr::left_join (sitios1,columnsfl8)
 fl8t[is.na(fl8t)] <- 0
 
-d.df8 <-dist(fl8t [,c(4:14)], method= "euclidean", diag =T, upper =T)
+d.df8 <-dist(fl8t [,c(4:13)], method= "euclidean", diag =T, upper =T)
 
 m.bf8 <- vegdist(d.df8, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
@@ -637,7 +636,7 @@ bf9t <- dplyr::left_join (sitios1,bf9)
 columnsfl9 <- dcast(bf9t, Subplot ~ Species, fun.aggregate = sum, value.var = "num.visitors")
 fl9t <- dplyr::left_join (sitios1,columnsfl9)
 fl9t[is.na(fl9t)] <- 0
-d.df9 <-dist(fl9t [,c(4:11)], method= "euclidean", diag =T, upper =T)
+d.df9 <-dist(fl9t [,c(4:10)], method= "euclidean", diag =T, upper =T)
 m.bf9 <- vegdist(d.df9, method="morisita", binary=FALSE, diag= T, upper=T,
                  na.rm = FALSE) 
 #u9<-  dplyr::left_join (sitios1,bf9sim)
@@ -882,7 +881,10 @@ t <- tabla.plantas
 #beetles en el plot 1 
 t.1 <- subset(t, plot == "1")
 r <- bioenv(m.bbe1 ~ t.1$CHFU +t.1$LEMA+t.1$PUPA +t.1$ME, method= "spearman" )
+
 summary(r)
+t.1.s <-t.1[,c("CHFU","LEMA","ME","PUPA")]
+visweb(r)
 #beetles en el Plot 2 
 t.2<- subset(t, plot== "2")  
 r2 <- bioenv(m.bbe2 ~ t.2$CHFU +t.2$LEMA+t.2$PUPA +t.2$ME, method= "spearman" )
@@ -982,6 +984,7 @@ summary(buter8)
 #analizar las abundancias de especies de visitantes por plot, frente los vectores de abundancias de las plantas
 #para ello se puede hacer un glmm normal
 #glm abundancias ----
+###bueno nacho----
 head(va19)
 pol.9 <- va19 %>% group_by(Plot, Subplot, Group, Plant_Simple) %>% summarise (num.visitors = sum(Visits))
 head(pol.9)
