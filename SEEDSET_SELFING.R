@@ -39,7 +39,7 @@ head(SF_2019)
 #chfu----
 SF_CHFU <- subset(SF_2019, PLANT== 'CHFU')
 boxplot(SF_CHFU$VIABLES_SEEDS~SF_CHFU$SELFING, xlab= ('Selfing'), 
-        ylab = ('Viable seeds'), main = ('Relation between viable seeds and selfing experiment: CHFU'),
+        ylab = ('Number of viable seeds'), main = ('Relation between viable seeds and selfing experiment: CHFU'),
         col=c("blue4", "chartreuse"), las = 1)
 m <- lm(VIABLES_SEEDS ~ SELFING, data = SF_CHFU)
 summary(m)
@@ -55,12 +55,15 @@ boxplot((SF_CHFU$VIABLES_SEEDS/SF_CHFU$TOTAL_SEEDS)~SF_CHFU$SELFING,
 n3 <- glm(cbind(SF_CHFU$VIABLES_SEEDS,SF_CHFU$NO_VIABLES_SEEDS) ~ SF_CHFU$SELFING, 
           family = "binomial") 
 summary(n3)
+library(vegan)
+library(MuMIn)
+r.squaredGLMM(n3)
 
 
 #LEMA ----
 SF_LEMA <- subset(SF_2019, PLANT== 'LEMA')
 boxplot(SF_LEMA$VIABLES_SEEDS~SF_LEMA$SELFING, xlab= ('Selfing'), 
-        ylab = ('Viable seeds'), 
+        ylab = ('Number of viable seeds'), 
         main = ('Relation between viable seeds and selfing experiment: LEMA'),
         col=c("blue4", "chartreuse"), las = 1)
 n <- lm(VIABLES_SEEDS ~ SELFING, data = SF_LEMA)
@@ -85,7 +88,7 @@ summary(n1)
 #pupa ----
 SF_PUPA <- subset(SF_2019, PLANT== 'PUPA')
 boxplot(SF_PUPA$VIABLES_SEEDS~SF_PUPA$SELFING, xlab= ('Selfing'), 
-        ylab = ('Viable seeds'), outline= F, las=1, 
+        ylab = ('Number of viable seeds'), outline= F, las=1, 
         main = ('Relation between viable seeds and selfing experiment: PUPA'),col=c("blue4", "chartreuse"))
 #aov(VIABLES_SEEDS ~ SELFING, data = SF_PUPA)
 O <- lm(VIABLES_SEEDS ~ SELFING, data = SF_PUPA)
