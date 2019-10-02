@@ -2,11 +2,12 @@
 library(vegan) #me sirve para bioenv
 library(tidyverse)
 library(ade4) #este es el paquete para el mantel test que he usado
-library(geoRmantel)
+library(geoR)
 library(gstat)
 library(aqfig)
 library(lattice)
 library(lme4) #para el glmm
+library(reshape2)
 #datos
 
 sitios <- read.table("data/caracolesplotposition.csv", header=T, sep= ";")
@@ -504,74 +505,77 @@ But.total <- pol.but9 %>% group_by(Plot, Subplot, Species) %>% summarise (visits
 a <- dcast(ab.simple, plot+ subplot ~ Sp.Focal, fun.aggregate = sum, value.var = "num.plantas")
 a.s <- a[,c("plot", "subplot", "CHFU","LEMA","PUPA","ME")]
 a.s$Subplot <- a.s$subplot
-as.sitio <- dplyr::left_join (dist2,a.s)
+subplots <- dis[,c ("plot", "position","x_coor","y_coor")]
+subplots$subplot <- subplots$position
+as.sitio <- dplyr::left_join (subplots,a.s)
 as.sitio[is.na(as.sitio)] <- 0
+#beta diversidad de todas las plantas por plots, bueno! ----
+#plot 1
+sitio1 <- subset(as.sitio, plot=="1")
+plot.1 <-dist(sitio1 [,c(6:9)], method= "euclidean", diag =T, upper =T)
+m.plot.1 <- vegdist(plot.1, method="morisita", binary=FALSE, diag= T, upper=T,
+        na.rm = FALSE)
+d.plot.1 <- dist(sitio1 [,c(3,4)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.plot.1, d.plot.1,nrepet = 9999)
 
+#plot 2
+sitio2 <- subset(as.sitio, plot=="2")
+plot.2 <-dist(sitio2 [,c(6:9)], method= "euclidean", diag =T, upper =T)
+m.plot.2 <- vegdist(plot.2, method="morisita", binary=FALSE, diag= T, upper=T,
+                    na.rm = FALSE)
+d.plot.2 <- dist(sitio2 [,c(3,4)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.plot.2, d.plot.2,nrepet = 9999)
+#plot 3
+sitio3 <- subset(as.sitio, plot=="3")
+plot.3 <-dist(sitio3 [,c(6:9)], method= "euclidean", diag =T, upper =T)
+m.plot.3 <- vegdist(plot.3, method="morisita", binary=FALSE, diag= T, upper=T,
+                    na.rm = FALSE)
+d.plot.3 <- dist(sitio3 [,c(3,4)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.plot.3, d.plot.3,nrepet = 9999)
+#plot 4
+sitio4 <- subset(as.sitio, plot=="4")
+plot.4 <-dist(sitio4 [,c(6:9)], method= "euclidean", diag =T, upper =T)
+m.plot.4 <- vegdist(plot.4, method="morisita", binary=FALSE, diag= T, upper=T,
+                    na.rm = FALSE)
+d.plot.4 <- dist(sitio4 [,c(3,4)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.plot.4, d.plot.4,nrepet = 9999)
+#plot 5
+sitio5 <- subset(as.sitio, plot=="5")
+plot.5 <-dist(sitio5 [,c(6:9)], method= "euclidean", diag =T, upper =T)
+m.plot.5 <- vegdist(plot.5, method="morisita", binary=FALSE, diag= T, upper=T,
+                    na.rm = FALSE)
+d.plot.5 <- dist(sitio5 [,c(3,4)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.plot.5, d.plot.5,nrepet = 9999)
 
-chfu.plots <-dist(as.sitio [,c(8)], method= "euclidean", diag =T, upper =T)
+#plot 6
+sitio6 <- subset(as.sitio, plot=="6")
+plot.6 <-dist(sitio6 [,c(6:9)], method= "euclidean", diag =T, upper =T)
+m.plot.6 <- vegdist(plot.6, method="morisita", binary=FALSE, diag= T, upper=T,
+                    na.rm = FALSE)
+d.plot.6 <- dist(sitio6 [,c(3,4)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.plot.6, d.plot.6,nrepet = 9999)
 
-m.chfu.plots <- vegdist(chfu.plots, method="morisita", binary=FALSE, diag= T, upper=T,
-                       na.rm = FALSE) 
-sitios.plantas <-dist(as.sitio [,c(4,5)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.chfu.plots, sitios.plantas,nrepet = 9999)
+#plot 7
+sitio7 <- subset(as.sitio, plot=="7")
+plot.7 <-dist(sitio7 [,c(6:9)], method= "euclidean", diag =T, upper =T)
+m.plot.7 <- vegdist(plot.7, method="morisita", binary=FALSE, diag= T, upper=T,
+                    na.rm = FALSE)
+d.plot.7 <- dist(sitio7 [,c(3,4)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.plot.7, d.plot.7,nrepet = 9999)
 
-lema.plots <-dist(as.sitio [,c(9)], method= "euclidean", diag =T, upper =T)
+#plot 8
+sitio8 <- subset(as.sitio, plot=="8")
+plot.8 <-dist(sitio8 [,c(6:9)], method= "euclidean", diag =T, upper =T)
+m.plot.8 <- vegdist(plot.8, method="morisita", binary=FALSE, diag= T, upper=T,
+                    na.rm = FALSE)
+d.plot.8 <- dist(sitio8 [,c(3,4)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.plot.8, d.plot.8,nrepet = 9999)
+#plot 9
+sitio9 <- subset(as.sitio, plot=="9")
+plot.9 <-dist(sitio9 [,c(6:9)], method= "euclidean", diag =T, upper =T)
+m.plot.9 <- vegdist(plot.9, method="morisita", binary=FALSE, diag= T, upper=T,
+                    na.rm = FALSE)
+d.plot.9 <- dist(sitio9 [,c(3,4)], method= "euclidean", diag =T, upper =T)
+mantel.rtest (m.plot.9, d.plot.9,nrepet = 9999)
+######
 
-m.lema.plots <- vegdist(lema.plots, method="morisita", binary=FALSE, diag= T, upper=T,
-                        na.rm = FALSE) 
-mantel.rtest (m.lema.plots, sitios.plantas,nrepet = 9999)
-Pupa.plots <-dist(as.sitio [,c(10)], method= "euclidean", diag =T, upper =T)
-
-m.pupa.plots <- vegdist(Pupa.plots, method="morisita", binary=FALSE, diag= T, upper=T,
-                        na.rm = FALSE) 
-mantel.rtest (m.pupa.plots, sitios.plantas,nrepet = 9999)
-me.plots <-dist(as.sitio [,c(11)], method= "euclidean", diag =T, upper =T)
-
-m.me.plots <- vegdist(me.plots, method="morisita", binary=FALSE, diag= T, upper=T,
-                        na.rm = FALSE) 
-mantel.rtest (m.me.plots, sitios.plantas,nrepet = 9999)
-#plot
-
-#
-a1 <- dcast(ab.simple, plot ~ Sp.Focal, fun.aggregate = sum, value.var = "num.plantas")
-a.sub <- a1[,c("plot", "CHFU","LEMA","PUPA","ME")]
-asub.sitio <- dplyr::left_join (dis_plot,a.sub)
-asub.sitio[is.na(asub.sitio)] <- 0
-
-
-chfu.subplots <-dist(asub.sitio [,c(4)], method= "euclidean", diag =T, upper =T)
-
-m.chfu.subplots <- vegdist(chfu.subplots, method="morisita", binary=FALSE, diag= T, upper=T,
-                        na.rm = FALSE) 
-sitios.plantas.sub <-dist(asub.sitio [,c(2,3)], method= "euclidean", diag =T, upper =T)
-mantel.rtest (m.chfu.subplots, sitios.plantas.sub,nrepet = 9999)
-
-lema.subplots <-dist(asub.sitio [,c(5)], method= "euclidean", diag =T, upper =T)
-
-m.lema.subplots <- vegdist(lema.subplots, method="morisita", binary=FALSE, diag= T, upper=T,
-                        na.rm = FALSE) 
-mantel.rtest (m.lema.subplots, sitios.plantas.sub,nrepet = 9999)
-Pupa.subplots <-dist(asub.sitio [,c(6)], method= "euclidean", diag =T, upper =T)
-
-m.pupa.subplots <- vegdist(Pupa.subplots, method="morisita", binary=FALSE, diag= T, upper=T,
-                        na.rm = FALSE) 
-mantel.rtest (m.pupa.subplots, sitios.plantas.sub,nrepet = 9999)
-me.subplots <-dist(asub.sitio [,c(7)], method= "euclidean", diag =T, upper =T)
-
-m.me.subplots <- vegdist(me.subplots, method="morisita", binary=FALSE, diag= T, upper=T,
-                      na.rm = FALSE) 
-mantel.rtest (m.me.subplots, sitios.plantas.sub,nrepet = 9999)
-
-
-todo.plantas.junto <-dist(asub.sitio [,c(4:7)], method= "euclidean", diag =T, upper =T)
-
-m.todo <- vegdist(todo.plantas.junto, method="morisita", binary=FALSE, diag= T, upper=T,
-                         na.rm = FALSE) 
-mantel.rtest (todo.plantas.junto, sitios.plantas.sub,nrepet = 9999)
-
-#subplot pero con todas las sp de plantas juntas
-todo.plantas.<-dist(as.sitio [,c(8:11)], method= "euclidean", diag =T, upper =T)
-
-m.todo.sub <- vegdist(todo.plantas., method="morisita", binary=FALSE, diag= T, upper=T,
-                  na.rm = FALSE) 
-mantel.rtest (m.todo.sub, sitios.plantas,nrepet = 9999)
