@@ -32,6 +32,7 @@ rownames(red_matrix) <- red_col$Plant_Simple
 
 red_igraph <- graph_from_incidence_matrix(red_matrix, weighted = TRUE)
 node.size.df <- F.3 %>% group_by(Plant_Simple) %>% summarise(size = sum(num.plantas))
+node.size.df[which(node.size.df$size == 0),"size"] <- 4
 plant.size <- node.size.df$size*7
 names(plant.size) <- node.size.df$Plant_Simple
 #visitors.size <- rep(1000,8)
