@@ -46,7 +46,7 @@ global <- ggplot(todo, aes(x = total.visits, y = Seed, group = Group))+
 global
 x_scale4 <- scale_x_continuous(limits = c(0,7))
 y_scale4 <- scale_y_continuous(limits = c(-100,1200))
-dos <- ggplot(todo, aes(x = total.visits, y= Seed))+ #GRAFICO GLOBAL PERO SEPARADO POR GUILD Y PLANTA
+dos <- ggplot(todo, aes(x = jitter(todo$total.visits), y= Seed))+ #GRAFICO GLOBAL PERO SEPARADO POR GUILD Y PLANTA
     geom_point(aes(color = Group))+
     geom_smooth(method = "lm", aes(color = Group))+
     facet_wrap(Plant_Simple~Group)+
@@ -58,6 +58,8 @@ dos <- ggplot(todo, aes(x = total.visits, y= Seed))+ #GRAFICO GLOBAL PERO SEPARA
     NULL
 dos #este gráfico muestra que en LEMA los coleopteros hacen que haya menos semillas! 
 #ahora graficos separados por especies de planta ----
+
+
 
 ##chfu ----
 
@@ -85,11 +87,11 @@ colSums(Seed.chfu2[6:9])
 Seed.chfu2$Seed[which(Seed.chfu2$Seed == 0)] <- NA
 Seed.chfu2$Fruit[which(Seed.chfu2$Fruit == 0)] <- NA
 
-GLM.chfu <- lm(Seed.chfu2$Seed ~ Seed.chfu2$Fly + Seed.chfu2$Beetle + Seed.chfu2$Bee)
+#GLM.chfu <- lm(Seed.chfu2$Seed ~ Seed.chfu2$Fly + Seed.chfu2$Beetle + Seed.chfu2$Bee)
 #plot(GLM.chfu) #bad
 
-GLM.chfu <- glm(Seed.chfu2$Seed ~ Seed.chfu2$Fly + Seed.chfu2$Beetle + Seed.chfu2$Bee, 
-                family = "poisson")
+#GLM.chfu <- glm(Seed.chfu2$Seed ~ Seed.chfu2$Fly + Seed.chfu2$Beetle + Seed.chfu2$Bee, 
+  #              family = "poisson")
 vignette("DHARMa", package="DHARMa")
 simulationOutput <- simulateResiduals(fittedModel = GLM.chfu, n = 250)
 plot(simulationOutput)
@@ -101,9 +103,35 @@ plot(simulationOutput)
 summary(GLM.chfu)
 r.squaredGLMM(GLM.chfu)
 
+
 plot(Seed.chfu2$Seed ~ jitter(Seed.chfu2$Fly), las = 1)
 abline(a = exp(GLM.chfu$coefficients[1]),
        b = exp(GLM.chfu$coefficients[2]), col = "red")
+
+flies.chfu <- Seed.chfu2 [,c("Seed", "Fly")]
+x_scale.1 <- scale_x_continuous(limits = c(0,8))
+S.chfu.fly <- ggplot(flies.chfu,aes(x =jitter(Seed.chfu2$Fly), y = Seed))+ 
+  geom_point(shape= "0", size = 2)+
+  geom_smooth(method= "lm", col= "red")+
+  ggtitle('Relation between the number of fly visits to CHFU and the seeds of CHFU')+
+  ylab("Number of CHFU's seeds")+
+  xlab("Number of fly visits")+
+  x_scale.1+
+  NULL
+S.chfu.fly
+
+beetles.chfu <- Seed.chfu2 [,c("Seed", "Beetle")]
+x_scale.2 <- scale_x_continuous(limits = c(0,3))
+S.chfu.beetles <- ggplot(beetles.chfu,aes(x =jitter(beetles.chfu$Beetle), y = Seed))+ 
+  geom_point( shape= "0", size = 2)+
+  geom_smooth(method= "lm")+
+  ggtitle('Relation between the number of CHFU visits and the seeds')+
+  ylab("Number of CHFU's seeds")+
+  xlab("Number of visits")+
+  x_scale.2+
+  NULL
+S.chfu.beetles
+
 #No estoy seguro de que lalinea este bien. 
 plot(Seed.chfu2$Seed ~ jitter(Seed.chfu2$Beetle), las = 1)
 abline(a = exp(GLM.chfu$coefficients[1])/1+exp(GLM.chfu$coefficients[1]),
@@ -143,9 +171,9 @@ abline(a = exp(GLM.chfu$coefficients[1])/1+exp(GLM.chfu$coefficients[1]),
 #lema ----
 Seed.LEMA <- subset(todo, Plant_Simple=="LEMA")
 x_scale6 <- scale_x_continuous(limits = c(0,8))
-S.LEMA <- ggplot(Seed.LEMA, aes(x = total.visits, y = Seed))+ 
+S.LEMA <- ggplot(Seed.LEMA, aes(x = jitter(Seed.LEMA$total.visits), y = Seed))+ 
     geom_point(aes(color = Group))+
-    geom_smooth(method = "lm", aes(color = Group))+
+    geom_smooth(method = "glm", aes(color = Group))+
     ggtitle('Reltaion between the LEMA visits and seeds')+
     ylab("Number of LEMA's seeds")+
     xlab("Number of visits")+
@@ -165,9 +193,34 @@ GLM.lema <- glm(Seed.lema2$Seed ~ Seed.lema2$Fly + Seed.lema2$Beetle + Seed.lema
 summary(GLM.lema)
 r.squaredGLMM(GLM.lema)
 
+bee.le <- Seed.lema2[,c("Seed", "Bee")]
+x_scale6 <- scale_x_continuous(limits = c(0,5))
+S.LEMA.3 <- ggplot(bee.le, aes(x = jitter(bee.le$Bee), y = Seed))+ 
+  geom_point(shape= "0", size = 2)+
+  geom_smooth(method = "glm", col= "red")+
+  ggtitle('Relation between the number of bee visits to LEMA and the seeds of LEMA')+
+  ylab("Number of LEMA's seeds")+
+  xlab("Number of bee visits")+
+  x_scale6+
+  NULL
+S.LEMA.3
+
+fly.le <- Seed.lema2[,c("Seed", "Fly")]
+x_scale6 <- scale_x_continuous(limits = c(0,5))
+S.fly.3 <- ggplot(fly.le, aes(x = jitter(fly.le$Fly), y = Seed))+ 
+  geom_point(shape= "0", size = 2)+
+  geom_smooth(method = "glm", col= "red")+
+  ggtitle('Relation between the number of fly visits to LEMA and the seeds of LEMA')+
+  ylab("Number of LEMA's seeds")+
+  xlab("Number of fly visits")+
+  x_scale6+
+  NULL
+S.fly.3
+
+
 plot(Seed.lema2$Seed ~ jitter(Seed.lema2$Fly), las = 1)
-abline(a = exp(GLM.lema$coefficients[1])/1+exp(GLM.lema$coefficients[1]),
-       b = exp(GLM.lema$coefficients[2])/1+exp(GLM.lema$coefficients[2]), col = "red")
+abline(a = exp(GLM.lema$coefficients[1]),
+       b = exp(GLM.lema$coefficients[2]), col = "red")
 #No estoy seguro de que lalinea este bien. 
 plot(Seed.lema2$Seed ~ jitter(Seed.lema2$Beetle), las = 1)
 abline(a = exp(GLM.lema$coefficients[1])/1+exp(GLM.lema$coefficients[1]),
