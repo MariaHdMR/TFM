@@ -82,8 +82,8 @@ plot(b.simulationOutput)
 summary(b.m2)
 
 #modelo para bees
-
-butCHUFU <- subset(dat2, Group == "Butterfly" & Plant_Simple == "CHFU")
+beesCHUFU <- subset(dat2, Group == "Bees" & Plant_Simple == "CHFU")#0
+butCHUFU <- subset(dat2, Group == "Butterfly" & Plant_Simple == "CHFU")#0
 #flyOthers <- subset(dat2, Group == "Fly" & Plant_Simple != "CHFU")
 #flyOthers$Plant_Simple #eliminar HOMA, y no sincronicas.
 beetleOthers <- subset(dat2, Group == "Beetle" & Plant_Simple %in% c("LEMA", "ME"))
