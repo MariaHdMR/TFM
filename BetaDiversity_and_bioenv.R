@@ -568,3 +568,4 @@ summary(bees8)
 buter8 <- bioenv(m.dbu8 ~ t.8$CHFU +t.8$LEMA+t.8$PUPA +t.8$ME, method= "spearman" )
 summary(buter8)
 
+citation(package= "DHARMa")
