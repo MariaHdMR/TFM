@@ -6,6 +6,9 @@ library(reshape2)
 library(dplyr)
 library(lme4)
 library(DHARMa)
+library(geepack)
+#install.packages(geepack)
+library(GGally)
 
 #load data
 FV <- read.table("data/FV_16_19_modificado_familiayespeciejunto.csv", header=T, sep=";")
@@ -125,7 +128,7 @@ plot6.6 <-subset(plot6,Plant_Simple %in% c("LEMA","CHFU","ME","PUPA", "CHMI"))
 plot6.6.6 <- dcast(plot6.6, Plant_Simple ~ Species, fun.aggregate = sum, value.var = "Visits")
 rownames(plot6.6.6) <- plot6.6.6$Plant_Simple 
 plot6.6.6 <- plot6.6.6[,-1]
-#plotweb(plot6.6.6, text.rot = 90)
+plotweb(plot6.6.6, text.rot = 90)
 
 specieslevel(plot6.6.6, index="betweenness", level="both", logbase=exp(1), low.abun=NULL,
              high.abun=NULL, PDI.normalise=TRUE, PSI.beta=c(1,0), nested.method="NODF",
@@ -156,7 +159,7 @@ plot8.8 <-subset(plot8,Plant_Simple %in% c("LEMA","CHFU","ME","PUPA", "CHMI"))
 plot8.8.8 <- dcast(plot8.8, Plant_Simple ~ Species, fun.aggregate = sum, value.var = "Visits")
 rownames(plot8.8.8) <- plot8.8.8$Plant_Simple 
 plot8.8.8 <- plot8.8.8[,-1]
-#plotweb(plot8.8.8, text.rot = 90)
+plotweb(plot8.8.8, text.rot = 90)
 
 
 specieslevel(plot8.8.8, index="betweenness", level="both", logbase=exp(1), low.abun=NULL,
@@ -172,7 +175,7 @@ plot9.9 <-subset(plot9,Plant_Simple %in% c("LEMA","CHFU","ME","PUPA", "CHMI"))
 plot9.9.9 <- dcast(plot9.9, Plant_Simple ~ Species, fun.aggregate = sum, value.var = "Visits")
 rownames(plot9.9.9) <- plot9.9.9$Plant_Simple 
 plot9.9.9 <- plot9.9.9[,-1]
-#plotweb(plot9.9.9, text.rot = 90)
+plotweb(plot9.9.9, text.rot = 90)
 
 specieslevel(plot9.9.9, index="betweenness", level="both", logbase=exp(1), low.abun=NULL,
              high.abun=NULL, PDI.normalise=TRUE, PSI.beta=c(1,0), nested.method="NODF",
@@ -244,6 +247,15 @@ summary(prueba2)
 simulationOutput1 <- simulateResiduals(fittedModel = prueba2, n = 250)
 plot(simulationOutput1) #este modelo no es, la prueba 1 se ajusta mejor y no tiene tanta sobredispersion
 
+prueba5<-glm(all.chfu$Seed ~  all.chfu$weighted.betweenes  + all.chfu$degree + all.chfu$Visits + 
+                              all.chfu$abundance_plot_inter + all.chfu$abundance_subplot_inter+ (1|Subplot)+ (1|Plot) , family="quasipoisson", data=all.chfu)
+#probelms
+all.chfu$Subplot <- as.factor(all.chfu$Subplot)
 
+M1<-geeglm(all.chfu$Seed ~all.chfu$weighted.betweenes  + all.chfu$degree + all.chfu$Visits + 
+               all.chfu$abundance_plot_inter + all.chfu$abundance_subplot_inter+ (1|Subplot)+ (1|Plot),
+           family=quasipoisson,data=all.chfu, scale.fix=T)
 
-
+prueba6<-glmer((rescale01(all.chfu$Seed))~  (rescale01(all.chfu$weighted.betweenes))  + (rescale01(all.chfu$degree)) + (rescale01(all.chfu$Visits)) + 
+                   (rescale01(all.chfu$abundance_plot_inter)) + (rescale01(all.chfu$abundance_subplot_inter))+ (1|Subplot:Plot)+ (1|Plot) , family="poisson", data=all.chfu)
+summary(prueba6)
