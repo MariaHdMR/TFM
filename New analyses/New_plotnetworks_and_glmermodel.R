@@ -217,11 +217,17 @@ CHFU.seedset <- subset(competencia, Plant_Simple == "CHFU")
 CHFU.seedset$Plot <- as.numeric(CHFU.seedset$Plot)
 CHFU$Plot <- as.numeric(CHFU$Plot)
 
-q <-left_join(CHFU.seedset, CHFU, by= c("Plot", "Subplot", "Plant_Simple"))
-q$Plot<-as.numeric(q$Plot)
-CHFU_Focal$Plot<-as.numeric(CHFU_Focal$Plot)
-CHFU_todo <- left_join(q,CHFU_Focal, by = c("Plot", "Subplot"))
-
+CHFU_todo <- left_join(q1, CHFU_Focal, by = c("Plot", "Subplot"))
+CHFU_todo$abundance_plot_inter[1:39] <- 2327#plot1
+CHFU_todo$abundance_plot_inter[40:75] <- 2218#plot2
+CHFU_todo$abundance_plot_inter[76:111] <- 1166#plot3
+CHFU_todo$abundance_plot_inter[112:159] <- 975#plot4
+CHFU_todo$abundance_plot_inter[160:202] <- 666#plot5
+CHFU_todo$abundance_plot_inter[204:246] <- 309#plot6
+CHFU_todo$abundance_plot_inter[247:308] <- 974#plot7
+CHFU_todo$abundance_plot_inter[309:381] <- 312#plot8
+CHFU_todo$abundance_plot_inter[382:432] <- 161#plot9
+CHFU_todo$abundance_plot_inter
 CHFU_todo[is.na(CHFU_todo)] <- 0
 betw_and_degree_CHFU$Plot <- as.numeric(betw_and_degree_CHFU$Plot)
 all.chfu <- left_join(CHFU_todo,betw_and_degree_CHFU, by = c("Plot"))#dataframe de chfu con toda
