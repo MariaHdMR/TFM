@@ -216,7 +216,12 @@ CHFU_Focal[is.na(CHFU_Focal)] <- 0
 CHFU.seedset <- subset(competencia, Plant_Simple == "CHFU")
 CHFU.seedset$Plot <- as.numeric(CHFU.seedset$Plot)
 CHFU$Plot <- as.numeric(CHFU$Plot)
+q1 <-left_join(CHFU.seedset, CHFU, by= c("Plot", "Subplot", "Plant_Simple"))
+q1$Plot<-as.numeric(q1$Plot)
+CHFU_Focal$Plot<-as.numeric(CHFU_Focal$Plot)
+CHFU_Focal$Subplot<-as.factor(CHFU_Focal$Subplot)
 
+CHFU_todo2 <- left_join(q1, CHFU_Focal, by = c("Plot", "Subplot"))
 CHFU_todo <- left_join(q1, CHFU_Focal, by = c("Plot", "Subplot"))
 CHFU_todo$abundance_plot_inter[1:39] <- 2327#plot1
 CHFU_todo$abundance_plot_inter[40:75] <- 2218#plot2
