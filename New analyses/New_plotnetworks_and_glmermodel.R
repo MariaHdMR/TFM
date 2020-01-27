@@ -9,6 +9,7 @@ library(DHARMa)
 library(geepack)
 #install.packages(geepack)
 library(GGally)
+library(openxlsx)
 
 #load data
 FV <- read.table("data/FV_16_19_modificado_familiayespeciejunto.csv", header=T, sep=";")
@@ -248,6 +249,13 @@ summary(prueba1)#parece ser que es el que mejor se ajusta, auqnue tengo mucha di
 simulationOutput <- simulateResiduals(fittedModel = prueba1, n = 250)
 plot(simulationOutput)
 overdisp.glmer(prueba1)
+
+ptions(na.action =  "na.fail")
+D1<-dredge(prueba1)
+write.xlsx(D1, file= "dredge prueba 1.csv")
+options(na.action =  "na.omit")
+#sale que el mejor modelo es el que unicamente tiene las variables de degree y abundancia de vecinos a nivel subplot
+
 #prueba3<-glmer(all.chfu$Seed ~  all.chfu$weighted.betweenes  + all.chfu$degree + all.chfu$Visits + 
 #all.chfu$abundance_plot_inter + all.chfu$abundance_subplot_inter+ (1|Subplot:Plot)+ (1|Plot) , family="quasipoisson", data=all.chfu)
 #summary(prueba3)# no works, glmer no admite quasi familias
@@ -270,3 +278,15 @@ M1<-geeglm(all.chfu$Seed ~all.chfu$weighted.betweenes  + all.chfu$degree + all.c
 prueba6<-glmer((rescale01(all.chfu$Seed))~  (rescale01(all.chfu$weighted.betweenes))  + (rescale01(all.chfu$degree)) + (rescale01(all.chfu$Visits)) + 
                    (rescale01(all.chfu$abundance_plot_inter)) + (rescale01(all.chfu$abundance_subplot_inter))+ (1|Subplot:Plot)+ (1|Plot) , family="poisson", data=all.chfu)
 summary(prueba6)
+
+#intento de reescalar las variables y meterlas en el modelo. Utilizo otro optimizador para ver si mejora los resultados. No sale
+prueba.rescale<-glmer(c1 ~  c2  + c3 + c4 + 
+                          c5 + c6+ (1|Subplot:Plot)+ (1|Plot) , family="poisson", data=all.chfu,
+                      glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary((prueba.rescale))
+c1 <- rescale01(all.chfu$Seed)
+c2 <-rescale01(all.chfu$weighted.betweenes)
+c3<- rescale01(all.chfu$degree)
+c4 <-rescale01(all.chfu$Visits)
+c5 <-rescale01(all.chfu$abundance_plot_inter)
+c6 <-rescale01(all.chfu$abundance_subplot_inter)
