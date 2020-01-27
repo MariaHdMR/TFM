@@ -10,6 +10,8 @@ library(geepack)
 #install.packages(geepack)
 library(GGally)
 library(openxlsx)
+#install.packages("usdm") esto es para calcular la collineariy 
+library(usdm)
 
 #load data
 FV <- read.table("data/FV_16_19_modificado_familiayespeciejunto.csv", header=T, sep=";")
@@ -242,6 +244,17 @@ all.chfu <- left_join(CHFU_todo,betw_and_degree_CHFU, by = c("Plot"))#dataframe 
 
 #ahora que ya tengo el dataframe de chfu voy a correr el modelo. 
 hist(log(all.chfu$Seed))
+#voy a mirar la collinearity de mis datos, para ver si tengo variables redundantes
+df <- all.chfu[,6:16]
+vif(df) #los que me salen mayor que 4 se suponeen que tiene una multicolinearidad muy alta, entonces hay que eliminar esas variables
+# habria que eliminar: abundancia plot inter, abundancia de plot de la sp concreta y el degree. Aunque me haya aparecido esto 
+#pongo las variables que pensaba desde el principio en el modelo, y en los modelos segun el AIC me termina saliendo que degree y 
+#abundancia de vecinos a nivel subplot son los de AIC mas bajo (viene mas abajo el analisis). Pero se supone que tenfo que 
+#eliminar el degree por la alta multicolinealidad quer tiene....??????
+
+
+
+
 
 prueba1<-glmer(all.chfu$Seed ~  all.chfu$weighted.betweenes  + all.chfu$degree + all.chfu$Visits + 
                    all.chfu$abundance_plot_inter + all.chfu$abundance_subplot_inter+ (1|Subplot:Plot)+ (1|Plot) , family="poisson", data=all.chfu)
