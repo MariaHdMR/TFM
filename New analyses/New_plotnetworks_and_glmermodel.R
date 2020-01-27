@@ -263,6 +263,14 @@ simulationOutput <- simulateResiduals(fittedModel = prueba1, n = 250)
 plot(simulationOutput)
 overdisp.glmer(prueba1)
 
+#como no estoy muy segura de mi anterior analisis he hecho una binomial negativa por la sobredispersion que creo que tengo
+#pero al hacerlo no encuentro muchas diferencias a nivel de residos con el modelo anterior. 
+otro1<- glmer.nb(all.chfu$Seed ~  all.chfu$weighted.betweenes  + all.chfu$degree + all.chfu$Visits + 
+                     all.chfu$abundance_plot_inter + all.chfu$abundance_subplot_inter+ (1|Subplot:Plot)+ (1|Plot) , family="poisson", data=all.chfu)
+summary(otro1)
+simulationOutput8 <- simulateResiduals(fittedModel = otro1, n = 250)
+plot(simulationOutput8)
+
 ptions(na.action =  "na.fail")
 D1<-dredge(prueba1)
 write.xlsx(D1, file= "dredge prueba 1.csv")
