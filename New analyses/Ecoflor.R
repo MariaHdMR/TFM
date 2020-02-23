@@ -14,6 +14,7 @@ library(usdm)
 library(lavaan)
 #cargar las bases de datos
 FV <- read.table("data/Metadata_Pollinators_2019_2016.csv", header=T, sep=";")
+Abun_19 <-read.table("data/Abun_19.csv", header=T, sep=";")
 competencia <- read.table("data/simplex_competencia_SEEDS_2019_new.csv", header=T, sep=";")
 total <- read.table("C:/Users/Cisco/Documents/TFM/data/FV_2019_FINAL_visits_abundances_seeds_copia.csv", header=T, sep=";")
 c.l.r <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
@@ -24,7 +25,7 @@ vecinos <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours.csv", 
 #FV <- read.table("data/Metadata_Pollinators_2019_2016.csv", header=T, sep=";")
 FV_19 <- subset(FV, Year == 2019) 
 #competencia <- read.table("data/simplex_competencia_SEEDS_2019_new.csv", header=T, sep=";")
-Abun_19 <-read.table("data/Abun_19.csv", header=T, sep=";")
+#Abun_19 <-read.table("data/Abun_19.csv", header=T, sep=";")
 Abun_19$Plot <- Abun_19$plot
 Abun_19$Subplot <- Abun_19$subplot
 Abun_19$Plant_Simple <- Abun_19$Sp.Focal
