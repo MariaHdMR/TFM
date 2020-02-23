@@ -16,9 +16,11 @@ library(lavaan)
 FV <- read.table("data/Metadata_Pollinators_2019_2016.csv", header=T, sep=";")
 Abun_19 <-read.table("data/Abun_19.csv", header=T, sep=";")
 competencia <- read.table("data/simplex_competencia_SEEDS_2019_new.csv", header=T, sep=";")
-total <- read.table("C:/Users/Cisco/Documents/TFM/data/FV_2019_FINAL_visits_abundances_seeds_copia.csv", header=T, sep=";")
+total1 <- read.table("C:/Users/Cisco/Documents/TFM/data/FV_2019_FINAL_visits_abundances_seeds_copia.csv", header=T, sep=";")
 c.l.r <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
 vecinos <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours.csv", header=T, sep=";")
+abundancee <- read.table("data/abundances.csv", header=T, sep= ";")
+
 
 
 #preparar y limpiar datos
@@ -39,8 +41,8 @@ FINAL$Plot <- as.numeric(FINAL$Plot)
 competencia$Plot <- as.numeric(competencia$Plot)
 competencia1 <- competencia[,c("Plot","Subplot","Plant_Simple","Fruit","Seed")]
 FINAL.seeds <- dplyr::full_join(FINAL, competencia, by= c("Plot", "Subplot", "Plant_Simple"))
-#del FINAL ahora tengo que seleccionar los grupos de especies que me interesan, son 9: 
-#   butterflies, flower_beetles, house_flies, Humbleflies, small_beetles, small_flies, social_bees, solitary_bees, hoverflies
+#del FINAL ahora tengo que seleccionar los grupos de especies que me interesan, son 8: 
+#   butterflies, flower_beetles, house_flies, Humbleflies, small_beetles, small_flies, bees, hoverflies
 G.funcinales <-subset(FINAL.seeds,G_F %in% c("Butterflies","Flower_beetles","House_flies","Humbleflies", "Small_beetles","Small_flies",
                                       "Bees" ,"Hoverflies"))
 a <-G.funcinales[,c("Plot","Subplot","Plant_Simple","G_F","Visits","num.plantas", "Fruit","Seed")] #selecciono las columnas 
@@ -51,8 +53,8 @@ semi.total <- a3 #base de datos final, pero sin convertir las abundancias 0 de p
 #write.table(semi.total,file = "C:/Users/Cisco/Documents/TFM/results/dataFV_2019_22.csv",sep=";",row.names = F)
 #lo he descargado para cambiar las abundancias de 0 a 1 de las plantas, y multiplicar las semillas por el num
 #   de plantas
-#total <- read.table("C:/Users/Cisco/Documents/TFM/data/FV_2019_FINAL_visits_abundances_seeds_copia.csv", header=T, sep=";")
-s<- subset(total,Plant_Simple %in% c("LEMA", "CHFU", "PUPA"))
+#total1 <- read.table("C:/Users/Cisco/Documents/TFM/data/FV_2019_FINAL_visits_abundances_seeds_copia.csv", header=T, sep=";")
+total<- subset(total1,Plant_Simple %in% c("LEMA", "CHFU", "PUPA"))
 #para ver como se distribuyen los polinizadores con las plantas
 ntw <- dcast(total, Plant_Simple ~ G_F, fun.aggregate = sum, value.var = "Visits") 
 
@@ -65,17 +67,17 @@ visitas_plantas <- ggplot(total, aes(x = Visits, y = log(Seed_t)))+
     ggtitle ("relacion entre el numero de abundancias de semillas y la abun de visitantes")+
     NULL
 visitas_plantas
-#x_scale1 <- scale_x_continuous(limits = c(0,500))
+x_scale1 <- scale_x_continuous(limits = c(1,5))
 y_scale1 <- scale_y_continuous(limits = c(4,7))
 visitors <- ggplot(total, aes(x = Visits, y = log(Seed_t), group = G_F))+
     geom_point(aes(color = G_F))+
     geom_smooth(method = "lm", aes(color = G_F))+
     ggtitle("num de visitors segun las abundancias de semillas 2019")+
-   # x_scale1+
+    x_scale1+
     y_scale1+
     NULL
 visitors #con semillas
-y_scale3 <- scale_y_continuous(limits = c(0,80))
+y_scale3 <- scale_y_continuous(limits = c(0,50))
 #x_scale3 <- scale_x_continuous(limits = c(0,80))
 visitors1 <- ggplot(total, aes(x = Visits, y = num.plantas, group = G_F))+
     geom_point(aes(color = G_F))+
@@ -143,7 +145,7 @@ g.pupa
 #voy a mirar como se distribuyen las plantas a lo largo de los datos
 #fenologia----
 plantas.feno <-subset(FINAL,Plant_Simple %in% c("LEMA","CHFU","ME","PUPA", "CHMI"))
-abundancee <- read.table("data/abundances.csv", header=T, sep= ";")
+#abundancee <- read.table("data/abundances.csv", header=T, sep= ";")
 V.19.2 <- FINAL[which(!is.na(FINAL$Month)),] 
 
 V.19.2$date <- paste(V.19.2$Year,"-",V.19.2$Month,"-",V.19.2$Day,sep="")
@@ -406,6 +408,77 @@ v3<-dredge(v.chfu)
 #write.xlsx(v1, file= "dredge_visitas_pupa.csv") #segun esto el mejor modelo por AIC seria el que 
 #   tuviese las siguientes variables: vecinos inter 1m.y si eso + inter 3m
 options(na.action =  "na.omit")
+#voy a hacerlo por los diferentes G_F
+#g_f ----
+smallflies.chfu <- subset(vecinos.chfu, G_F =="Small_flies")
+v.chfu.smallflies<-glmer((smallflies.chfu$Visits) ~ smallflies.chfu$neigh_inter.plot + smallflies.chfu$neigh_intra.plot + 
+                           smallflies.chfu$neigh_intra.3m + smallflies.chfu$neigh_inter.3m + smallflies.chfu$neigh_inter.1m+ 
+                           smallflies.chfu$neigh_intra.1m+ smallflies.chfu$neigh_inter.7.5+ smallflies.chfu$neigh_intra.7.5 + (1|Subplot:Plot)+ (1|Plot) , family="poisson",
+              data=smallflies.chfu, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary(v.chfu.smallflies)
+r.squaredGLMM(v.chfu.smallflies)
+
+hoverflies.chfu <- subset(vecinos.chfu, G_F =="Hoverflies")
+v.chfu.hoverflies<-glmer((hoverflies.chfu$Visits) ~ hoverflies.chfu$neigh_inter.plot + hoverflies.chfu$neigh_intra.plot + 
+                           hoverflies.chfu$neigh_intra.3m + hoverflies.chfu$neigh_inter.3m + hoverflies.chfu$neigh_inter.1m+ 
+                           hoverflies.chfu$neigh_intra.1m+ hoverflies.chfu$neigh_inter.7.5+ hoverflies.chfu$neigh_intra.7.5 + (1|Subplot:Plot)+ (1|Plot) , family="poisson",
+                         data=hoverflies.chfu, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary(v.chfu.hoverflies)
+r.squaredGLMM(v.chfu.hoverflies)
+lema.bees <- subset(vecinos.lema, G_F =="Bees")
+v.lema.bees<-glmer((lema.bees$Visits) ~ lema.bees$neigh_inter.plot + lema.bees$neigh_intra.plot + 
+                     lema.bees$neigh_intra.3m + lema.bees$neigh_inter.3m + lema.bees$neigh_inter.1m+ 
+                     lema.bees$neigh_intra.1m+ lema.bees$neigh_inter.7.5+ lema.bees$neigh_intra.7.5 + (1|Subplot:Plot)+ (1|Plot) , family="poisson",
+                        data=lema.bees, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary(v.lema.bees)
+r.squaredGLMM(v.lema.bees)
+lema.flowerbeetle <- subset(vecinos.lema, G_F =="Flower_beetles")
+v.lema.flowerbeetle<-glmer((lema.flowerbeetle$Visits) ~ lema.flowerbeetle$neigh_inter.plot + lema.flowerbeetle$neigh_intra.plot + 
+                             lema.flowerbeetle$neigh_intra.3m + lema.flowerbeetle$neigh_inter.3m + lema.flowerbeetle$neigh_inter.1m+ 
+                             lema.flowerbeetle$neigh_intra.1m+ lema.flowerbeetle$neigh_inter.7.5+ lema.flowerbeetle$neigh_intra.7.5 + (1|Subplot:Plot)+ (1|Plot) , family="poisson",
+                   data=lema.flowerbeetle, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary(v.lema.flowerbeetle)
+r.squaredGLMM(v.lema.flowerbeetle)# no explica nah el modelo
+lema.smallbeetles <- subset(vecinos.lema, G_F =="Small_beetles")
+v.lema.smallbeetles<-glmer((lema.smallbeetles$Visits) ~ lema.smallbeetles$neigh_inter.plot + lema.smallbeetles$neigh_intra.plot + 
+                             lema.smallbeetles$neigh_intra.3m + lema.smallbeetles$neigh_inter.3m + lema.smallbeetles$neigh_inter.1m+ 
+                             lema.smallbeetles$neigh_intra.1m+ lema.smallbeetles$neigh_inter.7.5+ lema.smallbeetles$neigh_intra.7.5 + (1|Subplot:Plot)+ (1|Plot) , family="poisson",
+                           data=lema.smallbeetles, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary(v.lema.smallbeetles)
+r.squaredGLMM(v.lema.smallbeetles)
+lema.smallflies <- subset(vecinos.lema, G_F =="Small_flies")
+v.lema.smallflies<-glmer((lema.smallflies$Visits) ~ lema.smallflies$neigh_inter.plot + lema.smallflies$neigh_intra.plot + 
+                           lema.smallflies$neigh_intra.3m + lema.smallflies$neigh_inter.3m + lema.smallflies$neigh_inter.1m+ 
+                           lema.smallflies$neigh_intra.1m+ lema.smallflies$neigh_inter.7.5+ lema.smallflies$neigh_intra.7.5 + (1|Subplot:Plot)+ (1|Plot) , family="poisson",
+                           data=lema.smallflies, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary(v.lema.smallflies)
+r.squaredGLMM(v.lema.smallflies)#no explica nah
+
+pupa.bee<- subset(vecinos.pupa, G_F =="Bees")
+v.pupa.bee<-glmer((pupa.bee$Visits) ~ pupa.bee$neigh_inter.plot + pupa.bee$neigh_intra.plot + 
+                    pupa.bee$neigh_intra.3m + pupa.bee$neigh_inter.3m + pupa.bee$neigh_inter.1m+ 
+                    pupa.bee$neigh_intra.1m+ pupa.bee$neigh_inter.7.5+ pupa.bee$neigh_intra.7.5 + (1|Subplot:Plot)+ (1|Plot) , family="poisson",
+                         data=pupa.bee, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary(v.pupa.bee)
+r.squaredGLMM(v.pupa.bee)
+
+pupa.but<- subset(vecinos.pupa, G_F =="Butterflies")
+v.pupa.but<-glmer((pupa.but$Visits) ~ pupa.but$neigh_inter.plot + pupa.but$neigh_intra.plot + 
+                    pupa.but$neigh_intra.3m + pupa.but$neigh_inter.3m + pupa.but$neigh_inter.1m+ 
+                    pupa.but$neigh_intra.1m+ pupa.but$neigh_inter.7.5+ pupa.but$neigh_intra.7.5 + (1|Subplot:Plot)+ (1|Plot) , family="poisson",
+                  data=pupa.but, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary(v.pupa.but)
+r.squaredGLMM(v.pupa.but)#no explica nah
+
+
+pupa.humb<- subset(vecinos.pupa, G_F =="Humbleflies")
+v.pupa.humb<-glmer((pupa.humb$Visits) ~ pupa.humb$neigh_inter.plot + pupa.humb$neigh_intra.plot + 
+                     pupa.humb$neigh_intra.3m + pupa.humb$neigh_inter.3m + pupa.humb$neigh_inter.1m+ 
+                     pupa.humb$neigh_intra.1m+ pupa.humb$neigh_inter.7.5+ pupa.humb$neigh_intra.7.5 + (1|Subplot:Plot)+ (1|Plot) , family="poisson",
+                  data=pupa.humb, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+summary(v.pupa.humb)
+r.squaredGLMM(v.pupa.humb)#no explica nah
+
 
 #voy a probar con lema+chfu juntas, a ver si consigo una r2 mejor, por la adecuacuon del modelo, pero no. 
 v.chfu.lema.pupa<-glmer((vecinos.chfu.lema$Visits) ~ vecinos.chfu.lema$neigh_inter.plot + vecinos.chfu.lema$neigh_intra.plot + 
