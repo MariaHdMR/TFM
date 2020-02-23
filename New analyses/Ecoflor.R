@@ -12,10 +12,18 @@ library(openxlsx)
 library(usdm)
 #install.packages("lavaan")
 library(lavaan)
-#preparar y limpiar datos
+#cargar las bases de datos
 FV <- read.table("data/Metadata_Pollinators_2019_2016.csv", header=T, sep=";")
-FV_19 <- subset(FV, Year == 2019) 
 competencia <- read.table("data/simplex_competencia_SEEDS_2019_new.csv", header=T, sep=";")
+total <- read.table("C:/Users/Cisco/Documents/TFM/data/FV_2019_FINAL_visits_abundances_seeds_copia.csv", header=T, sep=";")
+c.l.r <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
+vecinos <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours.csv", header=T, sep=";")
+
+
+#preparar y limpiar datos
+#FV <- read.table("data/Metadata_Pollinators_2019_2016.csv", header=T, sep=";")
+FV_19 <- subset(FV, Year == 2019) 
+#competencia <- read.table("data/simplex_competencia_SEEDS_2019_new.csv", header=T, sep=";")
 Abun_19 <-read.table("data/Abun_19.csv", header=T, sep=";")
 Abun_19$Plot <- Abun_19$plot
 Abun_19$Subplot <- Abun_19$subplot
@@ -42,7 +50,7 @@ semi.total <- a3 #base de datos final, pero sin convertir las abundancias 0 de p
 #write.table(semi.total,file = "C:/Users/Cisco/Documents/TFM/results/dataFV_2019_22.csv",sep=";",row.names = F)
 #lo he descargado para cambiar las abundancias de 0 a 1 de las plantas, y multiplicar las semillas por el num
 #   de plantas
-total <- read.table("C:/Users/Cisco/Documents/TFM/data/FV_2019_FINAL_visits_abundances_seeds_copia.csv", header=T, sep=";")
+#total <- read.table("C:/Users/Cisco/Documents/TFM/data/FV_2019_FINAL_visits_abundances_seeds_copia.csv", header=T, sep=";")
 s<- subset(total,Plant_Simple %in% c("LEMA", "CHFU", "PUPA"))
 #para ver como se distribuyen los polinizadores con las plantas
 ntw <- dcast(total, Plant_Simple ~ G_F, fun.aggregate = sum, value.var = "Visits") 
@@ -108,7 +116,7 @@ g.chfu.1 <- ggplot(t.chfu, aes(x = Visits, y = log(Seed_t), group = G_F))+
 g.chfu.1
 t.lema <- subset(total, Plant_Simple =="LEMA")
 #vt.lema$G_F == "Hoverflies"<- "Small_Flies"
-y_scale4 <- scale_y_continuous(limits = c(0, 600))
+#y_scale4 <- scale_y_continuous(limits = c(0, 600))
 
 g.lema <- ggplot(t.lema, aes(x = Visits, y = log(Seed), group = G_F))+
     geom_point(aes(color = G_F))+
@@ -164,7 +172,7 @@ phenology.color1
 
 #vecinos----
 #utilizo el scrit de David para sacar las primeras especies que coinciden: LEMA, RAPE, CHFU
-c.l.r <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
+#c.l.r <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
 c1 <- subset(c.l.r, year == 2019) 
 c1.sinedge <- subset(c1,edge %in% c("FALSE"))
 
@@ -205,7 +213,7 @@ vecinos.chfu.lema <- c2.total[,c("Plot","Subplot","Plant_Simple","G_F","Visits",
 
 #utilizo la base de datos creada por David llamada "focal_neighbours". De esta base de datos total sacaré las abundancias de 
 #     PUPA, al ser la especie que fenologicamente aparece la última se ve afectada por todo el resto. 
-vecinos <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours.csv", header=T, sep=";")
+#vecinos <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours.csv", header=T, sep=";")
 sp.vecinos <- subset(vecinos,focal %in% c("PUPA"))
 sp.vecinos.19 <- subset(sp.vecinos, year == 2019) 
 sp.vecinos.19.sinedge <- subset(sp.vecinos.19,edge %in% c("FALSE"))
@@ -267,7 +275,7 @@ plot(simulationOutput.otro)
 
 options(na.action =  "na.fail")
 D3<-dredge(p1)
-write.xlsx(D3, file= "dredge_PUPA.1.csv") #segun esto el mejor modelo por AIC seria el que 
+#write.xlsx(D3, file= "dredge_PUPA.1.csv") #segun esto el mejor modelo por AIC seria el que 
 #   tuviese las siguientes variables: vecinos inter e intra 3m, vecinos inter 7.5 cm, vecinos
 #   intra 1m  
 options(na.action =  "na.omit")
@@ -303,7 +311,7 @@ r.squaredGLMM(chufu)#r2 alta, no cuadra con la distribucion de los vecinos
 
 options(na.action =  "na.fail")
 D<-dredge(chufu)
-write.xlsx(D, file= "dredge_CHFU.csv") #segun esto el mejor modelo por AIC seria el que 
+#write.xlsx(D, file= "dredge_CHFU.csv") #segun esto el mejor modelo por AIC seria el que 
 #   tuviese las siguientes variables: vecinos inter e intra 1m2, vecinos inter 7.5 cm, vecinos intra plot
 options(na.action =  "na.omit")
 
@@ -320,7 +328,7 @@ r.squaredGLMM(lema)#R2 alta, no cuadra con la distribucion de los residuos
 
 options(na.action =  "na.fail")
 D8<-dredge(lema)
-write.xlsx(D8, file= "dredge_lema.csv") #segun esto el mejor modelo por AIC seria el que 
+#write.xlsx(D8, file= "dredge_lema.csv") #segun esto el mejor modelo por AIC seria el que 
 #   tuviese las siguientes variables: vecinos intra 1m y si eso, + inter plot
 options(na.action =  "na.omit")
 
