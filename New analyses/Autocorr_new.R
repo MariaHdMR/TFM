@@ -13,7 +13,6 @@ library(vegan)
 
 va <- read.table("data/Metadata_Pollinators_2019_2016_bueno.csv", header=T, sep=";")
 head(va)
-plantas <- read.table("data/Abun_19.csv", header=T, sep= ";")
 va19 <- subset(va, Year== "2019")
 pol <- va19 %>% group_by(Plot, Subplot, Group) %>% summarise (num.visitors = sum(Visits))
 pol <-pol[which(complete.cases(pol)),]
