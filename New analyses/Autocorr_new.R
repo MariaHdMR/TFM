@@ -114,10 +114,10 @@ moran.plot(bee.t$num.visitors,mat2listw(plots.dists.inv), main= "Spatial autocor
 ############################ problems 
 #me gustaria probar esto, que es coger los 8 vecinos de un dato y ver cuanto se parecen estos 8 vecinos a mi
 #   dato, pero me da error. Seria por comprobar los analisis anteriores. 
-disfinal2$x_coor2 <- as.numeric(disfinal2$x_coor2)
-disfinal2$y_coor2 <- as.numeric(disfinal2$y_coor2)
-w5 <- knn2nb(knearneigh(disfinal2, k=8))
-moran.test(bird$nSpecies, nb2listw(w2))
+disfinal1$x_coor2 <- as.numeric(as.character(disfinal1$x_coor2))
+disfinal1$y_coor2 <- as.numeric(as.character(disfinal1$y_coor2))
+w5 <- knn2nb(knearneigh(coordinates(disfinal1[,3:4]), k=8))
+moran.test(bird$nSpecies, nb2listw(w5))
 ###########################
 
 #polinizadores general ----
