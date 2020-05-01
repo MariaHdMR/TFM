@@ -50,6 +50,11 @@ plots.dists.inv <- 1/distancias.matriz
 diag(plots.dists.inv) <- 0
 plots.dists.inv[1:5,1:5]
 #
+# preparacion de datos para analizar por los 8 vecinos más cercanos --> w5
+disfinal1$x_coor2 <- as.numeric(disfinal1$x_coor2)
+disfinal1$y_coor2 <- as.numeric(disfinal1$y_coor2)
+w5 <- knn2nb(knearneigh(coordinates(disfinal1[,3:4]), k=8))
+
 #analisis por grupos
 #beetles ----
 pol.beetle <- subset(pol, Group == "Beetle")
@@ -65,6 +70,7 @@ plot(bet.corr, main= " Spatial Autocorrelation Beetles across plots")
     #test de moran. Aquí quiero obtener El estadistico de Moran y p.value 
 
 moran.test(beetle$num.visitors,mat2listw(plots.dists.inv)) # I= 0.3497
+moran.test(beetle$num.visitors, nb2listw(w5)) # vecinos, I= 0.45
 moran.plot(beetle$num.visitors,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation Beetles across plots")
 
 #flies----
@@ -79,6 +85,7 @@ flies.corr <- spline.correlog(x=flies.t$x_coor2, y=flies.t$y_coor2,
 plot(flies.corr, main= "Spatial autocorrelation flies across plots")
 
 moran.test(flies.t$num.visitors,mat2listw(plots.dists.inv)) # I= 0.3447
+moran.test(flies.t$num.visitors, nb2listw(w5)) # vecinos, I= 0.41
 moran.plot(beetle$num.visitors,mat2listw(plots.dists.inv), main= "Spatial autocorrelation flies across plots")
 
 #butterflies----
@@ -93,6 +100,7 @@ but.corr <- spline.correlog(x=but.t$x_coor2, y=but.t$y_coor2,
 plot(but.corr, main= "Spatial autocorrelation butterflies across plots")
 
 moran.test(but.t$num.visitors,mat2listw(plots.dists.inv)) # I= 0.2989
+moran.test(but.t$num.visitors, nb2listw(w5)) # vecinos, I= 0.52
 moran.plot(but.t$num.visitors,mat2listw(plots.dists.inv),  main= "Spatial autocorrelation butterflies across plots")
 
 #bees----
@@ -108,17 +116,10 @@ bee.corr <- spline.correlog(x=bee.t$x_coor2, y=bee.t$y_coor2,
 plot(bee.corr, main= "Spatial autocorrelation bee across plots")
 
 moran.test(bee.t$num.visitors,mat2listw(plots.dists.inv))# I = 0.39
+moran.test(bee.t$num.visitors, nb2listw(w5))#vecinos, da una correlacion mayor 0.54, se parecen mucho más los 
+#                                           cercanos
 moran.plot(bee.t$num.visitors,mat2listw(plots.dists.inv), main= "Spatial autocorrelation bee across plots")
 
-
-############################ problems 
-#me gustaria probar esto, que es coger los 8 vecinos de un dato y ver cuanto se parecen estos 8 vecinos a mi
-#   dato, pero me da error. Seria por comprobar los analisis anteriores. 
-disfinal2$x_coor2 <- as.numeric(disfinal2$x_coor2)
-disfinal2$y_coor2 <- as.numeric(disfinal2$y_coor2)
-w5 <- knn2nb(knearneigh(disfinal2, k=8))
-moran.test(bird$nSpecies, nb2listw(w2))
-###########################
 
 #polinizadores general ----
 junto <- pol[,c("Plot", "Subplot","num.visitors")]
@@ -134,5 +135,5 @@ plot(total.corr, main= "Spatial Autocorrelation pollinators across plots")
 
 moran.test(final.1$visit,mat2listw(plots.dists.inv)) # I= 0.23 de manera genral hay menos 
 #                                                       agregación que por grupos
-
+moran.test(final.1$visit, nb2listw(w5)) # vecinos, I= 0.36
 moran.plot(final.1$visit,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation pollinators across plots")
