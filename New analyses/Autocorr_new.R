@@ -269,16 +269,28 @@ moran.plot(final.pl$plantas,mat2listw(plots.dists.inv),main= "Spatial Autocorrel
 #Para incluir la variables espacio es necesario generar una auto-covariable. 
 # Ver: https://besjournals.onlinelibrary.wiley.com/doi/pdf/10.1111/2041-210X.12402 y https://rpubs.com/corey_sparks/111362
 # funcion a usar autocov_dist del paquete 'spdep'. Style= "B" y type = 'one'para que me de una matriz simetrica
-#mi modelo glm = semillas ~ visitas/group/subplot/indiv/hour . De esta manera sacaremos qué polinizador es el más importante 
+#mi modelo glm = semillas ~ visitas/group/subplot/indiv/hour + space . De esta manera sacaremos qué polinizador es el más importante 
 # para el fitness
+# https://www.ufz.de/export/data/2/92427_Dormann_et_al_Methods_appendix.pdf 
 # beetle. 
-head(pol)#tengo que añadir una columna dividiendo las visitas por 
+#head(pol)#tengo que añadir una columna dividiendo las visitas por 
 CHFU.vis <- subset(pol, Plant_Simple == "CHFU")
-visitas.chfu <- CHFU.vis[,c("Seed")]
 
-CHFU.vis$Seed <- as.numeric(CHFU.vis$Seed)
-xy1 <-- st_coordinates(st_centroid(st_geometry(xy),
-                           of_largest_polygon=TRUE))
-m <-autocov_dist(CHFU.vis$Seed,st_sf(xy), type = '1', style= "B" )
-0
-xy <- (cbind(disfinal1$x_coor2, disfinal1$y_coor2))
+#visitas.chfu <- as.vector(CHFU.vis[,"Seed"])
+
+#CHFU.vis$Seed <- as.numeric(CHFU.vis$Seed)
+
+#xy1 <-- st_coordinates(st_centroid(st_geometry(xy),
+                   #        of_largest_polygon=TRUE))
+
+#xy <- (cbind(disfinal1$x_coor2, disfinal1$y_coor2))
+#xy <- as.matrix(xy)
+#str(xy)
+
+nb.list <- dnearneigh(as.matrix(disfinal1[,c("x_coor2", "y_coor2")]), 0, 5)
+nb.weights <- nb2listw(nb.list)
+#Make a matrix of coordinates
+coords<-as.matrix(cbind(data$x_coor2,data$y_coor2))
+
+m <-autocov_dist(CHFU.vis$Seed,xy, type = '1', style= "B" )
+ac <- autocov_dist(CHFU.vis$Seed, coords,type = "inverse", nbs = 4, zero.policy=TRUE)
