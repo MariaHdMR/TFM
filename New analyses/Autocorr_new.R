@@ -191,8 +191,10 @@ moran.plot(final.1$visit,mat2listw(plots.dists.inv),main= "Spatial Autocorrelati
 
 ############################################PLANTS########################################
 plantas <- pol[,c("Plot", "Subplot", "Plant_Simple", "num.plantas", "Fruit", "Seed")]
+new_df <- plantas[-which(duplicated(plantas)), ]
+
 #CHFU ----
-CHFU <- subset(plantas, Plant_Simple == "CHFU")
+CHFU <- subset(new_df, Plant_Simple == "CHFU")
 CHFU$num.plantas <- as.numeric(CHFU$num.plantas)
 CHFU2 <- CHFU %>% group_by(Plot, Subplot) %>% summarise (planta = sum(num.plantas))
 CHFU1 <- left_join(disfinal1, CHFU2,by= c("Plot", "Subplot"))
@@ -203,11 +205,11 @@ chfu.corr <- spline.correlog(x=CHFU1$x_coor2, y=CHFU1$y_coor2,
                             z=CHFU1$planta, resamp=100, quiet=TRUE)
 plot(chfu.corr, main= " Spatial Autocorrelation CHFU across plots")
 
-moran.test(CHFU1$planta,mat2listw(plots.dists.inv)) # I= 0.2468
-moran.test(CHFU1$planta, nb2listw(w5)) # vecinos, I= 0.387
+moran.test(CHFU1$planta,mat2listw(plots.dists.inv)) # I= 0.3
+moran.test(CHFU1$planta, nb2listw(w5)) # vecinos, I= 0.45
 moran.plot(CHFU1$planta,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation CHFU across plots")
 #LEMA----
-LEMA <- subset(plantas, Plant_Simple == "LEMA")
+LEMA <- subset(new_df, Plant_Simple == "LEMA")
 LEMA$num.plantas <- as.numeric(LEMA$num.plantas)
 prueba1 <- LEMA %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.pla = sum(num.plantas))
 lema.sub <- left_join(disfinal1, prueba1, by= c("Plot", "Subplot"))
@@ -219,11 +221,11 @@ lema.corr <- spline.correlog(x=LEMA1$x_coor2, y=LEMA1$y_coor2,
                              z=LEMA1$num.plantas, resamp=100, quiet=TRUE)
 plot(lema.corr, main= " Spatial Autocorrelation LEMA across plots")
 
-moran.test(LEMA1$num.plantas,mat2listw(plots.dists.inv)) # I= 0.16
-moran.test(LEMA1$num.plantas, nb2listw(w5)) # vecinos, I= 0.23
+moran.test(LEMA1$num.plantas,mat2listw(plots.dists.inv)) # I= 0.26
+moran.test(LEMA1$num.plantas, nb2listw(w5)) # vecinos, I= 0.386
 moran.plot(LEMA1$num.plantas,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation LEMA across plots")
 #PUPA ----
-PUPA <- subset(plantas, Plant_Simple == "PUPA")
+PUPA <- subset(new_df, Plant_Simple == "PUPA")
 PUPA$num.plantas <- as.numeric(PUPA$num.plantas)
 prueba2 <- PUPA %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.pla = sum(num.plantas))
 pupa.sub <- left_join(disfinal1, prueba2, by= c("Plot", "Subplot"))
@@ -235,11 +237,11 @@ pupa.corr <- spline.correlog(x=PUPA1$x_coor2, y=PUPA1$y_coor2,
                              z=PUPA1$num.plantas, resamp=100, quiet=TRUE)
 plot(pupa.corr, main= " Spatial Autocorrelation PUPA across plots")
 
-moran.test(PUPA1$num.plantas,mat2listw(plots.dists.inv)) # I= 0.2737
-moran.test(PUPA1$num.plantas, nb2listw(w5)) # vecinos, I= 0.416
+moran.test(PUPA1$num.plantas,mat2listw(plots.dists.inv)) # I= 0.41
+moran.test(PUPA1$num.plantas, nb2listw(w5)) # vecinos, I= 0.63
 moran.plot(PUPA1$num.plantas,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation PUPA across plots")
 #ME
-ME <- subset(plantas, Plant_Simple == "ME")
+ME <- subset(new_df, Plant_Simple == "ME")
 ME$num.plantas <- as.numeric(ME$num.plantas)
 prueba3 <- ME %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.pla = sum(num.plantas))
 me.sub <- left_join(disfinal1, prueba3, by= c("Plot", "Subplot"))
@@ -251,15 +253,15 @@ me.corr <- spline.correlog(x=ME1$x_coor2, y=ME1$y_coor2,
                              z=ME1$num.plantas, resamp=100, quiet=TRUE)
 plot(me.corr, main= " Spatial Autocorrelation ME across plots")
 
-moran.test(ME1$num.plantas,mat2listw(plots.dists.inv)) # I= 0.01725 
-moran.test(ME1$num.plantas, nb2listw(w5)) # vecinos, I= 0.0143, pero un p.value 0.037
+moran.test(ME1$num.plantas,mat2listw(plots.dists.inv)) # I= 0.0437
+moran.test(ME1$num.plantas, nb2listw(w5)) # vecinos, I= 0.055
 moran.plot(ME1$num.plantas,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation ME across plots")
 
 #CHMI ----
-CHMI <- subset(plantas, Plant_Simple == "CHMI") # solo 5 entradas
+CHMI <- subset(new_df, Plant_Simple == "CHMI") # solo 4 entradas
 
 #plantas juntas ----
-juntas.plantas <- plantas[,c("Plot", "Subplot","num.plantas")]
+juntas.plantas <- new_df[,c("Plot", "Subplot","num.plantas")]
 juntas.plantas$num.plantas <- as.numeric(juntas.plantas$num.plantas)
 pl <- juntas.plantas %>% group_by(Plot, Subplot) %>% summarise (plantas = sum(num.plantas))
 pl$Plot <- as.numeric(pl$Plot)
@@ -270,8 +272,8 @@ total.corr.pl <- spline.correlog(x=final.pl$x_coor2, y=final.pl$y_coor2,
                               z=final.pl$plantas, resamp=100, quiet=TRUE)
 plot(total.corr.pl, main= "Spatial Autocorrelation pollinators across plots")
 
-moran.test(final.pl$plantas,mat2listw(plots.dists.inv)) # I= 0.15
-moran.test(final.pl$plantas, nb2listw(w5)) # vecinos, I= 0.25
+moran.test(final.pl$plantas,mat2listw(plots.dists.inv)) # I= 0.21
+moran.test(final.pl$plantas, nb2listw(w5)) # vecinos, I= 0.34
 moran.plot(final.pl$plantas,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation plants across plots")
 
 ######################## 2. GLMs #######################################
@@ -304,6 +306,73 @@ coords<-as.matrix(cbind(data$x_coor2,data$y_coor2))
 m <-autocov_dist(CHFU.vis$Seed,xy, type = '1', style= "B" )
 ac <- autocov_dist(CHFU.vis$Seed, coords,type = "inverse", nbs = 4, zero.policy=TRUE)
 
+########################################NEIGHBORS##################################33
+#phenology
+comp <- read.csv2("data/competition_wide.csv",stringsAsFactors = FALSE)
+abund <- read.csv2("data/abundances.csv",stringsAsFactors = FALSE)
+abund <- dplyr::arrange(abund,year,month,day,plot,subplot,species)
+abund$date <- paste(abund$year,"-",abund$month,"-",abund$day,sep="")
+abund$day <- as.numeric(abund$day)
+abund$month <- as.numeric(abund$month)
+abund$year <- as.numeric(abund$day)
+abund$date <- as.numeric(abund$date)
+abund$week <- strftime(abund$date,format = "%V")
+abund$week <- strftime(abund$date,format = "%V")
+phenology.color1 <- ggplot(abund, aes(x= week, y = species))+
+    geom_point(aes(color = week))+
+    ggtitle ("Phenology 2019")+
+    xlab ("weeks")+
+    ylab ("spp_Plants")+
+    NULL
+phenology.color1
+
+#FIRST- I'm making the neighbors data base for LEMA and CHFU, that they are the erliers at the season with RAPE. 
+#   we are going to include RAPE in the neighbors but not in the models. 
+
+table.chfu.lema <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
+table.19 <- subset(table.chfu.lema, year == 2019) 
+table.sinedge <- subset(table.19,edge %in% c("FALSE"))
+table.sinedge$Plant_Simple<- table.sinedge$focal 
+table.sinedge$Subplot <- table.sinedge$subplot
+table.sinedge$Plot <- table.sinedge$plot
+table.sinedge$Subplot <- table.sinedge$subplot
+table.sinedge$Plant_Simple <- table.sinedge$focal
+table <- table.sinedge[,c("Plot", "Subplot","Plant_Simple", "distance", "neigh_intra", "neigh_inter", "edge")]
+
+
+c2 <- dplyr::full_join(new_df, table, by= c("Plot", "Subplot", "Plant_Simple"))
+c2.clean <- subset(c2, Plant_Simple %in% c("LEMA", "CHFU")) #Here appears a lot of NAs, and it is because the NAs corresponds
+# with the edges. We are not having As, Fs, 6s and 1s. Next step eliminate these NAs. 
+
+
+c2.7.5 <- subset(c2.clean, distance %in% c("d1")) 
+c2.7.5$distance7.5 <- c2.7.5$distance
+c2.7.5$neigh_intra.7.5 <- c2.7.5$neigh_intra
+c2.7.5$neigh_inter.7.5<- c2.7.5$neigh_inter
+
+c2.1m <- subset(c2.clean, distance %in% c("d2")) 
+c2.1m$distances.1m <- c2.1m$distance
+c2.1m$neigh_intra.1m <- c2.1m$neigh_intra
+c2.1m$neigh_inter.1m<- c2.1m$neigh_inter
+c2.3m <- subset(c2.clean, distance %in% c("d3")) 
+c2.3m$distances.3m <- c2.3m$distance
+c2.3m$neigh_intra.3m <- c2.3m$neigh_intra
+c2.3m$neigh_inter.3m<- c2.3m$neigh_inter
+c2.plot <- subset(c2.clean, distance %in% c("d4")) 
+c2.plot$distances.plot <- c2.plot$distance
+c2.plot$neigh_intra.plot <- c2.plot$neigh_intra
+c2.plot$neigh_inter.plot <- c2.plot$neigh_inter
+
+c2.1 <- dplyr::full_join(c2.7.5, c2.1m, by= c("Plot", "Seed","num.plantas", "Subplot",  "Plant_Simple", "edge" ,"Seed", "Fruit"))
+c2.2 <- dplyr::full_join(c2.3m, c2.plot, by= c("Plot", "Seed","num.plantas", "Subplot", "Plant_Simple", "edge","Seed", "Fruit"))
+
+c2.total <- dplyr::full_join(c2.1, c2.2, by= c("Plot", "Seed","num.plantas", "Subplot", "Plant_Simple", "edge" ,"Seed", "Fruit"))
+
+head(c2.total)
+
+vecinos.chfu.lema <- c2.total[,c("Plot","Subplot","Plant_Simple","num.plantas", "Fruit","Seed", "neigh_inter.plot","neigh_intra.plot",
+                                 "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")]
+        # this is the final data of Lema and CHFU Neighbors. 
 
 ###HERE IS ONE OPTION FOLLOWING NLME.
 
@@ -316,12 +385,13 @@ library(emmeans)
 library(sjPlot)
 library(sjmisc)
 
+
 CHFU.vis$unique_id <- paste(CHFU.vis$Plot, CHFU.vis$Subplot, sep="_")
 CHFU1$unique_id <- paste(CHFU1$Plot, CHFU1$Subplot, sep="_")
 
 chfu <- full_join(CHFU.vis, CHFU1, by=c("Plot", "Subplot", "unique_id")) %>%
     group_by(unique_id)%>%
-    mutate(seeds = mean(Seed, na.rm=TRUE), visits = mean(num.visits, na.rm = TRUE)) %>%
+    mutate(seeds = mean(Seed, na.rm=TRUE), visits = mean(visitas_indv_hora, na.rm = TRUE)) %>%
     distinct(unique_id, .keep_all=TRUE) # this is done to have only one measure per subplot as the spatial autocorrelation does
                                         #not like distances matices equal to 0.
 chfu <- na.omit(chfu)
@@ -381,7 +451,7 @@ qqnorm(residuals)
 qqline(residuals)
 
 #Perform tukey test 
-summary(glht(model_best, linfct = mcp(Group = "Tukey")))
+summary(glht(model_best, linfct = mcp(Group = "Tukey"))) #esto no me funciona
 lsmeans(model_best, list(pairwise ~ visits*Group), adjust = "tukey") #tukey for an interaction
 # all the SITES CN1, CN2, and CN3 are differet.
 
