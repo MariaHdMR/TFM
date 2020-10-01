@@ -1,0 +1,71 @@
+---
+title: "Spatial_Caracoles"
+author: "Maria Hurtado de Mendoza Romo"
+date: "25/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+Pregunta general: ¿Afecta la agregación espacial al fitness de las plantas?
+Sabesmo que no hay una estructura al azar en la composición y abundancias de las especies de las plantas, ni de los polinizadores. Dependiendo de estas agregaciones y distribuciones puede verse el fitness de las plantas afectado. Tus vecinos pueden afectar directamente a tu fitness, pero además, tus vecinos puede hacer que recibas menos polinizadores o polinizadores menos eficaces. Por ello, vamos a realizar un análisis de la estructura espacial de las plantas y de los polinizadores, y averiguar si estas configuraciones terminan afectando al fitness de 4 especies de plantas (MESU, LEMA, CHFU, PUPA). Además, cada una de estas especies se pueden ver favorecidas (en cuanto al fitness) por un grupo de polinizadores concreto (Fly, Bee, Beetles or Butterflies), y por una escala concreta. 
+
+---------------------------------
+Tratamiento de los datos pre-analisis: 
+para realizar los análisis he tenido que sacar (con la ayuda de los scripst de David), el número de vecinos que tiene cada una de las especies según si fenología. CHFU, lema y MESU juntas. De pupa únicamente hemos contabilizado los vecinos a partir de una semana antes de su aparición en campo. 
+En los dataframes que se forman aparecen al unir vecinos+visitas+fitness, aparecen datos de visitas que tienen NAs de vecinos, esto es porque los edges no van a tener visitas (no hay datos de vecinos en A, F, 1 y 6). Además comprobando los data set originales, me he dado cuenta que en la base de datos de abundancias a veces hay datos de una specie de planta en un lugar concreto (plot 7 D2 chfu 10 plantas), sin embargo, en el data set de competencia no hay datos de esa planta, entonces al correr el análisis para obtener el número de vecinos estos datos que no aparecen en ambas bases de datos se descartan. Se necesitan tener los datos de competencia y abundancia, no vale que haya datos en uno pero en otro no. 
+
+Los modelos que describan la respuesta tanto de visitas como de fitness perteneceran a la familia poisson. 
+
+
+---------------------------------
+
+
+Preguntas específicas: 
+
+    1) Hay configuración espacial en las plantas, en los polinizadores, y en el fitness de las plantas? 
+Para resolver esta pregunta hemos realizado una I de Moran. Para el análisis de la I de Moran hemos metido las coordenadas de todos los subplots y plots de caracoles + en el caso de las plantas su abundancia, en el caso de los polizadores las visitas y en el caso del fitness el número de semillas. Se ha hecho una I de Moran por especie o grupo de polinizador. De ahí se ha sacado el Moran's INDEX que te dice cuanta correlación espacial hay. Si es positivo hay correlación espacial. (se han sacado unos gráficos que están guay para el paper)
+
+    2) Influyen más los efectos directos (competencia, número de visitas) o los indirectos (distribución de las plantas) en el fitness? y en las visitas? Qué efectos son los más importantes? 
+Para resolver esta pregunta haremos un GLM de tipo poisson (la variable semillas sigue una distribución poisson, y no es una variable continua), cuya formula será la siguiente (uso la funcion glmmTMB: 
+
+glmmTMB(seeds ~ visits  + neigh_inter.1m * neigh_intra.1m + mat(pos + 0 | ID), family = poisson, data= chufu.1)
+
+Las visitas son por individuo por hora y por subplot. 
+
+mat(pos + 0 | ID) -> "pos" viene de los datos X e Y de las coordenadas. Mientras que ID create a dummy group factor to be used as a random term (de las coordenadas también). https://datascienceplus.com/spatial-regression-in-r-part-1-spamm-vs-glmmtmb/
+
+
+De momento, para este análisis estoy realizándolo de 2 maneras: una en la que incluyo los datos de semillas con 0 visitas, y otra en los que únicamente incluyo los datos de semillas que tienen como mínimo 1 visita. 
+
+Además, realizo el mismo glmmTMB pero con las visitas como variable respuesta, y de variables predictoras uso los vecinos y el grupo de los polinizadores.
+
+Para obtener si el modelo explica más mejor con o sin coordenadas, hago una anova de los dos modelos. Y una vez que tengo el modelo que explica mejor, utilizo la función drop1, para ver qué variables son las que afectan más a mi modelo.
+
+
+                         IN PROGRESS!
+
+    3) ¿A qué escala espacial influyen cada uno de los componentes? 
+Del GLM anterior hemos tenido que sacar los grupos de polinizadores que afectan más a cada una de las especies. Estos grupos de polinizadores los incluiremos en los SEM multigroup que haremos. Para estos SEM Multigroup tendremos que crear variables latentes (conjuntos de variables que no sabemos su interacción, ni el efecto que pueden tener) para obtener la escala a la que afectan los polinicadores al fitness (directamente), y la escala o agregación a la que las especies de plantas (inter e intra) afectan al fitness (directamente) y a las visitas (indirectamente). 
