@@ -534,8 +534,7 @@ pupa.total <- dplyr::full_join(pupa.1, pupa.2, by= c("Plot", "Seed","num.plantas
 head(pupa.total) 
 
 vecinos.pupa <- pupa.total[,c("Plot","Subplot","Plant_Simple","num.plantas", "Fruit","Seed", "neigh_inter.plot","neigh_intra.plot",
-                              "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] #good dataframe----
-
+                              "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
 
 ##################################################3. GLM#######################################################################
 
@@ -572,9 +571,6 @@ chfu.test<-  full_join(chfu, solochfu, by=c("Plot", "Subplot", "Plant_Simple","S
     ungroup(unique_id) 
 #not like distances matices equal to 0.
 chfu.1 <- na.omit(chfu.test)
-#chufu.1 <-  chfu.test[,c("Plot", "Subplot","Group", "visits","num.visits", "Plant_Simple", "num.plantas" , "Fruit", "seeds", "unique_id", 
- #              "neigh_inter.plot","neigh_intra.plot",
-  #             "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5", "x_coor2", "y_coor2")] 
 
 chfu.test.2<-  left_join(solochfu, chfu ,by=c("Plot", "Subplot", "Plant_Simple","Seed", "Fruit", "num.plantas","unique_id")) %>%
   group_by(unique_id)%>%
@@ -596,8 +592,6 @@ chfu.1.simple<- chfu.test.2[,c("Plot", "Subplot","Group", "num.visits","visitas_
 chfufu.final.fitness <- left_join(chfu.1.simple, disfinal, by=c("Plot", "Subplot"))
 chfufu.final.fitness <- na.omit(chfufu.final.fitness)#en el grupo de polinizadores aparecen NAs que corresponden a las semillas que 
 #                                                     no tienen polinizadores
-#chfu.1 <- subset(chfu.1, Seed>0)#remove number of seeds equal to 0 because actually they make the model to behave badly. 
-#chech the variables correlation
 chfu.simple <- chfu.1[,c("visits", "num.plantas" , "Fruit", "Seed",  "x_coor2", "y_coor2", 
                         "neigh_inter.1m", "neigh_intra.1m")]
 graf.chfu <- cor(chfu.simple)
@@ -1004,12 +998,12 @@ p4 <- lme(log(Seed) ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
            corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
 AIC(p1, p2, p3, p4) # best model p1, without space
 
-model5.1 <- lme(log(Seed) ~ visitas_indv_hora*Group + neigh_inter.1m*neigh_intra.1m, data= pupa.final.fitness, random = ~1 |Plot, control=lCtr,
-           method = "ML") 
-model_sec5.1 <- dredge(model5.1, trace = TRUE, rank = "AICc", REML = FALSE) 
-(attr(model_sec5.1, "rank.call"))
-fmList5.1 <- get.models(model_sec5.1, 1:8) 
-summary(model.avg(fmList5.1))# nothing significant
+model5.1.c <- lme(log(Seed) ~ visitas_indv_hora*Group + neigh_inter.1m*neigh_intra.1m, data= pupa.final.fitness, random = ~1 |Plot, control=lCtr,
+           method = "ML") #interaction of the model dont appears ----
+model_sec5.1.c <- dredge(model5.1, trace = TRUE, rank = "AICc", REML = FALSE) 
+(attr(model_sec5.1.c, "rank.call"))
+fmList5.1.c <- get.models(model_sec5.1.c, 1:8) 
+summary(model.avg(fmList5.1.c))# nothing significant
 
 #con ceros 
 pupa.without0 <- subset(pupa.final.fitness, Seed>0)
