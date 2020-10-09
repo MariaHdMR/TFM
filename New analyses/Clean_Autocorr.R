@@ -8,6 +8,8 @@ library(reshape2)
 library(vegan)
 library(nlme)
 library(lme4)
+library(DHARMa)
+
 
 #install.packages("remotes")
 #remotes::install_github("nyiuab/NBZIMM")
@@ -87,7 +89,10 @@ Total$num.plantas[Total$num.plantas == "0"] <- "1"
 Total$num.visits <-as.numeric(Total$num.visits)
 Total$num.plantas <- as.numeric(Total$num.plantas)
 Total$visitas_indv <- Total$num.visits/ Total$num.plantas
-Total$visitas_indv_hora <- (Total$visitas_indv*60)/30 #de esta manera ya tengo las visitas por individuo y por hora
+Total$visitas_indv_hora <- (Total$visitas_indv*60)/30
+
+
+#de esta manera ya tengo las visitas por individuo y por hora
 pol <- Total #aqui tengo ya polinizadores, semillas, individuos y frutos --> pol - base de datos final
 
 #voy a ver si mis datos son normales -> no lo son. 
@@ -626,6 +631,12 @@ m.prueba_sec.chufu.2 <- dredge(m.prueba.chufu.2, trace = TRUE, rank = "AICc", RE
 (attr(m.prueba_sec.chufu.2, "rank.call"))
 fmList.prueba.chufu.2 <- get.models(m.prueba_sec.chufu.2, 1:4) 
 summary(model.avg(fmList.prueba.chufu.2))#neigh inter 1m
+plot(fitted(m.prueba.chufu.2), resid(m.prueba.chufu.2, type = "pearson"), main= "chfu fitness")
+abline(0,0, col="red")
+r.squaredGLMM(m.prueba.chufu.2)
+
+
+
 
     #different groups of pollinators
     #>>Fly----
@@ -648,6 +659,9 @@ model_sec2.fly.1 <- dredge(model2.fly.1, trace = TRUE, rank = "AICc", REML = FAL
 (attr(model_sec2.fly.1, "rank.call"))
 fmList2.fly.1 <- get.models(model_sec2.fly.1, 1:4)
 summary(model.avg(fmList2.fly.1)) #nothing important, no aparece si le afectan las visitas-----
+plot(fitted(model2.fly.1), resid(model2.fly.1, type = "pearson"), main=" chfu fitness with fly visits")
+abline(0,0, col="red")
+r.squaredGLMM(model2.fly.1)
 
     #beetle
 chfu.bet <- subset(chfufu.final.fitness, Group== "Beetle") #only 5 entries 
@@ -675,7 +689,9 @@ model_c.v <- dredge(model.chfu.vis, trace = TRUE, rank = "AICc", REML = FALSE)
 fmList.c.v <- get.models(model_c.v, 1:6) 
 summary(model.avg(fmList.c.v))
 isSingular(model.chfu.vis, tol = 1e-05)#tengo singularidad, varianzas cercanas a 0. No se explica muy bien el modelo. 
-
+plot(fitted(model.chfu.vis), resid(model.chfu.vis, type = "pearson"),main= "fitness chfu visits")
+abline(0,0, col="red")
+r.squaredGLMM(model.chfu.vis)
 
 #>LEMA---- 
 LEMA.vis <- subset(pol, Plant_Simple == "LEMA")
@@ -741,6 +757,10 @@ model_sec3 <- dredge(model3, trace = TRUE, rank = "AICc", REML = FALSE)
 fmList3 <- get.models(model_sec3, 1:4) 
 summary(model.avg(fmList3)) #neighbors intra at 1m has relevance
 
+plot(fitted(model3), resid(model3, type = "pearson"), main= "fitness lema")
+abline(0,0, col="red")
+r.squaredGLMM(model3)
+
 #con ceros 
 lema.without0 <-subset(lema.fitness, Seed>0)
 l1.1 <- lme(log(Seed) ~ 1, data= lema.without0,random = ~1 |Plot, control=lCtr,
@@ -784,6 +804,10 @@ model_sec3.bet <- dredge(model3.bet, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_sec3.bet, "rank.call"))
 fmList3.bet <- get.models(model_sec3.bet, 1:4)
 summary(model.avg(fmList3.bet)) #relevance: neigh_intra.1m**
+plot(fitted(model3.bet), resid(model3.bet, type = "pearson"), main= "fitness lema with beetle visits")
+abline(0,0, col="red")
+r.squaredGLMM(model3.bet)
+
 
     #>>fly---- 
 lema.fly <- subset(lema.without0, Group== "Fly")
@@ -801,6 +825,9 @@ model_sec3.fly <- dredge(model3.fly, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_sec3.fly, "rank.call"))
 fmList3.fly <- get.models(model_sec3.fly, 1:4) #best model: Seed ~ 1
 summary(model.avg(fmList3.fly)) #neigh intra 1m **
+plot(fitted(model3.fly), resid(model3.fly, type = "pearson"), main= "fitness lema with fly visits")
+abline(0,0, col="red")
+r.squaredGLMM(model3.fly)
 
     #>>bee----
 lema.bee <- subset(lema.without0, Group== "Bee")
@@ -840,7 +867,9 @@ model_sec3.v <- dredge(model3.v, trace = TRUE, rank = "AICc", REML = FALSE)
 fmList3.v <- get.models(model_sec3.v, 1:4) #best model: visits ~ neigh_intra.1m + 1 
 summary(model.avg(fmList3.v)) #the neighbors intra*** at 1m affects strong negatively to the visits of LEMA, and the group fly**
 #  also affects negatively (less strong that the nieghbors)
-
+plot(fitted(model3.v), resid(model3.v, type = "pearson"), main= "LEMA visits")
+abline(0,0, col="red")
+r.squaredGLMM(model3.v)
 #>MESU----
 MESU.vis <- subset(pol, Plant_Simple == "MESU")
 MESU.vis$unique_id <- paste(MESU.vis$Plot, MESU.vis$Subplot, sep="_")
@@ -906,7 +935,9 @@ model_sec4.me <- dredge(model4, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_sec4.me, "rank.call"))
 fmList4.me <- get.models(model_sec4.me, 1:4) #best model: Seed ~ neigh_inter.1m + 1 
 summary(model.avg(fmList4.me))#could be important neigh inter 1m
-
+plot(fitted(model4), resid(model4, type = "pearson"), main= "MESU fitness")
+abline(0,0, col="red")
+r.squaredGLMM(model4)
 
 #con ceros 
 mesu.without0 <-subset(mesu.final.fitness, Seed>0)
@@ -934,7 +965,9 @@ AIC(me1.v, me2.v, me3.v, me4.v) # best model me1, sin estructura espacial
 
 model4.v <- lme(log(visitas_indv_hora) ~ Group+neigh_inter.1m*neigh_intra.1m, data= mesu.final.visits, random = ~1 |Plot, control=lCtr,
               method = "ML") #no works
-
+plot(fitted(model4.v), resid(model4.v, type = "pearson"), main= "MESU visits")
+abline(0,0, col="red")
+r.squaredGLMM(model4.v)
 
 #>PUPA----
 PUPA.vis <- subset(pol, Plant_Simple == "PUPA")
@@ -1004,7 +1037,9 @@ model_sec5.1.c <- dredge(model5.1, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_sec5.1.c, "rank.call"))
 fmList5.1.c <- get.models(model_sec5.1.c, 1:8) 
 summary(model.avg(fmList5.1.c))# nothing significant
-
+plot(fitted(model5.1.c), resid(model5.1.c, type = "pearson"), main= "PUPA fitness")
+abline(0,0, col="red")
+r.squaredGLMM(model5.1.c)
 #con ceros 
 pupa.without0 <- subset(pupa.final.fitness, Seed>0)
 p1.1 <- lme(log(Seed) ~ 1, data= pupa.without0,random = ~1 |Plot, control=lCtr,
@@ -1023,6 +1058,10 @@ pupa.prueba_sec <- dredge(pupa.prueba, trace = TRUE, rank = "AICc", REML = FALSE
 (attr(pupa.prueba_sec, "rank.call"))
 fmList.pupa <- get.models(pupa.prueba_sec, 1:4) 
 summary(model.avg(fmList.pupa))#nothing relevance
+plot(fitted(pupa.prueba), resid(pupa.prueba, type = "pearson"), main= "PUPA fitness")
+abline(0,0, col="red")
+r.squaredGLMM(pupa.prueba)
+
 #sin ceros
 pupa.prueba.1 <- lme(log(Seed) ~ visits+neigh_inter.1m*neigh_intra.1m, data= pupa.1, random = ~1 |Plot, control=lCtr,
                      corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
@@ -1030,7 +1069,9 @@ pupa.prueba_sec1 <- dredge(pupa.prueba.1, trace = TRUE, rank = "AICc", REML = FA
 (attr(pupa.prueba_sec1, "rank.call"))
 fmList.pupa1 <- get.models(pupa.prueba_sec1, 1:4) 
 summary(model.avg(fmList.pupa1))#sin ceros, nothing important. 
-
+plot(fitted(pupa.prueba.1), resid(pupa.prueba.1, type = "pearson"), main= "PUPA fitness")
+abline(0,0, col="red")
+r.squaredGLMM(pupa.prueba.1)
               #pollinators groups
     #>>bee----
 pupa.bee <- subset(pupa.without0, Group== "Bee" )
@@ -1087,6 +1128,10 @@ model_sec5.1.v <- dredge(model5.1.v, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_sec5.1.v, "rank.call"))
 fmList5.1.v <- get.models(model_sec5.1.v, 1:8)
 summary(model.avg(fmList5.1.v))#neigh intra 1m important***. 
+plot(fitted(model5.1.v), resid(model5.1.v, type = "pearson"), main= "PUPA visits")
+abline(0,0, col="red")
+r.squaredGLMM(model5.1.v)
+
 
 #SEM multigroup ----
 #Ahora tengo que hacer un SEM multigroup por especie de planta, en el que tengo que incluir los vecinos inter e intra
