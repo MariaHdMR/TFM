@@ -18,29 +18,29 @@ library(lme4)
 
 #cargar datos, juntar bases de datos de polinizadores, abundancias plantas, fruits y seeds, y limpiar
                 #visitors
-FV <- read.table("data/Metadata_Pollinators_2019_2016_bueno.csv", header=T, sep=";")
+FV <- read.table("C:/Users/Cisco/Documents/TFM/data/Metadata_Pollinators_2019_2016_bueno.csv", header=T, sep=";")
 FV_19 <- subset(FV, Year == 2019) 
 #I have to change the ME plant to MESU. MOst of the plants were MESU insted of MEEL
 FV_19$Plant_Simple <- as.character(FV_19$Plant_Simple)
 FV_19$Plant_Simple[FV_19$Plant_Simple == 'ME'] <- "MESU" # todas las plantas como MESU
 FV_19$Plot<- as.factor(FV_19$Plot)
-FV_19 <-FV_19%>% group_by(Plot, Subplot, Plant_Simple, Group,G_F, ID_Simple, Plant_Simple) %>% summarise (num.visits = sum(Visits))
+FV_19 <-FV_19%>% group_by(Plot, Subplot, Plant_Simple, Group,G_F, ID_Simple, Plant_Simple) %>% summarise (num.visits = sum(Visits))%>% ungroup()
 FV_19 <- subset(FV_19, Plant_Simple %in% c("LEMA","CHFU","MESU","PUPA", "CHMI"))
 
                 #abundances plants
-Abun <-read.table("data/abundances.csv", header=T, sep=";")
+Abun <-read.table("C:/Users/Cisco/Documents/TFM/data/abundances.csv", header=T, sep=";")
 Abun_19 <- subset(Abun, year == 2019) 
 Abun_19$Plot <- Abun_19$plot
 Abun_19$Subplot <- Abun_19$subplot
 Abun_19$Plant_Simple <- Abun_19$Sp.Focal
 Abun_19$Plantas <- Abun_19$individuals
 Abun_19$Plant_Simple <- Abun_19$species
-Abun_19 <-Abun_19 %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.plantas = sum(Plantas))
+Abun_19 <-Abun_19 %>% group_by(Plot, Subplot, Plant_Simple) %>% summarise (num.plantas = sum(Plantas))%>% ungroup()
 Abun_19.sp <- subset(Abun_19, Plant_Simple%in% c("LEMA","CHFU","MESU","PUPA", "CHMI"))
 Abun_19.sp$Plot<- as.factor(Abun_19.sp$Plot)
 
                 #competition plants
-competencia <- read.table("data/competition_wide.csv", header=T, sep=";")
+competencia <- read.table("C:/Users/Cisco/Documents/TFM/data/competition_wide.csv", header=T, sep=";")
 competencia <- subset(competencia, year == 2019)
 competencia$Plant_Simple <- competencia$focal
 competencia$Plot <- competencia$plot
@@ -52,9 +52,9 @@ competencia1 <- competencia[,c("Plot","Subplot","Plant_Simple","Fruit","Seed")]
 plantfruit <- subset(competencia1, Plant_Simple%in% c("LEMA","CHFU","MESU","PUPA", "CHMI"))
 
             #neighbors data
-table.chfu.lema <- read.table("data/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
-table.mesu <- read.table("data/focal_neighbours_MESU_GOOD.csv", header=T, sep=";")
-table.pupa <- read.table("data/focal_neighbours_PUPA_good.csv", header=T, sep=";")
+table.chfu.lema <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
+table.mesu <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours_MESU_GOOD.csv", header=T, sep=";")
+table.pupa <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours_PUPA_good.csv", header=T, sep=";")
 
 
             #plants abundances+pollinators
@@ -78,6 +78,9 @@ Total <- subset(Total, ID_Simple != "Chrysididae")
 Total <- subset(Total, ID_Simple != "Diplazon_sp.")
 Total <- subset(Total, G_F != "Mosquitoes")
 Total <- Total[,c("Plot","Subplot", "Group", "num.visits","Plant_Simple", "num.plantas","Fruit","Seed")]
+Total$Group <- as.character(Total$Group)
+Total <- subset(Total, Group %in% c("Bee","Beetle","Butterfly","Fly"))
+
 
 #I change the 0 abundance of plants to 1 (at least we might have 1 plant)
 Total$num.plantas[Total$num.plantas == "0"] <- "1"
@@ -91,7 +94,7 @@ pol <- Total #aqui tengo ya polinizadores, semillas, individuos y frutos --> pol
 hist(pol$visitas_indv_hora)
 
 ##########################################DISTANCES PLOTS#############################################
-distances <- read.csv("data/caracolesplotposition.csv", sep = ";") #aqui solamente esta la informacion de 1 
+distances <- read.csv("C:/Users/Cisco/Documents/TFM/data/caracolesplotposition.csv", sep = ";") #aqui solamente esta la informacion de 1 
 # plot, se midieron las distancias entre los plots y se añadieron
 distances <- distances[seq(2,72,2),]
 distances2 <- rbind(distances, distances, distances,
@@ -204,17 +207,23 @@ junto$visit[is.na(junto$visit)] <- 0
 
 total.corr <- spline.correlog(x=junto$x_coor2, y=junto$y_coor2,
                               z=junto$visit, resamp=100, quiet=TRUE)
-plot(total.corr, main= "Spatial Autocorrelation pollinators across plots")
+plot(total.corr, main= "Spatial Autocorrelation visitors across plots")
 
 moran.test(junto$visit,mat2listw(plots.dists.inv)) # I= 0.1648
 moran.test(junto$visit, nb2listw(w5)) # vecinos, I= 0.249
 moran.plot(junto$visit,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation pollinators across plots")
 
+par(mfrow=c(2,3))
+plot(bet.corr, main= " Spatial Autocorrelation beetles across plots")
+plot(flies.corr, main= "Spatial autocorrelation flies across plots")
+plot(but.corr, main= "Spatial autocorrelation butterflies across plots")
+plot(bee.corr, main= "Spatial autocorrelation bees across plots")
+plot(total.corr, main= "Spatial Autocorrelation visitors across plots")
+
 ############################################ >Plants########################################
 plantas <- pol[,c("Plot", "Subplot", "Plant_Simple", "num.plantas", "Fruit", "Seed")]
 plantas <- plantas[-which(duplicated(plantas)), ] #It appears in the data set a lot of duplicated rows, because the previus data set was with the pollinators
 #                                                   so we have to eliminate the duplicates, and I did it with this step
-
         #CHFU
 CHFU <- subset(plantas, Plant_Simple == "CHFU")
 CHFU$num.plantas <- as.numeric(CHFU$num.plantas)
@@ -273,11 +282,11 @@ MESU.p$num.plantas[is.na(MESU.p$num.plantas)] <- 0
 
 me.corr <- spline.correlog(x=MESU.p$x_coor2, y=MESU.p$y_coor2,
                            z=MESU.p$num.plantas, resamp=100, quiet=TRUE)
-plot(me.corr, main= " Spatial Autocorrelation ME across plots")
+plot(me.corr, main= " Spatial Autocorrelation MESU across plots")
 
 moran.test(MESU.p$num.plantas,mat2listw(plots.dists.inv)) # I= 0.0437
 moran.test(MESU.p$num.plantas, nb2listw(w5)) # vecinos, I= 0.055
-moran.plot(MESU.p$num.plantas,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation ME across plots")
+moran.plot(MESU.p$num.plantas,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation MESU across plots")
 
         #CHMI 
 CHMI <- subset(plantas, Plant_Simple == "CHMI") # solo 4 entradas
@@ -292,11 +301,19 @@ num.plant$plantas[is.na(num.plant$plantas)] <- 0
 
 total.corr.pl <- spline.correlog(x=num.plant$x_coor2, y=num.plant$y_coor2,
                                  z=num.plant$plantas, resamp=100, quiet=TRUE)
-plot(total.corr.pl, main= "Spatial Autocorrelation pollinators across plots")
+plot(total.corr.pl, main= "Spatial Autocorrelation plants across plots")
 
 moran.test(num.plant$plantas,mat2listw(plots.dists.inv)) # I= 0.21
 moran.test(num.plant$plantas, nb2listw(w5)) # vecinos, I= 0.34
 moran.plot(num.plant$plantas,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation plants across plots")
+
+
+par(mfrow=c(3,2))
+plot(chfu.corr, main= " Spatial Autocorrelation CHFU across plots")
+plot(lema.corr, main= " Spatial Autocorrelation LEMA across plots")
+plot(pupa.corr, main= " Spatial Autocorrelation PUPA across plots")
+plot(me.corr, main= " Spatial Autocorrelation MESU across plots")
+plot(total.corr.pl, main= "Spatial Autocorrelation plants across plots")
 
 ##########################################>Fitness###################################################
 
@@ -347,7 +364,7 @@ MESU.fit$seeds[is.na(MESU.fit$seeds)] <- 0
 
 me.corr.s <- spline.correlog(x=MESU.fit$x_coor2, y=MESU.fit$y_coor2,
                              z=MESU.fit$seeds, resamp=100, quiet=TRUE)
-plot(me.corr.s, main= " Spatial Autocorrelation ME fitness across plots")
+plot(me.corr.s, main= " Spatial Autocorrelation MESU fitness across plots")
 
 moran.test(MESU.fit$seeds,mat2listw(plots.dists.inv)) # I= 0.027
 moran.test(MESU.fit$seeds, nb2listw(w5)) # vecinos, I= 0.0305
@@ -369,8 +386,12 @@ moran.test(juntas.plantas.fit$seeds,mat2listw(plots.dists.inv)) # I= 0.42
 moran.test(juntas.plantas.fit$seeds, nb2listw(w5)) # vecinos, I= 0.57
 moran.plot(juntas.plantas.fit$seeds,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation plants fitness across plots")
 
-
-
+par(mfrow=c(2,3))
+plot(chfu.corr.s, main= " Spatial Autocorrelation CHFU fitness across plots")
+plot(lema.corr.s, main= " Spatial Autocorrelation LEMA fitness across plots")
+plot(pupa.corr.s, main= " Spatial Autocorrelation PUPA fitness across plots")
+plot(me.corr.s, main= " Spatial Autocorrelation MESU fitness across plots")
+plot(total.corr.pl.s, main= "Spatial Autocorrelation plant fitness across plots")
 ######################################################### 2. NEIGHBORS####################################################################
                                                   
 #I ned to get the neighbors to include the intra and inter neighbors in the glm.
@@ -379,7 +400,7 @@ moran.plot(juntas.plantas.fit$seeds,mat2listw(plots.dists.inv),main= "Spatial Au
 #   we are going to include RAPE in the neighbors but not in the models. 
 
         #>chfu and lema----
-#table.chfu.lema <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
+table.chfu.lema <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_chfu_lema_RAPE.csv", header=T, sep=";")
 table.chfu.lema <- subset(table.chfu.lema, year == 2019) 
 table.chfu.lema <- subset(table.chfu.lema,edge %in% c("FALSE")) #elimino los que estén en el borde
 table.chfu.lema$Plant_Simple<- table.chfu.lema$focal 
@@ -400,7 +421,6 @@ chfulema.7.5 <- subset(N.chfu.lema, distance %in% c("d1"))
 chfulema.7.5$distance7.5 <- chfulema.7.5$distance
 chfulema.7.5$neigh_intra.7.5 <- chfulema.7.5$neigh_intra
 chfulema.7.5$neigh_inter.7.5<- chfulema.7.5$neigh_inter
-
 chfulema.1m <- subset(N.chfu.lema, distance %in% c("d2")) 
 chfulema.1m$distances.1m <- chfulema.1m$distance
 chfulema.1m$neigh_intra.1m <- chfulema.1m$neigh_intra
@@ -422,9 +442,8 @@ head(chfulema.total)
 vecinos.chfu.lema <- chfulema.total[,c("Plot","Subplot","Plant_Simple","num.plantas", "Fruit","Seed", "neigh_inter.plot","neigh_intra.plot",
                                  "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")]
                                         # this is the final data of Lema and CHFU Neighbors. 
-
             #>MESU----
-#table.mesu <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_MESU_GOOD.csv", header=T, sep=";")
+table.mesu <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_MESU_GOOD.csv", header=T, sep=";")
 table.mesu$unique_id <- paste(table.mesu$plot, table.mesu$subplot, table.mesu$focal,table.mesu$distance, sep="_")
 table.mesu$unique_id <- as.factor(table.mesu$unique_id)
 
@@ -434,10 +453,12 @@ table.mesu$Subplot <- table.mesu$subplot
 table.mesu$Plot <- table.mesu$plot
 table.mesu$Subplot <- table.mesu$subplot
 table.mesu$Plant_Simple <- table.mesu$focal
-table.mesu <- table.mesu[,c("Plot", "Subplot","Plant_Simple", "distance", "neigh_intra", "neigh_inter", "edge", "unique_id")]
+table.mesu <- table.mesu[,c("Plot", "Subplot","Plant_Simple", "distance", "neigh_intra", "neigh_inter", "edge", "unique_id")] 
 N.mesu <- dplyr::full_join(fitness, table.mesu, by= c("Plot", "Subplot", "Plant_Simple")) %>%
     group_by(unique_id)%>%
-    distinct(unique_id, .keep_all=TRUE)
+    distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup(unique_id) 
+
 N.mesu <- subset(N.mesu, Plant_Simple %in% c("MESU")) #solo hay 36 datos con semillas y vecinos completos
 
 mesu.7.5 <- subset(N.mesu, distance %in% c("d1")) 
@@ -470,7 +491,7 @@ vecinos.mesu <- mesu.total[,c("Plot","Subplot","Plant_Simple","num.plantas", "Fr
 
                              # this is the final data of MESU Neighbors. 
             #>PUPA----
-#table.pupa <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_PUPA_good.csv", header=T, sep=";")
+table.pupa <- read.table("C:/Users/Cisco/Documents/TFM/focal_neighbours_PUPA_good.csv", header=T, sep=";")
 table.pupa$unique_id <- paste(table.pupa$plot, table.pupa$subplot, table.pupa$focal,table.pupa$distance, sep="_")
 table.pupa$unique_id <- as.factor(table.pupa$unique_id)
 
@@ -481,9 +502,10 @@ table.pupa$Plot <- table.pupa$plot
 table.pupa$Subplot <- table.pupa$subplot
 table.pupa$Plant_Simple <- table.pupa$focal
 table.pupa <- table.pupa[,c("Plot", "Subplot","Plant_Simple", "distance", "neigh_intra", "neigh_inter", "edge", "unique_id")]
-N.pupa <- dplyr::full_join(fitness, table.pupa, by= c("Plot", "Subplot", "Plant_Simple")) %>%
+N.pupa <- dplyr::full_join(fitness, table.pupa, by= c("Plot", "Subplot", "Plant_Simple")) %>% 
     group_by(unique_id)%>%
-    distinct(unique_id, .keep_all=TRUE)
+    distinct(unique_id, .keep_all=TRUE)%>%
+    ungroup(unique_id) 
 N.pupa <- subset(N.pupa, Plant_Simple %in% c("PUPA"))
 
 pupa.7.5 <- subset(N.pupa, distance %in% c("d1")) 
@@ -509,10 +531,10 @@ pupa.1 <- dplyr::full_join(pupa.7.5, pupa.1m, by= c("Plot", "Seed","num.plantas"
 pupa.2 <- dplyr::full_join(pupa.3m, pupa.plot, by= c("Plot", "Seed","num.plantas", "Subplot", "Plant_Simple", "edge", "Fruit"))
 
 pupa.total <- dplyr::full_join(pupa.1, pupa.2, by= c("Plot", "Seed","num.plantas", "Subplot", "Plant_Simple", "edge" , "Fruit"))
-head(pupa.total)
+head(pupa.total) 
 
 vecinos.pupa <- pupa.total[,c("Plot","Subplot","Plant_Simple","num.plantas", "Fruit","Seed", "neigh_inter.plot","neigh_intra.plot",
-                              "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")]
+                              "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] #good dataframe----
 
 
 ##################################################3. GLM#######################################################################
@@ -540,36 +562,40 @@ chfu$unique_id <- paste(chfu$Plot, chfu$Subplot, sep="_")
 
 chfu <- full_join(CHFU.vis,CHFU.dis, by=c("Plot", "Subplot", "unique_id", "Seed", "Fruit", "Plant_Simple", "num.plantas")) %>%
     group_by(unique_id)%>%
-    mutate(seeds = mean(Seed, na.rm=TRUE), visits = mean(visitas_indv_hora, na.rm = TRUE)) %>%
-    distinct(unique_id, .keep_all=TRUE)
+    mutate(seeds = mean(Seed, na.rm=TRUE), visits = mean(visitas_indv_hora, na.rm = TRUE))%>%
+  ungroup(unique_id) %>% 
+  distinct(unique_id, .keep_all=TRUE) 
 
 chfu.test<-  full_join(chfu, solochfu, by=c("Plot", "Subplot", "Plant_Simple","Seed", "Fruit", "num.plantas","unique_id")) %>%
     group_by(unique_id)%>%
-    distinct(unique_id, .keep_all=TRUE)
+    distinct(unique_id, .keep_all=TRUE)%>%
+    ungroup(unique_id) 
 #not like distances matices equal to 0.
 chfu.1 <- na.omit(chfu.test)
-chufu.1 <-  chfu.test[,c("Plot", "Subplot","Group", "visits", "Plant_Simple", "num.plantas" , "Fruit", "seeds", "unique_id", 
-               "neigh_inter.plot","neigh_intra.plot",
-               "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
+#chufu.1 <-  chfu.test[,c("Plot", "Subplot","Group", "visits","num.visits", "Plant_Simple", "num.plantas" , "Fruit", "seeds", "unique_id", 
+ #              "neigh_inter.plot","neigh_intra.plot",
+  #             "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5", "x_coor2", "y_coor2")] 
 
 chfu.test.2<-  left_join(solochfu, chfu ,by=c("Plot", "Subplot", "Plant_Simple","Seed", "Fruit", "num.plantas","unique_id")) %>%
   group_by(unique_id)%>%
-  distinct(unique_id, .keep_all=TRUE)
+  distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup(unique_id) 
 
 chfu.test.2$visits[is.na(chfu.test.2$visits)] <- 0
+chfu.test.2$num.visits[is.na(chfu.test.2$num.visits)] <- 0
 chfu.test.2$visitas_indv_hora[is.na(chfu.test.2$visitas_indv_hora)] <- 0
 chfu.test.2$seeds[is.na(chfu.test.2$seeds)] <- 0
 chfu.test.2$Group <- as.character(chfu.test.2$Group)
-chfu.test.2$Group[is.na(chfu.test.2$Group)] <- 'NONE'
+#chfu.test.2$Group[is.na(chfu.test.2$Group)] <- 'NONE'
 
 
-
-chfu.1.simple<- chfu.test.2[,c("Plot", "Subplot","Group", "visitas_indv_hora", "Plant_Simple", "num.plantas" , "Fruit", "Seed", "unique_id", 
+chfu.1.simple<- chfu.test.2[,c("Plot", "Subplot","Group", "num.visits","visitas_indv_hora", "Plant_Simple", "num.plantas" , "Fruit", "Seed", "unique_id", 
                     "neigh_inter.plot","neigh_intra.plot",
                     "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
                 #data of CHFU with visits, fitness and neighbors
 chfufu.final.fitness <- left_join(chfu.1.simple, disfinal, by=c("Plot", "Subplot"))
-chfufu.final.fitness <- na.omit(chfufu.final.fitness)
+chfufu.final.fitness <- na.omit(chfufu.final.fitness)#en el grupo de polinizadores aparecen NAs que corresponden a las semillas que 
+#                                                     no tienen polinizadores
 #chfu.1 <- subset(chfu.1, Seed>0)#remove number of seeds equal to 0 because actually they make the model to behave badly. 
 #chech the variables correlation
 chfu.simple <- chfu.1[,c("visits", "num.plantas" , "Fruit", "Seed",  "x_coor2", "y_coor2", 
@@ -579,111 +605,82 @@ symnum(graf.chfu, legend = TRUE)
 
 #different models
 lCtr <- lmeControl(maxIter = 5000, msMaxIter = 5000, tolerance = 1e-9, niterEM = 250, msMaxEval = 200)
-library("glmmTMB")
-library(NBZIMM)
-s <- glmmTMB(Seed ~ 1+ mat(as.matrix(c("x_coor2","y_coor2"))+ (1|Plot), ziformula= ~1, data= chfufu.final.fitness))
-s1 <- glmmTMB(Seed~ 1+ (1|Plot), ziformula= ~1, family = poisson, data= chfufu.final.fitness, corr = corSpatial(form = ~x_coor2 + y_coor2))
-s2 <- glmmTMB(Seed~ 1+ (1|Plot), ziformula= ~1, family = Gamma, data= chfufu.final.fitness)
-s3 <- glmmTMB(Seed~ 1+ (1|Plot), ziformula= ~1, family = gaussian, data= chfufu.final.fitness)
-AIC(s, s1, s2, s3) #The best model is the poisson
-
-m1.p <- lme.zig(fixed= Seed ~ 1, data= chfufu.final.fitness,random = ~1 |Plot, control=lCtr,
-          method = "ML") 
-
-m2.p <- lme.zig(Seed ~ 1, data= chfufu.final.fitness, random = ~1 |Plot, control=lCtr,
-          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML", zi_fixed = ~1, zi_random = NULL,
-          niter = 30, epsilon = 1e-05, verbose = TRUE)
-
-m3.p <- lme.zig(Seed ~ 1, data= chfufu.final.fitness, random = ~1 |Plot, control=lCtr,
-          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-
-m4.p <- lme.zig(Seed ~ 1, data= chfufu.final.fitness, random = ~1 |Plot, control=lCtr,
-          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-
-library(NBZIMM)
-#install.packages('TMB', type = 'source')
-AIC(m1.p, m2.p, m3.p, m4.p) #no spatial autocorrelation fit best, model m1
-
-weights(m4)
 chfufu.final.fitness$Seed <-  as.numeric(chfufu.final.fitness$Seed)
+#con ceros 
+chufu.without0 <-subset(chfufu.final.fitness, Seed>0)
 
-m1<- lme(Seed ~ 1, data= chfufu.final.fitness,random = ~1 |Plot, control=lCtr,
+m1<- lme(log(Seed) ~ 1, data= chufu.without0,random = ~1 |Plot, control=lCtr,
            method = "ML")
-m2 <- lme(Seed ~ 1, data= chfufu.final.fitness, random = ~1 |Plot, control=lCtr,
+m2 <- lme(log(Seed) ~ 1, data= chufu.without0, random = ~1 |Plot, control=lCtr,
             corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
 
-m3 <- lme(Seed ~ 1, data= chfufu.final.fitness, random = ~1 |Plot, control=lCtr,
+m3 <- lme(log(Seed) ~ 1, data= chufu.without0, random = ~1 |Plot, control=lCtr,
             corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
 
-m4 <- lme(Seed ~ 1, data= chfufu.final.fitness, random = ~1 |Plot, control=lCtr,
+m4 <- lme(log(Seed) ~ 1, data= chufu.without0, random = ~1 |Plot, control=lCtr,
             corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(m1, m2, m3, m4) #best model is m3
+AIC(m1, m2, m3, m4) #best model is m2
 
 options(na.action = "na.fail")
 
-model2 <- lme(Seed ~ visitas_indv_hora*neigh_inter.1m*neigh_intra.1m, data= chfufu.final.fitness, random = ~1 |Plot, control=lCtr,
-              corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-model_sec2 <- dredge(model2, trace = TRUE, rank = "AICc", REML = FALSE)
-(attr(model_sec2, "rank.call"))
-fmList2 <- get.models(model_sec2, 1:6) #best model: Seed ~ neigh_inter.1m + neigh_intra.1m + visitas_indv_hora +
-#                                       neigh_inter.1m:neigh_intra.1m + neigh_inter.1m:visitas_indv_hora +neigh_inter.1m:neigh_intra.1m neigh_inter.1m:visitas_indv_hora 
-summary(model.avg(fmList2))
+chufu.without0$neigh_inter.1m <- as.numeric(chufu.without0$neigh_inter.1m)
+chufu.without0$neigh_intra.1m <- as.numeric(chufu.without0$neigh_intra.1m)
+m.prueba.chufu.2 <- lme(log(Seed) ~ visitas_indv_hora+neigh_inter.1m*neigh_intra.1m, data= chufu.without0, random = ~1 |Plot, control=lCtr,
+                corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
 
-#visits
-m1.v<- lme((visits) ~ 1, data= chfu.1,random = ~1 |Plot, control=lCtr,
-          method = "ML")
-
-m2.v <- lme((visits) ~ 1, data= chfu.1, random = ~1 |Plot, control=lCtr,
-          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-
-m3.v <- lme((visits) ~ 1, data= chfu.1, random = ~1 |Plot, control=lCtr,
-          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-
-m4.v <- lme((visits) ~ 1, data= chfu.1, random = ~1 |Plot, control=lCtr,
-          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-
-AIC(m1.v, m2.v, m3.v, m4.v) #no spatial autocorrelation fit best, model m1.v
-#Now we go with the fixed part MARIA REMEMBER THAT WE NEED TO INCLUDE HERE THE NUMBER OF CONSPECIFIC AND HETEROSPECIFIC PLANT INDIVIDUALS
-#WITHIN THE SUBPLOT. 
-options(na.action = "na.fail")
-
-model2 <- lmer(log(Seed) ~ scale(visits)*Group*scale(neigh_inter.1m)*scale(neigh_intra.1m) + (1 |Plot), data= chfu.1, REML = TRUE) #works
-model_sec2 <- dredge(model2, trace = TRUE, rank = "AICc", REML = FALSE)
-(attr(model_sec2, "rank.call"))
-fmList2 <- get.models(model_sec2, 1:6) #best model: log(Seed + 1) ~scale(neigh_inter.1m) + scale(neigh_intra.1m) + (1 | Plot)
-summary(model.avg(fmList2))
+m.prueba_sec.chufu.2 <- dredge(m.prueba.chufu.2, trace = TRUE, rank = "AICc", REML = FALSE)
+(attr(m.prueba_sec.chufu.2, "rank.call"))
+fmList.prueba.chufu.2 <- get.models(m.prueba_sec.chufu.2, 1:4) 
+summary(model.avg(fmList.prueba.chufu.2))#neigh inter 1m
 
     #different groups of pollinators
     #>>Fly----
-chfu.fly <- subset(chfufu.final.fitness, Group== "Fly")
-m1.f <- lme(Seed ~ 1, data= chfu.fly,random = ~1 |Plot, control=lCtr,
+chfu.fly <- subset(chufu.without0, Group== "Fly")%>% ungroup()
+m1.f <- lme(log(Seed) ~ 1, data= chfu.fly,random = ~1 |Plot, control=lCtr,
           method = "ML")
-m2.f <- lme(Seed ~ 1, data= chfu.fly, random = ~1 |Plot, control=lCtr,
+m2.f <- lme(log(Seed) ~ 1, data= chfu.fly, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-m3.f <- lme(Seed ~ 1, data= chfu.fly, random = ~1 |Plot, control=lCtr,
+m3.f <- lme(log(Seed) ~ 1, data= chfu.fly, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-m4.f <- lme(Seed ~ 1, data= chfu.fly, random = ~1 |Plot, control=lCtr,
+m4.f <- lme(log(Seed) ~ 1, data= chfu.fly, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(m1.f, m2.f, m3.f, m4.f) # fit best, model m1.f, without space
+AIC(m1.f, m2.f, m3.f, m4.f) # fit best, model m2.f
 
-model2.fly <- lme(Seed ~ visitas_indv_hora*neigh_inter.1m*neigh_intra.1m, data= chfu.fly,random = ~1 |Plot, control=lCtr,
-                  method = "ML")
+chfu.fly$neigh_intra.1m <- as.numeric(chfu.fly$neigh_intra.1m)
+chfu.fly$neigh_inter.1m <- as.numeric(chfu.fly$neigh_inter.1m)
+model2.fly.1 <- lme(log(Seed) ~ visitas_indv_hora +neigh_inter.1m*neigh_intra.1m, data= chfu.fly, random = ~1 |Plot, control=lCtr,
+                  corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
+model_sec2.fly.1 <- dredge(model2.fly.1, trace = TRUE, rank = "AICc", REML = FALSE)
+(attr(model_sec2.fly.1, "rank.call"))
+fmList2.fly.1 <- get.models(model_sec2.fly.1, 1:4)
+summary(model.avg(fmList2.fly.1)) #nothing important, no aparece si le afectan las visitas-----
 
-model_sec2.fly <- dredge(model2.fly, trace = TRUE, rank = "AICc", REML = FALSE)
-(attr(model_sec2.fly, "rank.call"))
-fmList2.fly <- get.models(model_sec2.fly, 1:4) #best model: Seed ~ neigh_inter.1m + 1 
-summary(model.avg(fmList2.fly)) #could have importance neigh_inter.1m
     #beetle
 chfu.bet <- subset(chfufu.final.fitness, Group== "Beetle") #only 5 entries 
     #bee
 chfu.be <- subset(chfufu.final.fitness, Group== "Bee") #only 5 entries
 
 #visits 
-model.chfu.vis <- lmer(visits ~ Group*neigh_inter.1m*neigh_intra.1m + (1 |Plot), data= chfu.1, REML = TRUE) #works
+
+m1.v<- lme(log(visits) ~ 1, data= chfu.1,random = ~1 |Plot, control=lCtr,
+         method = "ML")
+m2.v <- lme(log(visits) ~ 1, data= chfu.1, random = ~1 |Plot, control=lCtr,
+          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
+
+m3.v <- lme(log(visits) ~ 1, data= chfu.1, random = ~1 |Plot, control=lCtr,
+          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
+
+m4.v <- lme(log(visits) ~ 1, data= chfu.1, random = ~1 |Plot, control=lCtr,
+          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+AIC(m1.v, m2.v, m3.v, m4.v) #best model is m2.v
+
+model.chfu.vis <- lmer(log(visits) ~ Group + neigh_inter.1m *neigh_intra.1m + (1 |Plot), data= chfu.1,
+                       corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML") #funciona sin el control----
 model_c.v <- dredge(model.chfu.vis, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_c.v, "rank.call"))
-fmList.c.v <- get.models(model_c.v, 1:6) #best model: visits ~ neigh_inter.1m + neigh_intra.1m + (1 | Plot)
-summary(model.avg(fmList.c.v)) #the neigh intra 1m affects negatively strong to chfu's visits 
+fmList.c.v <- get.models(model_c.v, 1:6) 
+summary(model.avg(fmList.c.v))
+isSingular(model.chfu.vis, tol = 1e-05)#tengo singularidad, varianzas cercanas a 0. No se explica muy bien el modelo. 
 
 
 #>LEMA---- 
@@ -698,21 +695,25 @@ LEMA.dis$unique_id <- paste(LEMA.dis$Plot, LEMA.dis$Subplot, sep="_")
 lema <- full_join(LEMA.vis,LEMA.dis, by=c("Plot", "Subplot", "unique_id", "Seed", "Fruit", "Plant_Simple", "num.plantas")) %>%
     group_by(unique_id)%>%
     mutate(seeds = mean(Seed, na.rm=TRUE), visits = mean(visitas_indv_hora, na.rm = TRUE)) %>%
-    distinct(unique_id, .keep_all=TRUE)
+    distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup()
 
 lema.test<-  full_join(lema, sololema, by=c("Plot", "Subplot", "unique_id", "Plant_Simple", "Fruit", "Seed", "num.plantas", "Fruit", "Seed")) %>%
     group_by(unique_id)%>%
-    distinct(unique_id, .keep_all=TRUE)
+    distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup()
+
 lema.test.2 <- left_join(sololema,lema,  by=c("Plot", "Subplot", "unique_id", "Plant_Simple", "Fruit", "Seed", "num.plantas", "Fruit", "Seed")) %>%
   group_by(unique_id)%>%
-  distinct(unique_id, .keep_all=TRUE) #this data base is for fitness. 
+  distinct(unique_id, .keep_all=TRUE) %>%#this data base is for fitness. 
+  ungroup()
 
 lema.test.2$visits[is.na(lema.test.2$visits)] <- 0
 lema.test.2$visitas_indv_hora[is.na(lema.test.2$visitas_indv_hora)] <- 0
 lema.test.2$seeds[is.na(lema.test.2$seeds)] <- 0
 lema.test.2$Plant_Simple[is.na(lema.test.2$Plant_Simple)] <- 'NONE'
 lema.test.2$Group <- as.character(lema.test.2$Group)
-lema.test.2$Group[is.na(lema.test.2$Group)] <- 'NONE'
+#lema.test.2$Group[is.na(lema.test.2$Group)] <- 'NONE'
 
 lema.bis <- lema.test.2[,c("Plot", "Subplot","Group", "visits", "Plant_Simple", "num.plantas" , "Fruit", "Seed", 
           "neigh_inter.plot","neigh_intra.plot",
@@ -722,69 +723,93 @@ lema.1 <- na.omit(lema.test)
 lema.1 <- lema.1[,c("Plot", "Subplot","Group", "visits", "Plant_Simple", "num.plantas" , "Fruit", "Seed", "unique_id", "x_coor2", "y_coor2", 
                     "neigh_inter.plot","neigh_intra.plot",
                     "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
-lema.t <- subset(lema.1, Seed>0)
+lema.t <- subset(lema.1, Seed>0) 
 lema.simple <- lema.t[,c("visits", "num.plantas" , "Fruit", "Seed",  "x_coor2", "y_coor2", 
                        "neigh_inter.1m", "neigh_intra.1m")]
 graf.lema <- cor(lema.simple)
 symnum(graf.lema, legend = TRUE)
 
 #fitness
-l1 <- lme(Seed ~ 1, data= lema.fitness,random = ~1 |Plot, control=lCtr,
+la <- lme(log(Seed) ~ 1, data= lema.1,random = ~1 |Plot, control=lCtr,
           method = "ML")
-l2 <- lme(Seed ~ 1, data= lema.fitness, random = ~1 |Plot, control=lCtr,
+le <- lme(log(Seed) ~ 1, data= lema.1, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-l3 <- lme(Seed ~ 1, data= lema.fitness, random = ~1 |Plot, control=lCtr,
+li <- lme(log(Seed) ~ 1, data= lema.1, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-l4 <- lme(Seed ~ 1, data= lema.fitness, random = ~1 |Plot, control=lCtr,
+lo <- lme(log(Seed) ~ 1, data= lema.1, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(l1, l2, l3, l4) # best model l4. Gaussian with coordenates (small difference between l2,l3,l4)
-
-model3 <- lme(Seed ~ visits*neigh_inter.1m*neigh_intra.1m, data= lema.fitness, random = ~1 |Plot, control=lCtr,
-          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+AIC(la, le, li, lo) # best model l1. No space
+lema.fitness$Group <- as.factor(lema.fitness$Group)
+model3 <- lme(log(Seed) ~ visits+neigh_inter.1m*neigh_intra.1m, data= lema.fitness, random = ~1 |Plot, control=lCtr,
+          method = "ML")
 model_sec3 <- dredge(model3, trace = TRUE, rank = "AICc", REML = FALSE) 
-
 (attr(model_sec3, "rank.call"))
 fmList3 <- get.models(model_sec3, 1:4) 
-summary(model.avg(fmList3)) #neighbors intra at 1m has relevance, and could be important neigh_intra.1m:visits
+summary(model.avg(fmList3)) #neighbors intra at 1m has relevance
+
+#con ceros 
+lema.without0 <-subset(lema.fitness, Seed>0)
+l1.1 <- lme(log(Seed) ~ 1, data= lema.without0,random = ~1 |Plot, control=lCtr,
+          method = "ML")
+l2.1 <- lme(log(Seed) ~ 1, data= lema.without0, random = ~1 |Plot, control=lCtr,
+          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
+l3.1 <- lme(log(Seed) ~ 1, data= lema.without0, random = ~1 |Plot, control=lCtr,
+          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
+l4.1 <- lme(log(Seed) ~ 1, data= lema.without0, random = ~1 |Plot, control=lCtr,
+          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+AIC(l1.1, l2.1, l3.1, l4.1) # best model l1. No space
+m.prueba <- lme(log(Seed) ~ visits+neigh_inter.1m*neigh_intra.1m, data= lema.without0, random = ~1 |Plot, control=lCtr,
+                method = "ML") #Dont work
+m.prueba_sec <- dredge(m.prueba, trace = TRUE, rank = "AICc", REML = FALSE)
+(attr(m.prueba_sec, "rank.call"))
+fmList.prueba <- get.models(m.prueba_sec, 1:4) 
+summary(model.avg(fmList.prueba))#neighbors intra 1m *** , me salen los mismos estimates que en el anterior, por lo que seran iguales
+#sin ceros
+m.prueba.1 <- lme(log(Seed) ~ visits*Group+neigh_inter.1m*neigh_intra.1m, data= lema.1, random = ~1 |Plot, control=lCtr,
+                   method = "ML") #sin 0 funciona bien
+m.prueba_sec1 <- dredge(m.prueba.1, trace = TRUE, rank = "AICc", REML = FALSE)
+(attr(m.prueba_sec1, "rank.call"))
+fmList.prueba1 <- get.models(m.prueba_sec1, 1:4) 
+summary(model.avg(fmList.prueba1))#sin ceros, neigh intra ***
 
             #different groups of pollinators
     #>>beetle----
-lema.bet <- subset(lema.fitness, Group== "Beetle")
-l1.bet <- lme(Seed ~ 1, data= lema.bet,random = ~1 |Plot, control=lCtr,
+lema.bet <- subset(lema.without0, Group== "Beetle")
+l1.bet <- lme(log(Seed) ~ 1, data= lema.bet,random = ~1 |Plot, control=lCtr,
           method = "ML")
-l2.bet <- lme(Seed ~ 1, data= lema.bet, random = ~1 |Plot, control=lCtr,
+l2.bet <- lme(log(Seed) ~ 1, data= lema.bet, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-l3.bet <- lme(Seed ~ 1, data= lema.bet, random = ~1 |Plot, control=lCtr,
+l3.bet <- lme(log(Seed) ~ 1, data= lema.bet, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-l4.bet <- lme(Seed ~ 1, data= lema.bet, random = ~1 |Plot, control=lCtr,
+l4.bet <- lme(log(Seed) ~ 1, data= lema.bet, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(l1.bet, l2.bet, l3.bet, l4.bet) # best model with coordenates.Same AIC l2,l3,l4
-model3.bet <- lme(Seed ~ visits*neigh_inter.1m*neigh_intra.1m, data= lema.bet, random = ~1 |Plot, control=lCtr,
-              corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
+AIC(l1.bet, l2.bet, l3.bet, l4.bet) # best model without space. l1.bet
+model3.bet <- lme(log(Seed) ~ visits+neigh_inter.1m*neigh_intra.1m, data= lema.bet, random = ~1 |Plot, control=lCtr,
+               method = "ML")
 model_sec3.bet <- dredge(model3.bet, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_sec3.bet, "rank.call"))
 fmList3.bet <- get.models(model_sec3.bet, 1:4)
-summary(model.avg(fmList3.bet)) #relevance: neigh_inter.1m:visits** , neigh_inter.1m:neigh_intra.1m:visits***,neigh_intra.1m*  
+summary(model.avg(fmList3.bet)) #relevance: neigh_intra.1m**
 
     #>>fly---- 
-lema.fly <- subset(lema.fitness, Group== "Fly")
-l1.f <- lme(Seed ~ 1, data= lema.fly,random = ~1 |Plot, control=lCtr, method = "ML")
-l2.f <- lme(Seed ~ 1, data= lema.fly, random = ~1 |Plot, control=lCtr,
+lema.fly <- subset(lema.without0, Group== "Fly")
+l1.f <- lme(log(Seed) ~ 1, data= lema.fly,random = ~1 |Plot, control=lCtr, method = "ML")
+l2.f <- lme(log(Seed) ~ 1, data= lema.fly, random = ~1 |Plot, control=lCtr,
               corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-l3.f <- lme(Seed ~ 1, data= lema.fly, random = ~1 |Plot, control=lCtr,
+l3.f <- lme(log(Seed) ~ 1, data= lema.fly, random = ~1 |Plot, control=lCtr,
               corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-l4.f <- lme(Seed ~ 1, data= lema.fly, random = ~1 |Plot, control=lCtr,
+l4.f <- lme(log(Seed) ~ 1, data= lema.fly, random = ~1 |Plot, control=lCtr,
               corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(l1.f, l2.f, l3.f, l4.f) # best model l4.f
-model3.fly <- lme(Seed ~ visits*neigh_inter.1m*neigh_intra.1m, data= lema.fly, random = ~1 |Plot, control=lCtr,
-            corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+AIC(l1.f, l2.f, l3.f, l4.f) # best model l2.f
+model3.fly <- lme(log(Seed) ~ visits+neigh_inter.1m*neigh_intra.1m, data= lema.fly, random = ~1 |Plot, control=lCtr,
+            corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
 model_sec3.fly <- dredge(model3.fly, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_sec3.fly, "rank.call"))
 fmList3.fly <- get.models(model_sec3.fly, 1:4) #best model: Seed ~ 1
-summary(model.avg(fmList3.fly)) #nothing significant
+summary(model.avg(fmList3.fly)) #neigh intra 1m **
 
     #>>bee----
-lema.bee <- subset(lema.fitness, Group== "Bee")
+lema.bee <- subset(lema.without0, Group== "Bee")
 l1.bee <- lme(log(Seed) ~ 1, data= lema.bee,random = ~1 |Plot, control=lCtr, method = "ML")
 l2.bee <- lme(log(Seed) ~ 1, data= lema.bee, random = ~1 |Plot, control=lCtr,
             corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
@@ -792,34 +817,35 @@ l3.bee <- lme(log(Seed) ~ 1, data= lema.bee, random = ~1 |Plot, control=lCtr,
             corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
 l4.bee <- lme(log(Seed) ~ 1, data= lema.bee, random = ~1 |Plot, control=lCtr,
             corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(l1.bee, l2.bee, l3.bee, l4.bee) # best model with spatial correlation
-model3.fly <- lme(Seed ~ visits*neigh_inter.1m*neigh_intra.1m, data= lema.bee, random = ~1 |Plot, control=lCtr,
-                  corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+AIC(l1.bee, l2.bee, l3.bee, l4.bee) # best model without spatial correlation
+model3.fly <- lme(log(Seed) ~ visits+neigh_inter.1m*neigh_intra.1m, data= lema.bee, random = ~1 |Plot, control=lCtr,
+                  method = "ML")
 model_sec3.fly <- dredge(model3.fly, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_sec3.fly, "rank.call"))
-fmList3.fly <- get.models(model_sec3.fly, 1:4) #best model: Seed ~ 1
+fmList3.fly <- get.models(model_sec3.fly, 1:4) 
 summary(model.avg(fmList3.fly))#nothing significant
+
 
 
 #visits 
 
-l1.v <- lme(visits ~ 1, data= lema.1,random = ~1 |Plot, control=lCtr,
+l1.v <- lme(log(visits) ~ 1, data= lema.1,random = ~1 |Plot, control=lCtr,
           method = "ML")
-l2.v <- lme(visits ~ 1, data= lema.1, random = ~1 |Plot, control=lCtr,
+l2.v <- lme(log(visits) ~ 1, data= lema.1, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-l3.v <- lme(visits ~ 1, data= lema.1, random = ~1 |Plot, control=lCtr,
+l3.v <- lme(log(visits) ~ 1, data= lema.1, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-l4.v <- lme(visits ~ 1, data= lema.1, random = ~1 |Plot, control=lCtr,
+l4.v <- lme(log(visits) ~ 1, data= lema.1, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(l1.v, l2.v, l3.v, l4.v)   #the best model is the type rational
+AIC(l1.v, l2.v, l3.v, l4.v)   #the best model is the type gaussian
 
-model3.v <- lme(visits ~ Group*neigh_inter.1m*neigh_intra.1m, data= lema.1, random = ~1 |Plot, control=lCtr,
+model3.v <- lme(log(visits) ~ Group+neigh_inter.1m*neigh_intra.1m, data= lema.1, random = ~1 |Plot, control=lCtr,
               corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
 model_sec3.v <- dredge(model3.v, trace = TRUE, rank = "AICc", REML = FALSE) 
-
 (attr(model_sec3.v, "rank.call"))
 fmList3.v <- get.models(model_sec3.v, 1:4) #best model: visits ~ neigh_intra.1m + 1 
-summary(model.avg(fmList3.v)) #the neighbors intra at 1m affects strong negatively to the visits of LEMA
+summary(model.avg(fmList3.v)) #the neighbors intra*** at 1m affects strong negatively to the visits of LEMA, and the group fly**
+#  also affects negatively (less strong that the nieghbors)
 
 #>MESU----
 MESU.vis <- subset(pol, Plant_Simple == "MESU")
@@ -832,11 +858,13 @@ MESU.dis$unique_id <- paste(MESU.dis$Plot, MESU.dis$Subplot, sep="_")
 mesu <- full_join(MESU.vis,MESU.dis, by=c("Plot", "Subplot", "unique_id", "Seed", "Fruit", "Plant_Simple", "num.plantas")) %>%
     group_by(unique_id)%>%
     mutate(seeds = mean(Seed, na.rm=TRUE), visits = mean(visitas_indv_hora, na.rm = TRUE)) %>%
-    distinct(unique_id, .keep_all=TRUE)
+    distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup()
 
 mesu.test<-  full_join(mesu, solomesu, by=c("Plot", "Subplot", "unique_id", "Plant_Simple", "Fruit", "Seed", "num.plantas", "Fruit", "Seed")) %>%
     group_by(unique_id)%>%
-    distinct(unique_id, .keep_all=TRUE)
+    distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup()
 mesu.1 <- na.omit(mesu.test)
 mesu.1 <- mesu.1[,c("Plot", "Subplot","Group", "visits", "Plant_Simple", "num.plantas" , "Fruit", "Seed", "unique_id", "x_coor2", "y_coor2", 
                     "neigh_inter.plot","neigh_intra.plot",
@@ -851,39 +879,67 @@ symnum(graf.mesu, legend = TRUE)
 
 mesu.test.2<-  left_join(solomesu, mesu ,by=c("Plot", "Subplot", "Plant_Simple","Seed", "Fruit", "num.plantas","unique_id")) %>%
   group_by(unique_id)%>%
-  distinct(unique_id, .keep_all=TRUE)
+  distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup()
 
 mesu.test.2$visits[is.na(mesu.test.2$visits)] <- 0
 mesu.test.2$visitas_indv_hora[is.na(mesu.test.2$visitas_indv_hora)] <- 0
 mesu.test.2$seeds[is.na(mesu.test.2$seeds)] <- 0
 mesu.test.2$Group <- as.character(mesu.test.2$Group)
-mesu.test.2$Group[is.na(mesu.test.2$Group)] <- 'NONE'
+#mesu.test.2$Group[is.na(mesu.test.2$Group)] <- 'NONE'
 mesu.1.simple<- mesu.test.2[,c("Plot", "Subplot","Group", "visitas_indv_hora", "Plant_Simple", "num.plantas" , "Fruit", "Seed", "unique_id", 
                                "neigh_inter.plot","neigh_intra.plot",
                                "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
 #data of CHFU with visits, fitness and neighbors
 mesu.final.fitness <- left_join(mesu.1.simple, disfinal, by=c("Plot", "Subplot"))
-mesu.final.fitness <- na.omit(mesu.final.fitness)
+#mesu.final.fitness <- na.omit(mesu.final.fitness)
 
 
     #models fitness
-me1 <- lme(Seed ~ 1, data= mesu.final.fitness,random = ~1 |Plot, control=lCtr,
+me1 <- lme(log(Seed) ~ 1, data= mesu.final.fitness,random = ~1 |Plot, control=lCtr,
           method = "ML")
-me2 <- lme(Seed ~ 1, data= mesu.final.fitness, random = ~1 |Plot, control=lCtr,
+me2 <- lme(log(Seed) ~ 1, data= mesu.final.fitness, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-me3 <- lme(Seed ~ 1, data= mesu.final.fitness, random = ~1 |Plot, control=lCtr,
+me3 <- lme(log(Seed) ~ 1, data= mesu.final.fitness, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-me4 <- lme(Seed ~ 1, data= mesu.final.fitness, random = ~1 |Plot, control=lCtr,
+me4 <- lme(log(Seed) ~ 1, data= mesu.final.fitness, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(me1, me2, me3, me4) # best model me4
-    #no works 
-model4 <- lme(Seed ~ visitas_indv_hora*neigh_inter.1m*neigh_intra.1m, data= mesu.final.fitness, random = ~1 |Plot, control=lCtr,
-           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML") #no works
+AIC(me1, me2, me3, me4) # best model me1, sin estructura espacial
+    
+model4 <- lme(log(Seed) ~ visitas_indv_hora+neigh_inter.1m*neigh_intra.1m, data= mesu.final.fitness, random = ~1 |Plot, control=lCtr,
+            method = "ML") #no works
 model_sec4.me <- dredge(model4, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(model_sec4.me, "rank.call"))
 fmList4.me <- get.models(model_sec4.me, 1:4) #best model: Seed ~ neigh_inter.1m + 1 
 summary(model.avg(fmList4.me))#could be important neigh inter 1m
 
+
+#con ceros 
+mesu.without0 <-subset(mesu.final.fitness, Seed>0)
+mesu.prueba <- lme(log(Seed) ~ visitas_indv_hora+neigh_inter.1m*neigh_intra.1m, data= mesu.without0, random = ~1 |Plot, control=lCtr,
+                corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+
+    #only 9 entries, no works 
+
+
+#sin ceros
+mesu.prueba.1 <- lme(Seed ~ visitsGroup+neigh_inter.1m*neigh_intra.1m, data= mesu.final.fitness, random = ~1 |Plot, control=lCtr,
+                  corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")#no works
+
+#models visits
+mesu.final.visits <- na.omit(mesu.final.fitness)
+me1.v <- lme(log(visitas_indv_hora) ~ 1, data= mesu.final.visits,random = ~1 |Plot, control=lCtr,
+           method = "ML")
+me2.v <- lme(log(visitas_indv_hora) ~ 1, data= mesu.final.visits, random = ~1 |Plot, control=lCtr,
+           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
+me3.v <- lme(log(visitas_indv_hora) ~ 1, data= mesu.final.visits, random = ~1 |Plot, control=lCtr,
+           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
+me4.v <- lme(log(visitas_indv_hora) ~ 1, data= mesu.final.visits, random = ~1 |Plot, control=lCtr,
+           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+AIC(me1.v, me2.v, me3.v, me4.v) # best model me1, sin estructura espacial
+
+model4.v <- lme(log(visitas_indv_hora) ~ Group+neigh_inter.1m*neigh_intra.1m, data= mesu.final.visits, random = ~1 |Plot, control=lCtr,
+              method = "ML") #no works
 
 
 #>PUPA----
@@ -900,13 +956,15 @@ PUPA.dis$unique_id <- paste(PUPA.dis$Plot, PUPA.dis$Subplot, sep="_")
 pupa <- full_join(PUPA.vis,PUPA.dis, by=c("Plot", "Subplot", "unique_id", "Seed", "Fruit", "Plant_Simple", "num.plantas")) %>%
     group_by(unique_id)%>%
     mutate(seeds = mean(Seed, na.rm=TRUE), visits = mean(visitas_indv_hora, na.rm = TRUE)) %>%
-    distinct(unique_id, .keep_all=TRUE)
+    distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup()
 
 pupa.test<-  full_join(pupa, solopupa, by=c("Plot", "Subplot", "unique_id", "Plant_Simple", "Fruit", "Seed", "num.plantas", "Fruit", "Seed")) %>%
     group_by(unique_id)%>%
-    distinct(unique_id, .keep_all=TRUE)
+    distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup()
 pupa.1 <- na.omit(pupa.test)
-pupa.1 <- pupa.1[,c("Plot", "Subplot","Group", "visits", "Plant_Simple", "num.plantas" , "Fruit", "Seed", "unique_id", "x_coor2", "y_coor2", 
+pupa.1 <- pupa.1[,c("Plot", "Subplot","Group", "visits", "num.visits", "Plant_Simple", "num.plantas" , "Fruit", "Seed", "unique_id", "x_coor2", "y_coor2", 
                     "neigh_inter.plot","neigh_intra.plot",
                     "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
 pupa.t <- subset(pupa.1, Seed>0)
@@ -917,14 +975,15 @@ pupa.simple <- pupa.t[,c("visits", "num.plantas" , "Fruit", "Seed",  "x_coor2", 
 
 pupa.test.2<-  left_join(solopupa, pupa ,by=c("Plot", "Subplot", "Plant_Simple","Seed", "Fruit", "num.plantas","unique_id")) %>%
   group_by(unique_id)%>%
-  distinct(unique_id, .keep_all=TRUE)
+  distinct(unique_id, .keep_all=TRUE)%>%
+  ungroup()
 
 pupa.test.2$visits[is.na(pupa.test.2$visits)] <- 0
 pupa.test.2$visitas_indv_hora[is.na(pupa.test.2$visitas_indv_hora)] <- 0
 pupa.test.2$seeds[is.na(pupa.test.2$seeds)] <- 0
 pupa.test.2$Group <- as.character(pupa.test.2$Group)
-pupa.test.2$Group[is.na(pupa.test.2$Group)] <- 'NONE'
-pupa.1.simple<- pupa.test.2[,c("Plot", "Subplot","Group", "visitas_indv_hora", "Plant_Simple", "num.plantas" , "Fruit", "Seed", "unique_id", 
+#pupa.test.2$Group[is.na(pupa.test.2$Group)] <- 'NONE'
+pupa.1.simple<- pupa.test.2[,c("Plot", "Subplot","Group", "visitas_indv_hora", "num.visits", "Plant_Simple", "num.plantas" , "Fruit", "Seed", "unique_id", 
                                "neigh_inter.plot","neigh_intra.plot",
                                "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
 #data of CHFU with visits, fitness and neighbors
@@ -933,80 +992,308 @@ pupa.final.fitness <- na.omit(pupa.final.fitness)
 
 graf.pupa <- cor(pupa.simple)
 symnum(graf.pupa, legend = TRUE)
+pupa.without0 <- subset(pupa.final.fitness, Seed>0)
 
-p1 <- lme(Seed ~ 1, data= pupa.final.fitness,random = ~1 |Plot, control=lCtr,
+p1 <- lme(log(Seed) ~ 1, data= pupa.1,random = ~1 |Plot, control=lCtr,
            method = "ML")
-p2 <- lme(Seed ~ 1, data= pupa.final.fitness, random = ~1 |Plot, control=lCtr,
+p2 <- lme(log(Seed) ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
            corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-p3 <- lme(Seed ~ 1, data= pupa.final.fitness, random = ~1 |Plot, control=lCtr,
+p3 <- lme(log(Seed) ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
            corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-p4 <- lme(Seed ~ 1, data= pupa.final.fitness, random = ~1 |Plot, control=lCtr,
+p4 <- lme(log(Seed) ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
            corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(p1, p2, p3, p4) # best model p3
+AIC(p1, p2, p3, p4) # best model p1, without space
 
-model5.1 <- lme(Seed ~ visitas_indv_hora*neigh_inter.1m*neigh_intra.1m+ Group, data= pupa.final.fitness, random = ~1 |Plot, control=lCtr,
-          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML") #no works
-           
+model5.1 <- lme(log(Seed) ~ visitas_indv_hora*Group + neigh_inter.1m*neigh_intra.1m, data= pupa.final.fitness, random = ~1 |Plot, control=lCtr,
+           method = "ML") 
 model_sec5.1 <- dredge(model5.1, trace = TRUE, rank = "AICc", REML = FALSE) 
 (attr(model_sec5.1, "rank.call"))
-fmList5.1 <- get.models(model_sec5.1, 1:8) #best model: Seed ~ 1 
-summary(model.avg(fmList5.1))# no significance
+fmList5.1 <- get.models(model_sec5.1, 1:8) 
+summary(model.avg(fmList5.1))# nothing significant
 
+#con ceros 
+pupa.without0 <- subset(pupa.final.fitness, Seed>0)
+p1.1 <- lme(log(Seed) ~ 1, data= pupa.without0,random = ~1 |Plot, control=lCtr,
+          method = "ML")
+p2.1 <- lme(log(Seed) ~ 1, data= pupa.without0, random = ~1 |Plot, control=lCtr,
+          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
+p3.1 <- lme(log(Seed) ~ 1, data= pupa.without0, random = ~1 |Plot, control=lCtr,
+          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
+p4.1 <- lme(log(Seed) ~ 1, data= pupa.without0, random = ~1 |Plot, control=lCtr,
+          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+AIC(p1.1, p2.1, p3.1, p4.1) #no space
+
+pupa.prueba <- lme(log(Seed) ~ visitas_indv_hora+neigh_inter.1m*neigh_intra.1m, data= pupa.without0, random = ~1 |Plot, control=lCtr,
+                    method = "ML")
+pupa.prueba_sec <- dredge(pupa.prueba, trace = TRUE, rank = "AICc", REML = FALSE)
+(attr(pupa.prueba_sec, "rank.call"))
+fmList.pupa <- get.models(pupa.prueba_sec, 1:4) 
+summary(model.avg(fmList.pupa))#nothing relevance
+#sin ceros
+pupa.prueba.1 <- lme(log(Seed) ~ visits+neigh_inter.1m*neigh_intra.1m, data= pupa.1, random = ~1 |Plot, control=lCtr,
+                     corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+pupa.prueba_sec1 <- dredge(pupa.prueba.1, trace = TRUE, rank = "AICc", REML = FALSE)
+(attr(pupa.prueba_sec1, "rank.call"))
+fmList.pupa1 <- get.models(pupa.prueba_sec1, 1:4) 
+summary(model.avg(fmList.pupa1))#sin ceros, nothing important. 
 
               #pollinators groups
     #>>bee----
-pupa.bee <- subset(pupa.final.fitness, Group== "Bee" )
-p1.b <- lme(Seed ~ 1, data= pupa.bee,random = ~1 |Plot, control=lCtr,
+pupa.bee <- subset(pupa.without0, Group== "Bee" )
+p1.b <- lme(log(Seed) ~ 1, data= pupa.bee,random = ~1 |Plot, control=lCtr,
           method = "ML")
-p2.b <- lme(Seed ~ 1, data= pupa.bee, random = ~1 |Plot, control=lCtr,
+p2.b <- lme(log(Seed) ~ 1, data= pupa.bee, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-p3.b <- lme(Seed ~ 1, data= pupa.bee, random = ~1 |Plot, control=lCtr,
+p3.b <- lme(log(Seed) ~ 1, data= pupa.bee, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-p4.b <- lme(Seed ~ 1, data= pupa.bee, random = ~1 |Plot, control=lCtr,
+p4.b <- lme(log(Seed) ~ 1, data= pupa.bee, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(p1.b, p2.b, p3.b, p4.b) # best model with space
-model.p1.bee <- lme(Seed ~ visitas_indv_hora*neigh_inter.1m*neigh_intra.1m, data= pupa.bee, random = ~1 |Plot, control=lCtr,
-                      corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
+AIC(p1.b, p2.b, p3.b, p4.b) # best model no space
+model.p1.bee <- lme(log(Seed) ~ visitas_indv_hora+neigh_inter.1m*neigh_intra.1m, data= pupa.bee, random = ~1 |Plot, control=lCtr,
+                      method = "ML")
 model_sec5.1.bee <- dredge(model.p1.bee, trace = TRUE, rank = "AICc", REML = FALSE) 
 (attr(model_sec5.1.bee, "rank.call"))
-fmList5.1.bee <- get.models(model_sec5.1.bee, 1:4) #best model: eed ~ neigh_inter.1m + neigh_intra.1m + 
-#                                               visitas_indv_hora + neigh_inter.1m:visitas_indv_hora + 1
+fmList5.1.bee <- get.models(model_sec5.1.bee, 1:4) 
 summary(model.avg(fmList5.1.bee))#nothing significant
 
     #>>butterflies----
-pupa.but <- subset(pupa.final.fitness, Group== "Butterfly" )
-p1.but <- lme(Seed ~ 1, data= pupa.but,random = ~1 |Plot, control=lCtr,
+pupa.but <- subset(pupa.without0, Group== "Butterfly" )
+p1.but <- lme(log(Seed) ~ 1, data= pupa.but,random = ~1 |Plot, control=lCtr,
             method = "ML")
-p2.but <- lme(Seed ~ 1, data= pupa.but, random = ~1 |Plot, control=lCtr,
+p2.but <- lme(log(Seed) ~ 1, data= pupa.but, random = ~1 |Plot, control=lCtr,
             corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-p3.but <- lme(Seed ~ 1, data= pupa.but, random = ~1 |Plot, control=lCtr,
+p3.but <- lme(log(Seed) ~ 1, data= pupa.but, random = ~1 |Plot, control=lCtr,
             corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-p4.but <- lme(Seed ~ 1, data= pupa.but, random = ~1 |Plot, control=lCtr,
+p4.but <- lme(log(Seed) ~ 1, data= pupa.but, random = ~1 |Plot, control=lCtr,
             corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(p1.but, p2.but, p3.but, p4.but) # best model p4.but
-pupa.but.model <- lme(Seed ~ visitas_indv_hora*neigh_inter.1m*neigh_intra.1m, data= pupa.but, random = ~1 |Plot, control=lCtr,
-                      corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
+AIC(p1.but, p2.but, p3.but, p4.but) # best model no space
+pupa.but.model <- lme(log(Seed) ~ visitas_indv_hora+neigh_inter.1m*neigh_intra.1m, data= pupa.but, random = ~1 |Plot, control=lCtr,
+                       method = "ML")
 model_sec5.1.but <- dredge(model.p1.bee, trace = TRUE, rank = "AICc", REML = FALSE) 
 (attr(model_sec5.1.but, "rank.call"))
-fmList5.1.but <- get.models(model_sec5.1.but, 1:4) #best model: log(Seed) ~ 1 
+fmList5.1.but <- get.models(model_sec5.1.but, 1:4) 
 summary(model.avg(fmList5.1.but))  #nothing significant          
 
     #flies only 6 entries,and no beetles
 
 #visits
-p1.v <- lme(visits ~ 1, data= pupa.1,random = ~1 |Plot, control=lCtr,
+p1.v <- lme(log(visits) ~ 1, data= pupa.1,random = ~1 |Plot, control=lCtr,
           method = "ML")
-p2.v <- lme(visits ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
+p2.v <- lme(log(visits) ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
-p3.v <- lme(visits ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
+p3.v <- lme(log(visits) ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
-p4.v <- lme(visits ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
+p4.v <- lme(log(visits) ~ 1, data= pupa.1, random = ~1 |Plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
-AIC(p1.v, p2.v, p3.v, p4.v) # best model p2.v, p3.v, p4.v. The ones that have the coordenates
+AIC(p1.v, p2.v, p3.v, p4.v) # no space
 
-model5.1.v <- lme(visits ~ Group*neigh_inter.1m*neigh_intra.1m, data= pupa.1, random = ~1 |Plot, control=lCtr,
-                corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
+model5.1.v <- lme(log(visits) ~ Group+neigh_inter.1m*neigh_intra.1m, data= pupa.1, random = ~1 |Plot, control=lCtr,
+                 method = "ML")
 model_sec5.1.v <- dredge(model5.1.v, trace = TRUE, rank = "AICc", REML = FALSE) 
 (attr(model_sec5.1.v, "rank.call"))
-fmList5.1.v <- get.models(model_sec5.1.v, 1:8) #best model: visits ~ neigh_intra.1m + 1 
-summary(model.avg(fmList5.1.v))#neigh intra 1m 
+fmList5.1.v <- get.models(model_sec5.1.v, 1:8)
+summary(model.avg(fmList5.1.v))#neigh intra 1m important***. 
+
+#SEM multigroup ----
+#Ahora tengo que hacer un SEM multigroup por especie de planta, en el que tengo que incluir los vecinos inter e intra
+# a todas las escalas y los polinizadores que me hayan dado algún tipo de importancia
+
+library(dplyr)
+library(corrgram)
+library(vegan)
+library(varhandle)
+#install.packages("semPlot")
+#install.packages("matrixcalc")
+#install.packages("mi")
+#install.packages("corrgram")
+library(semPlot)
+
+corrgram (pupa.1, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
+          diag.panel=panel.density, pch=16, lty=1, main="PUPA correlations")
+#------------------
+library(lavaan)
+#SEM para lema
+#diferentes variables de LEMA: el fitness de lema depende de los vecinos que estan 1m intra (si eso de los vecinos inter plot),
+# y las visitas dependen de 1 m inter 
+#voy a poner semillas en positivo con el log
+library(scales)
+chfu.sem.prueba <- chfu.1
+chfu.sem.prueba$Seed <- rescale(chfu.sem.prueba$Seed)
+chfu.sem.prueba$neigh_inter.plot <- rescale(chfu.sem.prueba$neigh_inter.plot)
+chfu.sem.prueba$neigh_intra.plot <- rescale(chfu.sem.prueba$neigh_intra.plot)
+chfu.sem.prueba$neigh_intra.3m  <- rescale(chfu.sem.prueba$neigh_intra.3m )
+chfu.sem.prueba$neigh_inter.3m <- rescale(chfu.sem.prueba$neigh_inter.3m)
+chfu.sem.prueba$neigh_intra.1m <- rescale(chfu.sem.prueba$neigh_intra.1m)
+chfu.sem.prueba$neigh_inter.1m <- rescale(chfu.sem.prueba$neigh_inter.1m)
+chfu.sem.prueba$neigh_intra.7.5 <- rescale(chfu.sem.prueba$neigh_intra.7.5)
+chfu.sem.prueba$neigh_inter.7.5 <- rescale(chfu.sem.prueba$neigh_inter.7.5)
+#pupa.sem.prueba$neigh_inter.1m <- as.integrate(pupa.sem.prueba$neigh_inter.1m)
+#chfu.sem.prueba$neigh_inter.1m <- log(chfu.sem.prueba$neigh_inter.1m) #muchos NAS, no se puede hacer el log porque hay 0s. 
+#pupa.sem.prueba$neigh_inter.7.5 <- log(pupa.sem.prueba$neigh_inter.7.5)
+#pupa.sem.prueba$neigh_intra.7.5 <- log(pupa.sem.prueba$neigh_intra.7.5)
+chfu.sem.prueba$neigh_inter.7.5 <- as.numeric(chfu.sem.prueba$neigh_inter.7.5)
+chfu.sem.prueba$neigh_intra.7.5 <- as.numeric(chfu.sem.prueba$neigh_intra.7.5)
+chfu.sem.prueba$neigh_inter.1m <- as.numeric(chfu.sem.prueba$neigh_inter.1m)
+chfu.sem.prueba$Group <- as.factor(chfu.sem.prueba$Group)
+
+pupa.sem1 <- pupa.sem.prueba[,c("Group", "num.visits", "Seed", "neigh_inter.plot","neigh_intra.plot",
+          "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")]
+
+
+#los grupos los tengo que cambiar a numeros, para poderlos meter en el modelo
+
+parameterEstimates(pupa.sem1, standardized=TRUE)
+
+modelo <- '
+#regresions
+#Plant_fitness =
+num.visits ~ Seed
+Seed ~ neigh_inter.7.5
+Seed~neigh_intra.7.5
+Seed~neigh_intra.1m
+Seed~neigh_inter.1m
+Seed~neigh_intra.3m
+Seed~neigh_inter.3m
+Seed~neigh_inter.plot
+Seed~neigh_intra.plot
+num.visits~neigh_intra.7.5
+num.visits~neigh_inter.7.5
+num.visits~neigh_intra.1m
+num.visits~neigh_inter.1m
+num.visits~neigh_intra.3m
+num.visits~neigh_inter.3m
+num.visits~neigh_inter.plot
+num.visits~neigh_intra.plot
+num.visits~Fly
+neigh_intra.7.5~Fly
+neigh_inter.7.5~Fly
+neigh_inter.1m~Fly
+neigh_intra.3m~Fly
+neigh_inter.3m~Fly
+neigh_inter.plot~Fly
+neigh_intra.plot~Fly
+
+#intercept
+'
+modelo1 <- '
+Seed =~ num.visits+Group + neigh_intra.1m+neigh_inter.1m+neigh_inter.plot
+'
+#install.packages('dummies')
+library(dummies)
+library(tidyverse)
+library(sjmisc)
+dummy <- to_dummy(chfu.sem.prueba$Group,var.name = "groups")
+litter<-cbind(dummy,chfu.sem.prueba)
+litter$Fly1 <- litter$groups_3
+litter$Beetle1 <- litter$groups_2
+litter$Bee1 <- litter$groups_1
+litter <-spread(litter, Group, visits, fill = 0, convert = FALSE,
+       drop = TRUE, sep = NULL) 
+
+
+#N.big =~neigh_inter.plot+neigh_intra.plot+neigh_intra.3m+neigh_inter.3m
+#N.small=~neigh_intra.1m+neigh_inter.1m+neigh_inter.7.5+neigh_intra.7.5
+#num.visits ~ neigh_inter.plot+neigh_intra.plot+neigh_intra.1m+neigh_inter.1m
+#N.small~~N.big
+
+modelo3 <- 'Seed ~ visits+Group + neigh_intra.7.5+neigh_intra.7.5+neigh_intra.1m+neigh_inter.1m
+          N.big =~neigh_inter.plot+neigh_intra.plot+neigh_intra.3m+neigh_inter.3m
+          N.small=~neigh_intra.1m+neigh_inter.1m+neigh_inter.7.5+neigh_intra.7.5
+          num.visits ~ Group+neigh_inter.plot+neigh_intra.plot+neigh_intra.3m+neigh_inter.3m+neigh_intra.1m+neigh_inter.1m+neigh_inter.7.5+neigh_intra.7.5
+          N.small~~N.big'
+library(lavaan)
+#◙install.packages('corrgram')
+#install.packages('seriation')
+library(corrgram)
+corrgram (chfu.sem.prueba, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
+          diag.panel=panel.density, pch=16, lty=1, main="Environmental correlations")
+litter2<- litter[,c("visits", "Seed", "visitas_indv_hora", 
+               "neigh_inter.plot","neigh_intra.plot",
+               "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
+vif(litter2)
+cor(litter2)
+fit2 <- cfa(model =modelo3,data= litter,check.gradient = FALSE,std.lv=TRUE, orthogonal=TRUE, ordered=c("Group")) #me salen mogollon de warnings       
+varTable(fit1)
+summary(fit1,fit.measures = TRUE, standardized = TRUE)
+summary(fit1)
+modindices(fit1, sort = TRUE, maximum.number = 10)
+
+multigroup2 <- sem(modelo, litter, group = "group") 
+
+#  c=~neigh_inter.plot+neigh_inter.3m+neigh_intra.7.5
+# d=~neigh_intra.plot+neigh_inter.3m+neigh_intra.1m
+#  e=~neigh_inter.plot+neigh_inter.3m+neigh_intra.1m
+#  f=~neigh_inter.1m+neigh_inter.3m
+# h=~neigh_inter.7.5+neigh_intra.1m
+install.packages("semPlot")
+library(semPlot)
+install.packages('arm')
+install.packages('Hmisc')
+library(arm)
+latent_formula2 <- '
+#regresions
+#Plant_Fitness=
+    N =~neigh_inter.plot+neigh_intra.plot+neigh_intra.3m+neigh_inter.3m+neigh_intra.1m+neigh_inter.1m+neigh_inter.7.5+neigh_intra.7.5
+    Fly ~ N
+   Seed ~ Fly + N
+#intercept'
+latent_model2 <- sem(latent_formula2, litter)
+m22 <- cfa(model =latent_model2,data= litter,check.gradient = FALSE,std.lv=TRUE, orthogonal=TRUE)
+vartable(m22)
+summary(latent_model2, standardize = T, rsq = T)
+summary(m22, fit.measures=TRUE)
+print(modindices(latent_model2))
+
+
+
+
+latent_formula4 <- '
+#regresions
+#Plant_Fitness=
+          Seed ~ Fly+ neigh_inter.plot+neigh_intra.plot+neigh_intra.3m+neigh_inter.3m+neigh_intra.1m+neigh_inter.1m+neigh_inter.7.5+neigh_intra.7.5
+          Fly ~neigh_inter.plot+neigh_intra.plot+neigh_intra.3m+neigh_inter.3m+neigh_intra.1m+neigh_inter.1m+neigh_inter.7.5+neigh_intra.7.5
+          
+#intercept'
+latent_model4 <- sem(latent_formula4, litter)
+m.model4 <- cfa(model =latent_model4,data= litter,check.gradient = FALSE,std.lv=TRUE, orthogonal=TRUE)
+vartable(m.model4)
+summary(latent_model4, standardize = T, rsq = T)
+print(modindices(latent_model4))
+
+
+
+
+latent_formula6 <- '
+#regresions
+#Plant_Fitness=
+    N =~neigh_inter.plot+neigh_intra.plot+neigh_intra.3m+neigh_inter.3m+neigh_intra.1m+neigh_inter.1m+neigh_inter.7.5+neigh_intra.7.5
+    Fly ~ N
+   Seed ~ Fly + N
+   neigh_intra.3m ~~   neigh_intra.1m
+   neigh_inter.3m ~~   neigh_inter.1m
+   neigh_intra.plot ~~   neigh_intra.3m
+   neigh_intra.plot ~~   neigh_intra.1m 
+   #intercept'
+latent_model6 <- sem(latent_formula6, litter)
+m6 <- cfa(model =latent_model6,data= litter,check.gradient = FALSE,std.lv=TRUE, orthogonal=TRUE, ordered=c("Group"))
+vartable(m6)
+summary(latent_model4, standardize = T, rsq = T)
+print(modindices(latent_model6))
+
+
+
+latent_formula9 <- '
+#regresions
+#Plant_Fitness=
+    N =~neigh_inter.plot+neigh_intra.plot+neigh_intra.3m+neigh_inter.3m+neigh_intra.1m+neigh_inter.1m+neigh_inter.7.5+neigh_intra.7.5
+       Seed ~ Fly + N
+       neigh_inter.plot ~~   neigh_inter.3m
+       neigh_inter.1m ~~ Seed
+       neigh_intra.plot ~~   neigh_inter.1m
+        neigh_intra.plot ~~   neigh_inter.1m 
+   #intercept'
+latent_model9 <- sem(latent_formula9, litter)
+m9 <- cfa(model =latent_model9,data= litter,check.gradient = FALSE,std.lv=TRUE, orthogonal=TRUE, ordered=c("Group"))
+vartable(m9)
+summary(latent_model9, standardize = T, rsq = T)
+print(modindices(latent_model9))
