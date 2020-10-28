@@ -188,7 +188,7 @@ w5 <- knn2nb(knearneigh(coordinates(disfinal[,3:4]), k=8))
 #neighbors data, there is not the plot 4
 start.plants <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours.2020_start.csv", header=T, sep=";")
 end.plants <- read.table("C:/Users/Cisco/Documents/TFM/data/focal_neighbours.2020_2nphenology.csv", header=T, sep=";")
-########
+
 ################################################ 1.Moran's I####################################################
 
 ##### ##############################>Pollinators#######################################
