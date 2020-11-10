@@ -575,6 +575,20 @@ moran.test(SCLA.fit$seeds,mat2listw(plots.dists.inv)) # 0.08
 moran.test(SCLA.fit$seeds, nb2listw(w5)) # vecinos, I= 0.12
 moran.plot(SCLA.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation SCLA across plots")
 
+#CHMI
+CHMI.fit <- CHMI %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
+CHMI.fit <- left_join(disfinal, CHMI.fit, by= c("plot", "subplot"))
+CHMI.fit$seeds <- CHMI.fit$seeds
+CHMI.fit$seeds [is.na(CHMI.fit$seeds )] <- 0
+
+chmi.corr.s <- spline.correlog(x=CHMI.fit$x_coor2, y=CHMI.fit$y_coor2,
+                               z=CHMI.fit$seeds, resamp=100, quiet=TRUE)
+plot(chmi.corr.s, main= " Spatial Autocorrelation CHMI fitness across plots")
+
+moran.test(CHMI.fit$seeds,mat2listw(plots.dists.inv)) # 6.541291e-02
+moran.test(CHMI.fit$seeds, nb2listw(w5)) # vecinos, I= 0.14
+moran.plot(CHMI.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation CHMI across plots")
+
 #global fitness
 
 juntas.plantas.fit <- plantas[,c("plot", "subplot","seed")]
@@ -600,6 +614,7 @@ plot(mesu.corr.s, main= " MESU fitness distribution across plots",xlab="Distance
 plot(scla.corr.s, main= " SCLA fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(soas.corr.s, main= " SOAS fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(spru.corr.s, main= " SPRU fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(chmi.corr.s, main= " Spatial Autocorrelation CHMI fitness across plots",xlab="Distance (m)", ylab="Correlation")
 plot(total.corr.pl.s, main= "Plant fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
 
@@ -1085,19 +1100,19 @@ CHFU.sem1$n_neighbors_intra <- rescale(CHFU.sem1$n_neighbors_intra)
 corrgram(CHFU.sem1, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
           diag.panel=panel.density, pch=16, lty=1, main="CHFU correlations") #to check the correlation between the variables
 
-multigroup.1 <- sem(modelo, CHFU.sem1, group = "distance_total") 
+multigroup.1 <- sem(modelo.chfu, CHFU.sem1, group = "distance_total") 
 summary(multigroup.1, standardize=T)
 varTable(multigroup.1)
 fitMeasures(multigroup.1, c("cfi","rmsea","srmr", "pvalue"))
 print(modindices(multigroup.1))
 
-multigroup2.constrained <- sem(modelo, CHFU.sem1, group = "distance_total", group.equal = c("intercepts", "regressions"))
+multigroup2.constrained <- sem(modelo.chfu, CHFU.sem1, group = "distance_total", group.equal = c("intercepts", "regressions"))
 summary(multigroup2.constrained)
 
 #I have to compare both models to see which is the best one.
-anova(multigroup.1, multigroup2.constrained)#better the constrained
+anova(multigroup.1, multigroup2.constrained)#better the NO contrained
 par(mfrow=c(1,1))
-semPaths(multigroup2.constrained) #aqui tengo que plotear el modelo que mejor me ha salido en el paso anterior
+semPaths(multigroup.1) #aqui tengo que plotear el modelo que mejor me ha salido en el paso anterior
 
 #Now I will try the same model but with all the levels of neighbors together, I mean, plot_intra, plot_inter...
 CHFU.sem.t <- subset(neigbors.intra.inter, Plant== "CHFU")
@@ -1115,9 +1130,9 @@ print(modindices(multigroup.1.t))
 
 multigroup2.constrained.t <- sem(modelo1.chfu, CHFU.sem1.t, group = "distance", group.equal = c("intercepts", "regressions"))
 summary(multigroup2.constrained.t)
-anova(multigroup.1.t, multigroup2.constrained.t)#better the constrained
+anova(multigroup.1.t, multigroup2.constrained.t)#better the NO constrained
 par(mfrow=c(1,1))
-semPaths(multigroup2.constrained.t)
+semPaths(multigroup.1.t)
 
 #> LEMA 
 
@@ -1146,7 +1161,7 @@ Beetle ~ n_neighbors
 '
 
 LEMA.sem <- subset(neigbors.intra.inter.split, Plant== "LEMA")
-LEMA.sem <- LEMA.sem[,c( "seed", "fruit", "x_coor2", "y_coor2", "Bee","Beetle",
+LEMA.sem <- LEMA.sem[,c("seed", "fruit", "x_coor2", "y_coor2", "Bee","Beetle",
                           "distance_total", "n_neighbors_inter" , "n_neighbors_intra")]# I only include the predictors
 #                                       that appear in the lme model
 LEMA.sem$seed <- rescale(LEMA.sem$seed) 
@@ -1186,9 +1201,9 @@ print(modindices(multigroup.1.lema.t))
 
 multigroup2.constrained.lema.t <- sem(modelo1.lema, LEMA.sem.t, group = "distance", group.equal = c("intercepts", "regressions"))
 summary(multigroup2.constrained.lema.t)
-anova(multigroup.1.lema.t, multigroup2.constrained.lema.t)#here the AIC smaller are the multigroup
+anova(multigroup.1.lema.t, multigroup2.constrained.lema.t)#multigroup constrained
 par(mfrow=c(1,1))
-semPaths(multigroup.1.lema.t)
+semPaths(multigroup2.constrained.lema.t)
 
 #PUPA 
 
@@ -1199,9 +1214,9 @@ seed ~ Fly
 seed ~ Beetle
 seed ~ n_neighbors_inter
 seed ~ n_neighbors_intra
-Fly ~  n_neighbors_intra
+Fly ~ n_neighbors_intra
 Fly ~ n_neighbors_inter
-Beetle ~  n_neighbors_intra
+Beetle ~ n_neighbors_intra
 Beetle ~ n_neighbors_inter
 #intercept
 '
@@ -1233,9 +1248,9 @@ print(modindices(multigroup.1.pupa))
 
 multigroup2.constrained.pupa <- sem(modelo.pupa, PUPA.sem, group = "distance_total", group.equal = c("intercepts", "regressions"))
 summary(multigroup2.constrained.pupa)
-anova(multigroup.1.lema, multigroup2.constrained.pupa)#better the constrained
+anova(multigroup.1.pupa, multigroup2.constrained.pupa)#better the NO constrained
 par(mfrow=c(1,1))
-semPaths(multigroup2.constrained.pupa)
+semPaths(multigroup.1.pupa)
 
 
 #Now I will try the same model but with all the levels of neighbors together, I mean, plot_intra, plot_inter...
@@ -1256,7 +1271,7 @@ print(modindices(multigroup.1.pupa.t))
 
 multigroup2.constrained.pupa.t <- sem(modelo1.pupa, PUPA.sem.t, group = "distance", group.equal = c("intercepts", "regressions"))
 summary(multigroup2.constrained.pupa.t)
-anova(multigroup.1.pupa.t, multigroup2.constrained.pupa.t)#Best model no constrained!
+anova(multigroup.1.pupa.t, multigroup2.constrained.pupa.t)#Best model no constrained
 par(mfrow=c(1,1))
 semPaths(multigroup.1.pupa.t)
 
