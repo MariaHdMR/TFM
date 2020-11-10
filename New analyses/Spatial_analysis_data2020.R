@@ -4,6 +4,7 @@
 # their neighbors (direct effects)? 3) Know the indirect and direct interactions at different levels that affect plant fitness
 #to answer this question we follow 3 main analysis: 1) Moran's I
 #libraries and packages----
+library(ggthemes) #to the ggplots
 library(tidyverse)
 library(ggplot2)
 library(tidyverse)
@@ -37,7 +38,7 @@ start.plants <- read.table("data/focal_neighbours.2020_start.csv", header=T, sep
 end.plants <- read.table("data/focal_neighbours.2020_2nphenology.csv", header=T, sep=";")
 
 #data of the coordenates of the plots
-distances <- read.csv("C:/data/caracolesplotposition.csv", sep = ";") 
+distances <- read.csv("data/caracolesplotposition.csv", sep = ";") 
 
 #pollinators, abundances and competition data
 FV <- read.table("data/Data_2020/raw_Pollinators_2020_1.csv", header=T, sep=";") #pollinators 2020
@@ -191,8 +192,8 @@ bet.corr <- spline.correlog(x=beetle.v$x_coor2, y=beetle.v$y_coor2,
 plot(bet.corr, main= " Spatial Autocorrelation beetles across plots")
 
 #test de moran. Aqui quiero obtener El estadistico de Moran y p.value 
-moran.test(beetle.v$visits,mat2listw(plots.dists.inv)) # I= 0.15
-moran.test(beetle.v$visits, nb2listw(w5)) # vecinos, I= 0.27
+moran.test(beetle.v$visits,mat2listw(plots.dists.inv)) # I= 1.085506e-01
+moran.test(beetle.v$visits, nb2listw(w5)) # vecinos, I= 0.17
 moran.plot(beetle.v$visits,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation Beetles across plots")
 
 #flies
@@ -259,12 +260,13 @@ moran.test(junto$visit, nb2listw(w5)) # vecinos, I= 0.099
 moran.plot(junto$visit,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation pollinators across plots")
 
 par(mfrow=c(2,3))
-plot(bet.corr, main= " Spatial Autocorrelation beetles across plots")
-plot(flies.corr, main= "Spatial autocorrelation flies across plots")
-plot(but.corr, main= "Spatial autocorrelation butterflies across plots")
-plot(bee.corr, main= "Spatial autocorrelation bees across plots")
-plot(total.corr, main= "Spatial Autocorrelation visitors across plots")
+plot(bet.corr, main= " Beetles distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(flies.corr, main= "Flies distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(but.corr, main= "Butterflies distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(bee.corr, main= "Bees distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(total.corr, main= "Floral visitors distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
+       
 ############################################ >Plants I de Moran########################################
 plantas <- final[,c("plot", "subplot", "Plant", "individuals", "fruit", "seed")]
 plantas <- plantas[-which(duplicated(plantas)), ] #It appears in the data set a lot of duplicated rows, because the previus data set was with the pollinators
@@ -433,16 +435,16 @@ moran.test(num.plant$num.planta,mat2listw(plots.dists.inv)) # I= 0.58
 moran.test(num.plant$num.planta, nb2listw(w5)) # vecinos, I= 0.72
 moran.plot(num.plant$num.planta,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation plants across plots")
 par(mfrow=c(4,3))
-plot(chfu.corr, main= " Spatial Autocorrelation CHFU across plots")
-plot(lema.corr, main= " Spatial Autocorrelation LEMA across plots")
-plot(pupa.corr, main= " Spatial Autocorrelation PUPA across plots")
-plot(me.corr, main= " Spatial Autocorrelation MESU across plots")
-plot(cete.corr, main= " Spatial Autocorrelation CETE across plots")
-plot(bema.corr, main= " Spatial Autocorrelation BEMA across plots")
-plot(scla.corr, main= " Spatial Autocorrelation SCLA across plots")
-plot(spru.corr, main= " Spatial Autocorrelation SPRU across plots")
-plot(soas.corr, main= " Spatial Autocorrelation SOAS across plots")
-plot(total.corr.pl, main= "Spatial Autocorrelation plants across plots")
+plot(chfu.corr, main= " CHFU distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(lema.corr, main= " LEMA distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(pupa.corr, main= " PUPA distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(me.corr, main= " MESU distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(cete.corr, main= " CETE distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(bema.corr, main= " BEMA distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(scla.corr, main= " SCLA distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(spru.corr, main= " SPRU distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(soas.corr, main= " SOAS distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(total.corr.pl, main= "Plants distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
 
 ##########################################>Fitness I de Moran###################################################
@@ -591,14 +593,14 @@ moran.test(juntas.plantas.fit$seeds, nb2listw(w5)) # vecinos, I=  -0.0089702967
 moran.plot(juntas.plantas.fit$seeds,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation plants fitness across plots")
 
 par(mfrow=c(3,3))
-plot(chfu.corr.s, main= " Spatial Autocorrelation CHFU fitness across plots")
-plot(lema.corr.s, main= " Spatial Autocorrelation LEMA fitness across plots")
-plot(pupa.corr.s, main= " Spatial Autocorrelation PUPA fitness across plots")
-plot(mesu.corr.s, main= " Spatial Autocorrelation MESU fitness across plots")
-plot(scla.corr.s, main= " Spatial Autocorrelation SCLA fitness across plots")
-plot(soas.corr.s, main= " Spatial Autocorrelation SOAS fitness across plots")
-plot(spru.corr.s, main= " Spatial Autocorrelation SPRU fitness across plots")
-plot(total.corr.pl.s, main= "Spatial Autocorrelation plant fitness across plots")
+plot(chfu.corr.s, main= " CHFU fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(lema.corr.s, main= " LEMA fitness distributionfitness across plots",xlab="Distance (m)", ylab="Correlation")
+plot(pupa.corr.s, main= " PUPA fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(mesu.corr.s, main= " MESU fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(scla.corr.s, main= " SCLA fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(soas.corr.s, main= " SOAS fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(spru.corr.s, main= " SPRU fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
+plot(total.corr.pl.s, main= "Plant fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
 
 #NEIGHBORS Data transformation----
@@ -746,12 +748,13 @@ g.chfu <- ggplot(CHFU.vis, aes(x = neigh_intra.1m))+
   geom_smooth(method = "lm",aes(y=fittedvalues))+
   ggtitle("CHFU fitness with neighbors intra at 1m")+
   ylab("Number of seeds (log)")+
-  xlab("Number of neighbors intra at 1m")
+  xlab("Number of neighbors intra at 1m")+
+  theme_light()
 g.chfu #in this graph i just add the fitted values of the model
 
 
 #ggsave(filename = paste("Graphics/2020/CHFU.fitness.pdf",sep=""),
- #    plot = g.chfu,width = 9,height = 3,dpi = 600)
+ #   plot = g.chfu,width = 9,height = 3,dpi = 600)
 
 
 #>LEMA
@@ -788,9 +791,13 @@ b <- ggplot(LEMA.vis, aes(x = neigh_inter.1m))+
     geom_smooth(method = "lm",aes(y=fittedvalues))+
     ylab("Number of seeds (log)")+
     xlab("Number of neighbors inter at 1m")+
-    ggtitle("LEMA fitness with neighbors inter at 1m")
+    ggtitle("LEMA fitness with neighbors inter at 1m")+
+  theme_light()
 
 b #outlayer!
+
+#ggsave(filename = paste("Graphics/2020/LEMA.fitness.pdf",sep=""),
+ #      plot = b,width = 9,height = 3,dpi = 600)
 
 #>PUPA
 PUPA.vis <- subset(data.spread.visitors, Plant == "PUPA") 
@@ -834,11 +841,13 @@ b.p <- ggplot(PUPA.vis, aes(x = neigh_inter.1m))+
   geom_smooth(method = "lm",aes(y=fittedvalues))+
   ylab("Number of seeds (log)")+
   xlab("Number of neighbors intra at 1m")+
-  ggtitle("PUPA fitness with neighbors intra at 1m")
+  ggtitle("PUPA fitness with neighbors intra at 1m")+
+  theme_light()
 b.p
 
 
-
+#ggsave(filename = paste("Graphics/2020/PUPA.fitness.pdf",sep=""),
+ #      plot = b.p,width = 9,height = 3,dpi = 600)
 #>MESU
 MESU.vis <- subset(data.spread.visitors, Plant == "MESU") #only 1 row
 #>cete
@@ -919,8 +928,15 @@ Bet.vis$fittedvalues <- fitted(k)
 k.bet <- ggplot(Bet.vis, aes(x = neigh_intra.1m))+
     geom_point(aes(y= log(visits)))+
     geom_smooth(method = "lm",aes(y=fittedvalues))+
-    ggtitle("Beetle visits with neighbors intra at 1m")
+    ggtitle("Beetle visits with neighbors intra at 1m")+
+  ylab("Number of visits (log)")+
+  xlab("Number of neighbors intra at 1m")+
+  theme_light()
 k.bet
+
+
+#ggsave(filename = paste("Graphics/2020/Beetle.neigh.pdf",sep=""),
+ #      plot = k.bet,width = 9,height = 3,dpi = 600)
 
 #flies visits
 fly.vis <- subset(vis.all, Group== "Fly") #Here I have also same coordenates for different rows. I need to change them. I'm 
@@ -968,8 +984,15 @@ fly.vis$fittedvalues <- fitted(k1)
 k.fly <- ggplot(fly.vis, aes(x = neigh_intra.1m))+
     geom_point(aes(y= log(visits)))+
     geom_smooth(method = "lm",aes(y=fittedvalues))+
-    ggtitle("Fly visits with neighbors intra at 1m")
+    ggtitle("Fly visits with neighbors intra at 1m")+
+  ylab("Number of visits (log)")+
+  xlab("Number of neighbors intra at 1m")+
+  theme_light()
 k.fly
+
+
+#ggsave(filename = paste("Graphics/2020/Fly.neigh.pdf",sep=""),
+ #      plot = k.fly,width = 9,height = 3,dpi = 600)
 
 ##butterflies
 but.vis <- subset(vis.all, Group== "Butterfly") #solo 3 entradas
@@ -1012,9 +1035,13 @@ bee.vis$fittedvalues <- fitted(k2.bee)
 k.bee <- ggplot(bee.vis, aes(x = neigh_intra.1m))+
     geom_point(aes(y= log(visits)))+
     geom_smooth(method = "lm",aes(y=fittedvalues))+
-    ggtitle("Bee visits with neighbors intra at 1m")
+    ggtitle("Bee visits with neighbors intra at 1m")+
+  ylab("Number of visits (log)")+
+  xlab("Number of neighbors intra at 1m")+
+  theme_light()
 k.bee
-
+#ggsave(filename = paste("Graphics/2020/Bee.neigh.pdf",sep=""),
+ #      plot = k.bee,width = 9,height = 3,dpi = 600)
 
 #SEM----
 #>CHFU.
