@@ -35,34 +35,48 @@ library(lavaan)#SEM
 
 #neighbors data, there is not the plot 4
 start.plants <- read.table("data/focal_neighbours.2020_start.csv", header=T, sep=";")
+head(start.plants)
 end.plants <- read.table("data/focal_neighbours.2020_2nphenology.csv", header=T, sep=";")
+head(end.plants)
 
 #data of the coordenates of the plots
 distances <- read.csv("data/caracolesplotposition.csv", sep = ";") 
+head(distances)
 
 #pollinators, abundances and competition data
 FV <- read.table("data/Data_2020/raw_Pollinators_2020_1.csv", header=T, sep=";") #pollinators 2020
+head(FV)
 FV3 <- FV %>% group_by(Plot, Subplot,Group,ID_Simple, Plant) %>% summarise (visits = sum(Visits))%>%
     ungroup()
 FV3$ID <- FV3$ID_Simple
+head(FV3)
+
 Ab <-read.table("data/Data_2020/Abundances_2020.csv", header=T, sep=";")#plants abundance 2020
+head(Ab)
 Ab <- subset(Ab, plot != 4)
 #there is an error in the Abundance data base. It appears for the same subplot and plot 2 measures of abundance for the same species
 #the next row is to fix this error
 Ab$unique_id <- paste(Ab$plot, Ab$subplot,Ab$species, sep="_")
 Ab <- Ab %>% distinct(unique_id, .keep_all = TRUE)
+
 comp <- competencia <- read.table("data/Data_2020/competition_caracoles2020.csv", header=T, sep=";")#competition 2020
+head(comp)
 comp <- subset(comp, plot != 4)
+
 fitness <- read.table("data/Data_2020/Fitness_2020.csv", header=T, sep=";")
+head(fitness)
 fitness <- subset(fitness, Plot != 4)
+
 alfonsodata<-  read_csv2("data/Data_2020/2020_data_models_phenol_overlap_bueno.csv")
+head(alfonsodata)
 alfonsodata<- alfonsodata[,c("Plot","Subplot","Plant","Seeds_GF","Fruit_GF", "visits_GF", "ID")]
 alfonsodata$seed <- alfonsodata$Seeds_GF
 alfonsodata$fruit <- alfonsodata$Fruit_GF
 alfonsodata$visits <- alfonsodata$visits_GF
 alfonsodata <- subset(alfonsodata, Plot != 4)
-FV3.2 <- FV3[,c("ID", "Group")]
 
+FV3.2 <- FV3[,c("ID", "Group")]
+head(FV3.2)
 
 todo.1 <- left_join(alfonsodata, FV3.2,  by= c("ID"))
 todo.1 <- distinct(todo.1)
@@ -72,11 +86,12 @@ todo.1.1 <- todo.1 %>% group_by(Plot, Subplot, Group, Plant, seed, fruit) %>% su
 fitness <- fitness[,c("Plot","Subplot","Plant","Seeds.Fruit","Mean.Seeds.Fruit")]
 
 #select the floral visitors that i want
+head(todo.1.1)
 todo1 <- subset(todo.1.1, Plot != "OUT")
 todo4 <- subset(todo1, Subplot != "OUT")
 todo4 <- subset(todo4, Plot != 4)
 
-todo4$vis <- as.numeric(todo4$vis)
+todo4$vis <- as.numeric(todo4$vis) #necesary?
 todo4$seed <- as.numeric(todo4$seed)
 todo4$fruit <- as.numeric(todo4$fruit)
 
@@ -101,11 +116,12 @@ final$individuals <- as.numeric(final$individuals)
 final$individuals[is.na(final$individuals)] <- 1
 
 final$visits[final$visits== 0] <- 0.01 #in order to not have 0 to do the log I change the 0 values to 0,01
-final$visitas_indv <- final$visits/ final$individuals
+final$visitas_indv <- final$visits/ final$individuals #Aqui es donde no me cuadra el calculo.
+#Visitas por flor o visitas totales, no?
 final$visitas_indv_hora <- (final$visitas_indv*60)/30#this is to have the numer of visits per individuals per hour.
 final$visitas_indv_hora2 <- log(final$visitas_indv_hora ) #the distribution of the visits is check doing the log.
 hist(final$visitas_indv_hora2)
-
+hist(log(final$visits)) #zero inflated...
 
 #la base de datos de "final" ya tiene los polinizadores,las visitas/hora/indv, las plantas, y 
 #                       las abundancias de las plantas
@@ -185,6 +201,7 @@ beetle.v <- beetle[,c("plot", "subplot","visitas_indv_hora")] #datos de plot, su
 beetle.v <-beetle.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visitas_indv_hora))
 beetle.v <- left_join(disfinal, beetle.v, by= c("plot", "subplot"))
 beetle.v$visits[is.na(beetle.v$visits)] <- 0
+head(beetle.v)
 
 #grafico de la correlacion espacial
 bet.corr <- spline.correlog(x=beetle.v$x_coor2, y=beetle.v$y_coor2,
@@ -195,6 +212,27 @@ plot(bet.corr, main= " Spatial Autocorrelation beetles across plots")
 moran.test(beetle.v$visits,mat2listw(plots.dists.inv)) # I= 1.085506e-01
 moran.test(beetle.v$visits, nb2listw(w5)) # vecinos, I= 0.17
 moran.plot(beetle.v$visits,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation Beetles across plots")
+
+#beetles (Nacho plays with data)
+beetle <- subset(final, Group == "Beetle")
+beetle$plot <- as.numeric(as.character(beetle$plot))
+head(beetle)
+beetle.v <- beetle[,c("plot", "subplot","visits")] #datos de plot, subplot, y visitas de BEETLES
+beetle.v <-beetle.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visits))
+beetle.v <- left_join(disfinal, beetle.v, by= c("plot", "subplot"))
+beetle.v$visits[is.na(beetle.v$visits)] <- 0
+head(beetle.v)
+#grafico de la correlacion espacial
+bet.corr <- spline.correlog(x=beetle.v$x_coor2, y=beetle.v$y_coor2,
+                            z=beetle.v$visits, resamp=100, quiet=TRUE) 
+plot(bet.corr, main= " Spatial Autocorrelation beetles across plots")
+#A MI ME GUSTARIA QUE LA SPLIE FUERA MÁS SMOOTH, AHORA FLUCTUA MUCHO... OSCAR, SABES COMO TOCAR ESE PARAMETRO?
+#test de moran. Aqui quiero obtener El estadistico de Moran y p.value 
+moran.test(beetle.v$visits,mat2listw(plots.dists.inv)) # I= 0.33 (in plot = large distances)
+moran.test(beetle.v$visits, nb2listw(w5)) # vecinos, I= 0.44 (in plot = short distances)
+moran.plot(beetle.v$visits,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation Beetles across plots")
+#Yo voto usar observaciones, por que la pregunta es sobre si los escarabajos estan clustered o no.
+#Alternativamente, podemos usar visitation rate (POR FLOR) que es otra pregunta.
 
 #flies
 flies <- subset(final, Group == "Fly")
@@ -272,19 +310,20 @@ plantas <- final[,c("plot", "subplot", "Plant", "individuals", "fruit", "seed")]
 plantas <- plantas[-which(duplicated(plantas)), ] #It appears in the data set a lot of duplicated rows, because the previus data set was with the pollinators
 #                                                   so we have to eliminate the duplicates, and I did it with this step
 #CHFU
-CHFU <- subset(plantas, Plant == "CHFU")
+CHFU <- subset(plantas, Plant == "CHFU") #ESTO USA INDIVIDUOS POR m2? O INTRAS?
 CHFU$individuals <- as.numeric(CHFU$individuals)
 CHFU.p <- CHFU %>% group_by(plot, subplot) %>% summarise (num.planta = sum(individuals))
 CHFU.p <- left_join(disfinal, CHFU.p,by= c("plot", "subplot"))
 CHFU.p$num.planta[is.na(CHFU.p$num.planta)] <- 0
+head(CHFU)
 
 #grafico de la correlacion espacial
 chfu.corr <- spline.correlog(x=CHFU.p$x_coor2, y=CHFU.p$y_coor2,
                              z=CHFU.p$num.planta, resamp=100, quiet=TRUE)
 plot(chfu.corr, main= " Spatial Autocorrelation CHFU across plots")
 
-moran.test(CHFU.p$num.planta,mat2listw(plots.dists.inv)) # I= 0.38
-moran.test(CHFU.p$num.planta, nb2listw(w5)) # vecinos, I= 0.48
+moran.test(CHFU.p$num.planta,mat2listw(plots.dists.inv)) # I= 0.38 #No cuadra con el grafico! Por que no es negativo?
+moran.test(CHFU.p$num.planta, nb2listw(w5)) # vecinos, I= 0.48 #Cuadra con el grafico
 moran.plot(CHFU.p$num.planta,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation CHFU across plots")
 #LEMA
 LEMA <- subset(plantas, Plant == "LEMA")  
@@ -298,8 +337,8 @@ lema.corr <- spline.correlog(x=LEMA.2$x_coor2, y=LEMA.2$y_coor2,
                              z=LEMA.2$num.planta, resamp=100, quiet=TRUE)
 plot(lema.corr, main= " Spatial Autocorrelation LEMA across plots")
 
-moran.test(LEMA.2$num.planta,mat2listw(plots.dists.inv)) # I= 0.58
-moran.test(LEMA.2$num.planta, nb2listw(w5)) # vecinos, I= 0.73
+moran.test(LEMA.2$num.planta,mat2listw(plots.dists.inv)) # I= 0.58 #Idem...
+moran.test(LEMA.2$num.planta, nb2listw(w5)) # vecinos, I= 0.73 
 moran.plot(LEMA.2$num.planta,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation LEMA across plots")
 #PUPA 
 PUPA <- subset(plantas, Plant == "PUPA")
@@ -688,7 +727,7 @@ data <- na.omit(data)
 
 data <- data[,c("plot","subplot","Plant","Group","visits.total", "individuals", "seed", "fruit",  "neigh_inter.plot","neigh_intra.plot",
                 "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5", "x_coor2", "y_coor2")] 
-
+head(data)
 data.spread.visitors <- spread(data, Group, visits.total, fill = 0, convert = FALSE,
                                drop = TRUE, sep = NULL) #final data of neighbors and the visitors spread it. 
 
@@ -717,7 +756,7 @@ intra.neigh$distance[intra.neigh$distance_total == "f"] <- "e"#1M
 intra.neigh$distance[intra.neigh$distance_total == "h"] <- "g"#7.5cm
 intra <- intra.neigh[,c("n_neighbors_intra" )] 
 neigbors.intra.inter.split<- cbind(inter.neigh, intra)# in this data i have the neighbors separate with the level plot, 3m, 1m and 7.5 cm
-
+head(neigbors.intra.inter.split)
 ##################################################3. GLM#######################################################################
 #control for the lme
 lCtr <- lmeControl(maxIter = 5000, msMaxIter = 5000, tolerance = 1e-9, niterEM = 250, msMaxEval = 200)#this lmecontrol is
@@ -742,12 +781,19 @@ m3 <- lme(log.seed ~ 1, data= CHFU.vis, random = ~1 |plot, control=lCtr,
 m4 <- lme(log.seed ~ 1, data= CHFU.vis, random = ~1 |plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
 AIC(m1, m2, m3, m4) #best model is m1, without coordenates
+#IS THIS CORRECT? CAN YOU USE AIC (in models with method = ML) FOR THIS? I am asking as I don't know.
 
 options(na.action = "na.fail")
 
 #final model for CHFU
-m.prueba.chufu.3 <- lme(log.seed ~ Beetle+Fly+ Bee +neigh_inter.1m*neigh_intra.1m, data= CHFU.vis, random = ~1 |plot, control=lCtr,
+head(as.data.frame(CHFU.vis))
+m.prueba.chufu.3 <- lme(log.seed ~ Beetle+Fly+ Bee +neigh_inter.1m*neigh_intra.1m, 
+                        data= CHFU.vis, random = ~1 |plot, control=lCtr,
                          method = "ML")
+summary(m.prueba.chufu.3) #por que solo 37 obs?
+#por que solo inter's a 1m? Pense que comparabamos a diferentes escalas, o a 7.5 sino...
+#visits are per individual, which may be biasing our estimates.
+#QUESTION why drege the model, and not just presenting the full model?
 m.prueba_sec.chufu.2 <- dredge(m.prueba.chufu.3, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(m.prueba_sec.chufu.2, "rank.call"))
 fmList.prueba.chufu.2 <- get.models(m.prueba_sec.chufu.2, 1:6) 
@@ -793,6 +839,7 @@ options(na.action = "na.fail")
 m.prueba.lema.2 <- lme(log.seed ~ Beetle+Fly+ Bee +neigh_inter.1m+neigh_intra.1m, data= LEMA.vis, random = ~1 |plot, control=lCtr,
                        corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")# This model includes the log.seed
 #                                                               because, with only the seeds, the model have an error of convergence. 
+summary(m.prueba.lema.2)
 m.prueba_sec.lema.2 <- dredge(m.prueba.lema.2, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(m.prueba_sec.lema.2, "rank.call"))
 fmList.prueba.lema.2 <- get.models(m.prueba_sec.lema.2, 1:4) 
@@ -838,6 +885,8 @@ m.prueba.pupa.2 <- lme(log.seed ~ Beetle+Fly+ Bee+Butterfly +neigh_inter.1m+neig
                        method = "ML")
 m.prueba.pupa.6 <- lme(seed ~ Beetle+Fly+ Bee+Butterfly +neigh_inter.1m+neigh_intra.1m, data= PUPA.vis, random = ~1 |plot, control=lCtr,
                        method = "ML")
+plot(m.prueba.pupa.2) #looks good, use log.
+plot(m.prueba.pupa.6) #Not good.
 
 m.prueba_sec.pupa.2 <- dredge(m.prueba.pupa.2, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(m.prueba_sec.pupa.2, "rank.call"))
@@ -846,7 +895,7 @@ summary(model.avg(fmList.prueba.pupa.2))# maybe neigh intra 1m
 r.squaredGLMM(m.prueba.pupa.2)
 residplot(m.prueba.pupa.2) # I have doubts with which of them have the best distribution of residuals. I thin that with the log 
 #                               it is better
-residplot(m.prueba.pupa.6)
+residplot(m.prueba.pupa.6) #clearly, this is not good, the trend is too pronounced.
 
 
 
@@ -897,7 +946,10 @@ vis.all <- data %>% group_by(plot, subplot, visits.total, Group, x_coor2, y_coor
 #Beetle visits
 Bet.vis <- subset(vis.all, Group== "Beetle")
 #In Bet.vis I have some coordenates that are not unique, for that I change in 0.1 the y_coord in other to have different coordenates and the model could 
-#           converge. The next lines in the code are for changing these y coordenates. 
+#           converge. The next lines in the code are for changing these y coordenates.
+#YOU CAN DO THIS BY USING:
+#Bet.vis$x_coor2 <-  jitter(Bet.vis$x_coor2)
+
 Bet.vis[37, 6]<-  57.6
 Bet.vis[58, 6]<-  289.1
 Bet.vis[71, 6]<-  274.6
@@ -933,6 +985,9 @@ AIC(c.vis.bet.1, c2.vis.bet.1, c3.vis.bet.1, c4.vis.bet.1)#best model 1, I check
 
 k <- lme(log(visits) ~ neigh_inter.1m+ neigh_intra.1m, data= Bet.vis,random = ~1 |plot, control=lCtr,
     method = "ML")
+#ok, ya veo, las visitas a una planta (luego discutimos como están calculadas) dependen de inter y intra
+#POR TANTO; NO TENDRIA QUE IR ESPECIE en Random?
+#MIRA MI COMENT EN GDOCS SOBRE LA REDUNDANCIA DE ESTE MODELO
 residplot(k) #i just tried also the model without the log, and the residuals and the q-q plot have a worst distribution
 m.prueba_sec.k <- dredge(k, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(m.prueba_sec.k, "rank.call"))
