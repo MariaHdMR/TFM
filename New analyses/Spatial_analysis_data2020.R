@@ -30,8 +30,11 @@ library(sjmisc)
 library(corrgram)#SEM
 library(sem)#SEM
 library(lavaan)#SEM
+library(tidyr)
 
 #load data and data transformations----
+
+
 
 #neighbors data, there is not the plot 4
 start.plants <- read.table("data/focal_neighbours.2020_start.csv", header=T, sep=";")
@@ -39,120 +42,110 @@ head(start.plants)
 end.plants <- read.table("data/focal_neighbours.2020_2nphenology.csv", header=T, sep=";")
 head(end.plants)
 
+#NEIGHBORS Data transformation
+start.plants <- subset(start.plants,edge %in% c("FALSE"))#esto es para quitar aquellas plantas que estan en los bordes. 
+#                           Esto hace que no tenga las columnas A y F, ni las finasl 1 y 6
+start.plants <- subset(start.plants, focal %in% c("SOAS","CHFU","LEMA","CHMI", "SCLA"))
+
+end.plants <- subset(end.plants,edge %in% c("FALSE"))
+end.plants <- subset(end.plants, focal %in% c("BEMA","CETE","MESU","PUPA", "SPRU"))
+neighbors <- rbind(start.plants, end.plants) #all the neighbors together, now i have to join to the final dataset
+neighbors_1 <- neighbors[-which(duplicated(neighbors)), ] 
+neighbors_1$Plant <- neighbors_1$focal
+neighbors_1$neigh_inter <- as.numeric(neighbors_1$neigh_inter)
+neighbors_1$neigh_intra <- as.numeric(neighbors_1$neigh_intra)
+neighbors_1$unique_id <- paste(neighbors_1$plot, neighbors_1$subplot,neighbors_1$Plant,neighbors_1$distance, sep="_")
+neighbors1 <- neighbors_1 %>% distinct(unique_id, .keep_all = TRUE)
+final$unique_id <- paste(final$plot, final$subplot,final$Plant, sep="_")
+final$subplot <- as.factor(final$subplot)
+final$Plant <- as.factor(final$Plant)
+
+neighbors <- neighbors_1[,c("plot","subplot","Plant","distance", "neigh_intra","neigh_inter")] 
+
+
+neighbors.7.5 <- subset(neighbors, distance %in% c("d1")) 
+neighbors.7.5$distance7.5 <- neighbors.7.5$distance
+neighbors.7.5$neigh_intra.7.5 <- neighbors.7.5$neigh_intra
+neighbors.7.5$neigh_inter.7.5<- neighbors.7.5$neigh_inter
+
+neighbors.1m <- subset(neighbors, distance %in% c("d2")) 
+neighbors.1m$distances.1m <- neighbors.1m$distance
+neighbors.1m$neigh_intra.1m <- neighbors.1m$neigh_intra
+neighbors.1m$neigh_inter.1m<- neighbors.1m$neigh_inter
+neighbors.3m <- subset(neighbors, distance %in% c("d3")) 
+neighbors.3m$distances.3m <- neighbors.3m$distance
+neighbors.3m$neigh_intra.3m <- neighbors.3m$neigh_intra
+neighbors.3m$neigh_inter.3m<- neighbors.3m$neigh_inter
+neighbors.plot <- subset(neighbors, distance %in% c("d4")) 
+neighbors.plot$distances.plot <- neighbors.plot$distance
+neighbors.plot$neigh_intra.plot <- neighbors.plot$neigh_intra
+neighbors.plot$neigh_inter.plot <- neighbors.plot$neigh_inter
+
+a <- dplyr::full_join(neighbors.7.5, neighbors.1m, by= c("plot", "subplot",  "Plant"))
+
+b <- dplyr::full_join(neighbors.3m, neighbors.plot, by= c("plot", "subplot",  "Plant"))
+
+ab<- dplyr::full_join(a, b, by= c("plot", "subplot",  "Plant"))
+head(ab) 
+vecinos<- ab[,c("plot","subplot","Plant", "neigh_inter.plot","neigh_intra.plot",
+                "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
+vecinos <- unique(vecinos)
+vecinos$unique_id <- paste(vecinos$plot, vecinos$subplot,vecinos$Plant, sep="_")
+vecinos <- vecinos %>% distinct(unique_id, .keep_all = TRUE)
+#final$unique_id <- paste(final$plot, final$subplot,final$Plant, sep="_")
+final.data <- dplyr::full_join( final, vecinos , by=c("plot", "subplot", "Plant")) #veinos + base de datos pol+abund
+
+none.visitor <- na.omit(final.data) #only neighbors in the places that i have a pollinator
+none.visitor<- none.visitor[,c("plot","subplot","Plant","Group","visits", "individuals", "seed", "fruit", "visitas_indv", "visitas_indv_hora", "neigh_inter.plot","neigh_intra.plot",
+                               "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
+
+
+data <- dplyr::full_join(none.visitor, disfinal, by=c("plot", "subplot"))#ahora junto la base de datos con la de las coordenadas
+#this data have all the neigbors together
+
+
+data <- data %>% group_by(plot, subplot, Plant, Group, individuals, seed, fruit,visitas_indv_hora, x_coor2, y_coor2,
+                          neigh_inter.plot,neigh_intra.plot,neigh_intra.3m ,neigh_inter.3m, neigh_inter.1m ,neigh_intra.1m ,
+                          neigh_inter.7.5,neigh_intra.7.5) %>% summarise (visits.total = sum(visitas_indv_hora))%>%
+  ungroup()
+data <- na.omit(data)
+
+data <- data[,c("plot","subplot","Plant","Group","visits.total", "individuals", "seed", "fruit",  "neigh_inter.plot","neigh_intra.plot",
+                "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5", "x_coor2", "y_coor2")] 
+head(data)
+data.spread.visitors <- spread(data, Group, visits.total, fill = 0, convert = FALSE,
+                               drop = TRUE, sep = NULL) #final data of neighbors and the visitors spread it. 
+
+
+neigbors.intra.inter <- tidyr::gather(data.spread.visitors,'neigh_inter.plot', 'neigh_intra.plot', 'neigh_intra.3m', 'neigh_inter.3m', 'neigh_inter.1m', 
+                                      'neigh_intra.1m', 'neigh_inter.7.5', 'neigh_intra.7.5', key = "distance", value = "n_neighbors" )
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.plot"] <- "a"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.plot"] <- "b"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.3m"] <- "c"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.3m"] <- "d"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.1m"] <- "e"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.1m"] <- "f"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.7.5"] <- "g"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.7.5"] <- "h"
+neigbors.intra.inter$distance <- as.factor(neigbors.intra.inter$distance)
+neigbors.intra.inter$n_neighbors_total <- neigbors.intra.inter$n_neighbors 
+neigbors.intra.inter$distance_total <- neigbors.intra.inter$distance
+inter.neigh <- subset(neigbors.intra.inter, distance_total%in% c("a","c","e","g"))
+inter.neigh$n_neighbors_inter <- inter.neigh$n_neighbors_total
+intra.neigh <- subset(neigbors.intra.inter, distance_total%in% c("b","d","f","h"))
+intra.neigh$distance_total <- as.character(intra.neigh$distance_total)
+intra.neigh$n_neighbors_intra <- intra.neigh$n_neighbors_total
+intra.neigh$distance[intra.neigh$distance_total == "b"] <- 'a' #PLOT
+intra.neigh$distance[intra.neigh$distance_total == "d"] <- "c"#3M
+intra.neigh$distance[intra.neigh$distance_total == "f"] <- "e"#1M
+intra.neigh$distance[intra.neigh$distance_total == "h"] <- "g"#7.5cm
+intra <- intra.neigh[,c("n_neighbors_intra" )] 
+neigbors.intra.inter.split<- cbind(inter.neigh, intra)# in this data i have the neighbors separate with the level plot, 3m, 1m and 7.5 cm
+head(neigbors.intra.inter.split)
+
 #data of the coordenates of the plots
 distances <- read.csv("data/caracolesplotposition.csv", sep = ";") 
 head(distances)
-
-#pollinators, abundances and competition data
-FV <- read.table("data/Data_2020/raw_Pollinators_2020_1.csv", header=T, sep=";") #pollinators 2020
-head(FV)
-FV3 <- FV %>% group_by(Plot, Subplot,Group,ID_Simple, Plant) %>% summarise (visits = sum(Visits))%>%
-    ungroup()
-FV3$ID <- FV3$ID_Simple
-head(FV3)
-
-Ab <-read.table("data/Data_2020/Abundances_2020.csv", header=T, sep=";")#plants abundance 2020
-head(Ab)
-Ab <- subset(Ab, plot != 4)
-#there is an error in the Abundance data base. It appears for the same subplot and plot 2 measures of abundance for the same species
-#the next row is to fix this error
-Ab$unique_id <- paste(Ab$plot, Ab$subplot,Ab$species, sep="_")
-Ab <- Ab %>% distinct(unique_id, .keep_all = TRUE)
-
-comp <- competencia <- read.table("data/Data_2020/competition_caracoles2020.csv", header=T, sep=";")#competition 2020
-head(comp)
-comp <- subset(comp, plot != 4)
-
-fitness <- read.table("data/Data_2020/Fitness_2020.csv", header=T, sep=";")
-head(fitness)
-fitness <- subset(fitness, Plot != 4)
-
-alfonsodata<-  read_csv2("data/Data_2020/2020_data_models_phenol_overlap_bueno.csv")
-head(alfonsodata)
-alfonsodata<- alfonsodata[,c("Plot","Subplot","Plant","Seeds_GF","Fruit_GF", "visits_GF", "ID")]
-alfonsodata$seed <- alfonsodata$Seeds_GF
-alfonsodata$fruit <- alfonsodata$Fruit_GF
-alfonsodata$visits <- alfonsodata$visits_GF
-alfonsodata <- subset(alfonsodata, Plot != 4)
-
-FV3.2 <- FV3[,c("ID", "Group")]
-head(FV3.2)
-
-todo.1 <- left_join(alfonsodata, FV3.2,  by= c("ID"))
-todo.1 <- distinct(todo.1)
-todo.1.1 <- todo.1 %>% group_by(Plot, Subplot, Group, Plant, seed, fruit) %>% summarise (vis = sum(visits))%>%
-  ungroup() 
-
-fitness <- fitness[,c("Plot","Subplot","Plant","Seeds.Fruit","Mean.Seeds.Fruit")]
-
-#select the floral visitors that i want
-head(todo.1.1)
-todo1 <- subset(todo.1.1, Plot != "OUT")
-todo4 <- subset(todo1, Subplot != "OUT")
-todo4 <- subset(todo4, Plot != 4)
-
-todo4$vis <- as.numeric(todo4$vis) #necesary?
-todo4$seed <- as.numeric(todo4$seed)
-todo4$fruit <- as.numeric(todo4$fruit)
-
-todo4$seed[is.na(todo4$seed)] <- 0
-todo4$fruit[is.na(todo4$fruit)] <- 0
-todo4$Plant <- as.factor(todo4$Plant)
-todo4$plot <- todo4$Plot
-todo4$subplot <- todo4$Subplot
-
-Ab$Plant <- Ab$species
-
-todo.numplants <- left_join(todo4, Ab, by= c("plot", "subplot", "Plant"))
-final <- todo.numplants[,c("plot","subplot","Group",  "vis","Plant","individuals", "seed","fruit")]
-final$subplot <- as.factor(final$subplot)
-final <- subset(final, plot != "OUT")
-final <- subset(final, subplot != "OUT")
-
-final$visits <- final$vis
-final$individuals <- as.numeric(final$individuals)
-
-#minimum has to be 1 individual of plants, so I change the 0 to 1
-final$individuals[is.na(final$individuals)] <- 1
-
-final$visits[final$visits== 0] <- 0.01 #in order to not have 0 to do the log I change the 0 values to 0,01
-final$visitas_indv <- final$visits/ final$individuals #Aqui es donde no me cuadra el calculo.
-#Visitas por flor o visitas totales, no?
-final$visitas_indv_hora <- (final$visitas_indv*60)/30#this is to have the numer of visits per individuals per hour.
-final$visitas_indv_hora2 <- log(final$visitas_indv_hora ) #the distribution of the visits is check doing the log.
-hist(final$visitas_indv_hora2)
-hist(log(final$visits)) #zero inflated...
-
-#la base de datos de "final" ya tiene los polinizadores,las visitas/hora/indv, las plantas, y 
-#                       las abundancias de las plantas
-
-
-final$log.seed <-  log(final$seed)
-hist(final$seed)
-ggplot() + geom_histogram(aes(x=log(final$seed))) + scale_x_continuous(breaks=seq(0,15,0.5))#to see the seeds distribution
-
-#Phenology -----
-#I First I have to see the pehnology of the 2020 to calculate the right neighbors. 
-FV$date <- paste(FV$Year,"-",FV$Month,"-",FV$Day,sep="")
-FV$week <- strftime(FV$date,format = "%V")
-FV$week <- strftime(FV$date,format = "%V")
-phenology.color <- ggplot(FV, aes(x= week, y = Plant))+
-  geom_point(aes(color = week))+
-  ggtitle ("Phenology 2020")+
-  xlab ("weeks")+
-  ylab ("spp_Plants")+
-  NULL
-phenology.color #This grpah is to know in which week a visit was register in a plant. This graph show that (mostly for the quarentin) there are
-# 2 phenologies: the ones that started first: CHFU, LEMA, SOAS, CHMI and SCLA, and the second one that are: LEMA, CHMI, CHFU, BEMA, PUPA, SOAS, SCLA,
-#MESU and CETE. For CHMI occurs and special thing, and it is that the chmi visits apper later, but in the competition that species has been measured in the 
-#first part of the season, so for that reason it is included in the first group. For calculating the neighbors for the first group, we will only count the 
-#abundances of the species that have been measured in competition at the same time that the ones that belong to the first flowering group (at the group 1,
-#we have to add the abundances of HOMA), and for the second group, we will consider the abundances of all the species except for SUSP, SASO and RAPE and
-#COSQ. FOr the two first we dont have the number of seed per fruit, and for the second last, they appear so later, so there is not overlap.  
-
-#Now I'm going to calculate the neighbors inter e intra at different scales following the David Neighbors script. At the end, there would be
-#2 dataframes, one for the first species, and another for the last species. 
-
 
 ##########################################DISTANCES PLOTS#############################################
 distances <- distances[seq(2,72,2),]
@@ -189,6 +182,174 @@ diag(plots.dists.inv) <- 0
 disfinal$x_coor2 <- as.numeric(disfinal$x_coor2)
 disfinal$y_coor2 <- as.numeric(disfinal$y_coor2)
 w5 <- knn2nb(knearneigh(coordinates(disfinal[,3:4]), k=8))
+######################
+#pollinators, abundances and competition data
+FV <- read.table("data/Data_2020/raw_Pollinators_2020_1.csv", header=T, sep=";") #pollinators 2020
+head(FV)
+FV3 <- FV %>% group_by(Day, Month, Year, Plot, Subplot,Group,ID_Simple, Plant) %>% summarise (visits = sum(Visits))%>%
+    ungroup()
+FV3$ID <- FV3$ID_Simple
+head(FV3)
+
+Ab <-read.table("data/Data_2020/Abundances_2020.csv", header=T, sep=";")#plants abundance 2020
+head(Ab)
+Ab <- subset(Ab, plot != 4)
+#there is an error in the Abundance data base. It appears for the same subplot and plot 2 measures of abundance for the same species
+#the next row is to fix this error
+Ab$unique_id <- paste(Ab$plot, Ab$subplot,Ab$species, sep="_")
+Ab <- Ab %>% distinct(unique_id, .keep_all = TRUE)
+
+comp <- competencia <- read.table("data/Data_2020/competition_caracoles2020.csv", header=T, sep=";")#competition 2020
+head(comp)
+comp <- subset(comp, plot != 4)
+
+fitness <- read.table("data/Data_2020/Fitness_2020.csv", header=T, sep=";")
+head(fitness)
+fitness <- subset(fitness, Plot != 4)
+
+alfonsodata<-  read.table("data/Data_2020/2020_data_models_phenol_overlap_Seeds_per_fruit.csv", header=T, sep=",")
+head(alfonsodata)
+alfonsodata<- alfonsodata[,c("Plot","Subplot","Plant","Seeds_per_fruit","Fruit", "visits_GF", "ID")]
+alfonsodata$seed <- alfonsodata$Seeds_per_fruit
+alfonsodata$fruit <- alfonsodata$Fruit
+alfonsodata$visits <- alfonsodata$visits_GF
+alfonsodata <- subset(alfonsodata, Plot != 4)
+
+FV3.2 <- FV3[,c("Day", "Month", "Year", "Plant", "ID", "Group")]
+head(FV3.2)
+
+todo.1 <- left_join(alfonsodata, FV3.2,  by= c("ID", "Plant"))
+todo.1 <- distinct(todo.1)
+todo.1.1 <- todo.1 %>% group_by(Day, Month, Year, Plot, Subplot, Group, Plant, seed, fruit) %>% summarise (vis = sum(visits))%>%
+  ungroup() 
+
+fitness <- fitness[,c("Plot","Subplot","Plant","Seeds.Fruit","Mean.Seeds.Fruit")]
+
+#select the floral visitors that i want
+head(todo.1.1)
+todo1 <- subset(todo.1.1, Plot != "OUT")
+todo4 <- subset(todo1, Subplot != "OUT")
+todo4 <- subset(todo4, Plot != 4)
+
+todo4$vis <- as.numeric(todo4$vis) #necesary?
+todo4$seed <- as.numeric(todo4$seed)
+todo4$fruit <- as.numeric(todo4$fruit)
+
+todo4$seed[is.na(todo4$seed)] <- 0
+todo4$fruit[is.na(todo4$fruit)] <- 0
+todo4$Plant <- as.factor(todo4$Plant)
+todo4$plot <- todo4$Plot
+todo4$subplot <- todo4$Subplot
+
+Ab$Plant <- Ab$species
+
+todo.numplants <- left_join(todo4, Ab, by= c("plot", "subplot", "Plant"))
+final <- todo.numplants[,c("Day", "Month", "Year","plot","subplot","Group",  "vis","Plant","individuals", "seed","fruit")]
+final$subplot <- as.factor(final$subplot)
+final <- subset(final, plot != "OUT")
+final <- subset(final, subplot != "OUT")
+
+final$visits <- final$vis
+final$individuals <- as.numeric(final$individuals)
+
+#minimum has to be 1 individual of plants, so I change the 0 to 1
+final$individuals[is.na(final$individuals)] <- 1
+
+final$visits[final$visits== 0] <- 0.01 #in order to not have 0 to do the log I change the 0 values to 0,01
+final$visitas_indv <- final$visits/ final$individuals #Aqui es donde no me cuadra el calculo.----
+#Visitas por flor o visitas totales, no?-----
+final$visitas_indv_hora <- (final$visitas_indv*60)/30#this is to have the numer of visits per individuals per hour.
+final$visitas_indv_hora2 <- log(final$visitas_indv_hora ) #the distribution of the visits is check doing the log.
+hist(final$visitas_indv_hora2)
+hist(log(final$visits)) #zero inflated...----
+
+
+flores<-  read.table("data/Data_2020/Flowers_Abundance_2020.csv", header=T, sep=";")
+flores <- na.omit(flores)
+head(flores)
+flores$date <- paste(flores$Year,"-",flores$Month,"-", flores$Day,sep="")
+flores$week <- strftime(flores$date,format = "%V")
+flores$week <- strftime(flores$date,format = "%V")
+flores.juntas <- tidyr::gather(flores, key = "Plant", value = "flowers", 6:23)
+flores.juntas$plot <- flores.juntas$Plot
+flores.juntas$subplot <- flores.juntas$Subplot
+flores.juntas <- subset(flores.juntas, subplot != "OUT")
+
+
+
+#nueva base de datos
+
+fl.vs <- full_join(final, flores.juntas, by= c("Day", "Month", "Year", "plot", "subplot", "Plant") )#casi completa, me falta añadir vecinos y coordenadas
+
+fl.vs.coor <- full_join(fl.vs, disfinal, by= c("plot", "subplot"))#ahora me toca añadir los vecinos
+
+
+together <- full_join(fl.vs.coor, vecinos, by= c("plot", "subplot", "Plant"))
+
+
+together1 <- together[,c("Day", "Month","plot","subplot","Group",  "vis","Plant","individuals", "seed","fruit", "visits", "visitas_indv_hora", "flowers",
+            "x_coor2", "y_coor2", "neigh_inter.plot","neigh_intra.plot", "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m", 
+            "neigh_inter.7.5", "neigh_intra.7.5")]
+
+together2 <- together1[!is.na(together1$neigh_inter.plot),]#esto lo he hecho para eliminar los NAs correspondientes a los vecinos. Elimino
+#     estos NAs, porque los datos que se me quedan son los que he podido calcular los vecinos, recuerda, has quitado las ultimas lineas y filas
+#     de los plots. 
+
+sum(is.na(together2$flowers))
+#Ahora tengo que arreglar la columna de flores, ya que hay NAs que son 0, pero también hay NAs que son NAs
+
+
+df1 <- together2
+df2 <- together2
+df3 <- together2
+filas.sin.na <- 1073:1
+df1[filas.sin.na,] <- replace_na(df1[filas.sin.na,],list(flowers = 0)) #arreglado
+
+
+str(df1)
+filas.sin.na <- 1:1051 #selecciono las filas que quiero convertir los Nas en 0
+posiciones <- which(is.na(df3[filas.sin.na,13])) #aqui me solecciona solo las lineas que son NAs
+df3$flowers[posiciones] <- 0 #ahora sustituyo esas lineas que sn Nas en 0. #arreglado
+
+
+
+filas.sin.na1 <- 1277:1520
+posiciones1 <- which(is.na(df1[filas.sin.na1,1]))
+df1$flowers[posiciones1] <- 0
+
+
+#la base de datos de "final" ya tiene los polinizadores,las visitas/hora/indv, las plantas, y 
+#                       las abundancias de las plantas
+
+
+final$log.seed <-  log(final$seed)
+hist(final$seed)
+ggplot() + geom_histogram(aes(x=log(final$seed))) + scale_x_continuous(breaks=seq(0,15,0.5))#to see the seeds distribution
+
+#Phenology -----
+#I First I have to see the pehnology of the 2020 to calculate the right neighbors. 
+FV$date <- paste(FV$Year,"-",FV$Month,"-",FV$Day,sep="")
+FV$week <- strftime(FV$date,format = "%V")
+FV$week <- strftime(FV$date,format = "%V")
+phenology.color <- ggplot(FV, aes(x= week, y = Plant))+
+  geom_point(aes(color = week))+
+  ggtitle ("Phenology 2020")+
+  xlab ("weeks")+
+  ylab ("spp_Plants")+
+  NULL
+phenology.color #This grpah is to know in which week a visit was register in a plant. This graph show that (mostly for the quarentin) there are
+# 2 phenologies: the ones that started first: CHFU, LEMA, SOAS, CHMI and SCLA, and the second one that are: LEMA, CHMI, CHFU, BEMA, PUPA, SOAS, SCLA,
+#MESU and CETE. For CHMI occurs and special thing, and it is that the chmi visits apper later, but in the competition that species has been measured in the 
+#first part of the season, so for that reason it is included in the first group. For calculating the neighbors for the first group, we will only count the 
+#abundances of the species that have been measured in competition at the same time that the ones that belong to the first flowering group (at the group 1,
+#we have to add the abundances of HOMA), and for the second group, we will consider the abundances of all the species except for SUSP, SASO and RAPE and
+#COSQ. FOr the two first we dont have the number of seed per fruit, and for the second last, they appear so later, so there is not overlap.  
+
+#Now I'm going to calculate the neighbors inter e intra at different scales following the David Neighbors script. At the end, there would be
+#2 dataframes, one for the first species, and another for the last species. 
+
+
+
 
 
 ################################################ 1.Moran's I####################################################
@@ -213,6 +374,11 @@ moran.test(beetle.v$visits,mat2listw(plots.dists.inv)) # I= 1.085506e-01
 moran.test(beetle.v$visits, nb2listw(w5)) # vecinos, I= 0.17
 moran.plot(beetle.v$visits,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation Beetles across plots")
 
+
+moran.mc(beetle.v$visits, mat2listw(plots.dists.inv), nsim=99) #in internet it is said that The Montercalo
+# has more accurate results then the moran.test function. 
+
+
 #beetles (Nacho plays with data)
 beetle <- subset(final, Group == "Beetle")
 beetle$plot <- as.numeric(as.character(beetle$plot))
@@ -226,13 +392,13 @@ head(beetle.v)
 bet.corr <- spline.correlog(x=beetle.v$x_coor2, y=beetle.v$y_coor2,
                             z=beetle.v$visits, resamp=100, quiet=TRUE) 
 plot(bet.corr, main= " Spatial Autocorrelation beetles across plots")
-#A MI ME GUSTARIA QUE LA SPLIE FUERA MÁS SMOOTH, AHORA FLUCTUA MUCHO... OSCAR, SABES COMO TOCAR ESE PARAMETRO?
+#A MI ME GUSTARIA QUE LA SPLIE FUERA MÁS SMOOTH, AHORA FLUCTUA MUCHO... OSCAR, SABES COMO TOCAR ESE PARAMETRO?----
 #test de moran. Aqui quiero obtener El estadistico de Moran y p.value 
 moran.test(beetle.v$visits,mat2listw(plots.dists.inv)) # I= 0.33 (in plot = large distances)
 moran.test(beetle.v$visits, nb2listw(w5)) # vecinos, I= 0.44 (in plot = short distances)
 moran.plot(beetle.v$visits,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation Beetles across plots")
 #Yo voto usar observaciones, por que la pregunta es sobre si los escarabajos estan clustered o no.
-#Alternativamente, podemos usar visitation rate (POR FLOR) que es otra pregunta.
+#Alternativamente, podemos usar visitation rate (POR FLOR) que es otra pregunta.----
 
 #flies
 flies <- subset(final, Group == "Fly")
@@ -310,7 +476,7 @@ plantas <- final[,c("plot", "subplot", "Plant", "individuals", "fruit", "seed")]
 plantas <- plantas[-which(duplicated(plantas)), ] #It appears in the data set a lot of duplicated rows, because the previus data set was with the pollinators
 #                                                   so we have to eliminate the duplicates, and I did it with this step
 #CHFU
-CHFU <- subset(plantas, Plant == "CHFU") #ESTO USA INDIVIDUOS POR m2? O INTRAS?
+CHFU <- subset(plantas, Plant == "CHFU") #ESTO USA INDIVIDUOS POR m2? O INTRAS? M: Individuos por m2---
 CHFU$individuals <- as.numeric(CHFU$individuals)
 CHFU.p <- CHFU %>% group_by(plot, subplot) %>% summarise (num.planta = sum(individuals))
 CHFU.p <- left_join(disfinal, CHFU.p,by= c("plot", "subplot"))
@@ -657,106 +823,7 @@ plot(chmi.corr.s, main= " Spatial Autocorrelation CHMI fitness across plots",xla
 plot(total.corr.pl.s, main= "Plant fitness distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
 
-#NEIGHBORS Data transformation----
-start.plants <- subset(start.plants,edge %in% c("FALSE"))#esto es para quitar aquellas plantas que estan en los bordes. 
-#                           Esto hace que no tenga las columnas A y F, ni las finasl 1 y 6
-start.plants <- subset(start.plants, focal %in% c("SOAS","CHFU","LEMA","CHMI", "SCLA"))
 
-end.plants <- subset(end.plants,edge %in% c("FALSE"))
-end.plants <- subset(end.plants, focal %in% c("BEMA","CETE","MESU","PUPA", "SPRU"))
-neighbors <- rbind(start.plants, end.plants) #all the neighbors together, now i have to join to the final dataset
-neighbors_1 <- neighbors[-which(duplicated(neighbors)), ] 
-neighbors_1$Plant <- neighbors_1$focal
-neighbors_1$neigh_inter <- as.numeric(neighbors_1$neigh_inter)
-neighbors_1$neigh_intra <- as.numeric(neighbors_1$neigh_intra)
-neighbors_1$unique_id <- paste(neighbors_1$plot, neighbors_1$subplot,neighbors_1$Plant,neighbors_1$distance, sep="_")
-neighbors1 <- neighbors_1 %>% distinct(unique_id, .keep_all = TRUE)
-final$unique_id <- paste(final$plot, final$subplot,final$Plant, sep="_")
-final$subplot <- as.factor(final$subplot)
-final$Plant <- as.factor(final$Plant)
-
-neighbors <- neighbors_1[,c("plot","subplot","Plant","distance", "neigh_intra","neigh_inter")] 
-
-
-neighbors.7.5 <- subset(neighbors, distance %in% c("d1")) 
-neighbors.7.5$distance7.5 <- neighbors.7.5$distance
-neighbors.7.5$neigh_intra.7.5 <- neighbors.7.5$neigh_intra
-neighbors.7.5$neigh_inter.7.5<- neighbors.7.5$neigh_inter
- 
-neighbors.1m <- subset(neighbors, distance %in% c("d2")) 
-neighbors.1m$distances.1m <- neighbors.1m$distance
-neighbors.1m$neigh_intra.1m <- neighbors.1m$neigh_intra
-neighbors.1m$neigh_inter.1m<- neighbors.1m$neigh_inter
-neighbors.3m <- subset(neighbors, distance %in% c("d3")) 
-neighbors.3m$distances.3m <- neighbors.3m$distance
-neighbors.3m$neigh_intra.3m <- neighbors.3m$neigh_intra
-neighbors.3m$neigh_inter.3m<- neighbors.3m$neigh_inter
-neighbors.plot <- subset(neighbors, distance %in% c("d4")) 
-neighbors.plot$distances.plot <- neighbors.plot$distance
-neighbors.plot$neigh_intra.plot <- neighbors.plot$neigh_intra
-neighbors.plot$neigh_inter.plot <- neighbors.plot$neigh_inter
-
-a <- dplyr::full_join(neighbors.7.5, neighbors.1m, by= c("plot", "subplot",  "Plant"))
-
-b <- dplyr::full_join(neighbors.3m, neighbors.plot, by= c("plot", "subplot",  "Plant"))
-
-ab<- dplyr::full_join(a, b, by= c("plot", "subplot",  "Plant"))
-head(ab) 
-vecinos<- ab[,c("plot","subplot","Plant", "neigh_inter.plot","neigh_intra.plot",
-                              "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
-vecinos <- unique(vecinos)
-vecinos$unique_id <- paste(vecinos$plot, vecinos$subplot,vecinos$Plant, sep="_")
-vecinos <- vecinos %>% distinct(unique_id, .keep_all = TRUE)
-#final$unique_id <- paste(final$plot, final$subplot,final$Plant, sep="_")
-final.data <- dplyr::full_join( final, vecinos , by=c("plot", "subplot", "Plant")) #veinos + base de datos pol+abund
-                                 
-none.visitor <- na.omit(final.data) #only neighbors in the places that i have a pollinator
-none.visitor<- none.visitor[,c("plot","subplot","Plant","Group","visits", "individuals", "seed", "fruit", "visitas_indv", "visitas_indv_hora", "neigh_inter.plot","neigh_intra.plot",
-                  "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
-
-
-data <- dplyr::full_join(none.visitor, disfinal, by=c("plot", "subplot"))#ahora junto la base de datos con la de las coordenadas
- #this data have all the neigbors together
-
-
-data <- data %>% group_by(plot, subplot, Plant, Group, individuals, seed, fruit,visitas_indv_hora, x_coor2, y_coor2,
-                  neigh_inter.plot,neigh_intra.plot,neigh_intra.3m ,neigh_inter.3m, neigh_inter.1m ,neigh_intra.1m ,
-                  neigh_inter.7.5,neigh_intra.7.5) %>% summarise (visits.total = sum(visitas_indv_hora))%>%
-  ungroup()
-data <- na.omit(data)
-
-data <- data[,c("plot","subplot","Plant","Group","visits.total", "individuals", "seed", "fruit",  "neigh_inter.plot","neigh_intra.plot",
-                "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5", "x_coor2", "y_coor2")] 
-head(data)
-data.spread.visitors <- spread(data, Group, visits.total, fill = 0, convert = FALSE,
-                               drop = TRUE, sep = NULL) #final data of neighbors and the visitors spread it. 
-
-
-neigbors.intra.inter <- tidyr::gather(data.spread.visitors,'neigh_inter.plot', 'neigh_intra.plot', 'neigh_intra.3m', 'neigh_inter.3m', 'neigh_inter.1m', 
-                          'neigh_intra.1m', 'neigh_inter.7.5', 'neigh_intra.7.5', key = "distance", value = "n_neighbors" )
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.plot"] <- "a"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.plot"] <- "b"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.3m"] <- "c"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.3m"] <- "d"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.1m"] <- "e"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.1m"] <- "f"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.7.5"] <- "g"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.7.5"] <- "h"
-neigbors.intra.inter$distance <- as.factor(neigbors.intra.inter$distance)
-neigbors.intra.inter$n_neighbors_total <- neigbors.intra.inter$n_neighbors 
-neigbors.intra.inter$distance_total <- neigbors.intra.inter$distance
-inter.neigh <- subset(neigbors.intra.inter, distance_total%in% c("a","c","e","g"))
-inter.neigh$n_neighbors_inter <- inter.neigh$n_neighbors_total
-intra.neigh <- subset(neigbors.intra.inter, distance_total%in% c("b","d","f","h"))
-intra.neigh$distance_total <- as.character(intra.neigh$distance_total)
-intra.neigh$n_neighbors_intra <- intra.neigh$n_neighbors_total
-intra.neigh$distance[intra.neigh$distance_total == "b"] <- 'a' #PLOT
-intra.neigh$distance[intra.neigh$distance_total == "d"] <- "c"#3M
-intra.neigh$distance[intra.neigh$distance_total == "f"] <- "e"#1M
-intra.neigh$distance[intra.neigh$distance_total == "h"] <- "g"#7.5cm
-intra <- intra.neigh[,c("n_neighbors_intra" )] 
-neigbors.intra.inter.split<- cbind(inter.neigh, intra)# in this data i have the neighbors separate with the level plot, 3m, 1m and 7.5 cm
-head(neigbors.intra.inter.split)
 ##################################################3. GLM#######################################################################
 #control for the lme
 lCtr <- lmeControl(maxIter = 5000, msMaxIter = 5000, tolerance = 1e-9, niterEM = 250, msMaxEval = 200)#this lmecontrol is
@@ -781,7 +848,7 @@ m3 <- lme(log.seed ~ 1, data= CHFU.vis, random = ~1 |plot, control=lCtr,
 m4 <- lme(log.seed ~ 1, data= CHFU.vis, random = ~1 |plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
 AIC(m1, m2, m3, m4) #best model is m1, without coordenates
-#IS THIS CORRECT? CAN YOU USE AIC (in models with method = ML) FOR THIS? I am asking as I don't know.
+#IS THIS CORRECT? CAN YOU USE AIC (in models with method = ML) FOR THIS? I am asking as I don't know.----
 
 options(na.action = "na.fail")
 
@@ -883,10 +950,10 @@ options(na.action = "na.fail")
 #I have two models because I'm not sure of which model is best seeing the residuals. The log model or without log?
 m.prueba.pupa.2 <- lme(log.seed ~ Beetle+Fly+ Bee+Butterfly +neigh_inter.1m+neigh_intra.1m, data= PUPA.vis, random = ~1 |plot, control=lCtr,
                        method = "ML")
-m.prueba.pupa.6 <- lme(seed ~ Beetle+Fly+ Bee+Butterfly +neigh_inter.1m+neigh_intra.1m, data= PUPA.vis, random = ~1 |plot, control=lCtr,
-                       method = "ML")
+#m.prueba.pupa.6 <- lme(seed ~ Beetle+Fly+ Bee+Butterfly +neigh_inter.1m+neigh_intra.1m, data= PUPA.vis, random = ~1 |plot, control=lCtr,
+ #                      method = "ML")
 plot(m.prueba.pupa.2) #looks good, use log.
-plot(m.prueba.pupa.6) #Not good.
+#plot(m.prueba.pupa.6) #Not good.
 
 m.prueba_sec.pupa.2 <- dredge(m.prueba.pupa.2, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(m.prueba_sec.pupa.2, "rank.call"))
@@ -895,7 +962,7 @@ summary(model.avg(fmList.prueba.pupa.2))# maybe neigh intra 1m
 r.squaredGLMM(m.prueba.pupa.2)
 residplot(m.prueba.pupa.2) # I have doubts with which of them have the best distribution of residuals. I thin that with the log 
 #                               it is better
-residplot(m.prueba.pupa.6) #clearly, this is not good, the trend is too pronounced.
+#residplot(m.prueba.pupa.6) #clearly, this is not good, the trend is too pronounced.
 
 
 
@@ -986,7 +1053,7 @@ AIC(c.vis.bet.1, c2.vis.bet.1, c3.vis.bet.1, c4.vis.bet.1)#best model 1, I check
 k <- lme(log(visits) ~ neigh_inter.1m+ neigh_intra.1m, data= Bet.vis,random = ~1 |plot, control=lCtr,
     method = "ML")
 #ok, ya veo, las visitas a una planta (luego discutimos como están calculadas) dependen de inter y intra
-#POR TANTO; NO TENDRIA QUE IR ESPECIE en Random?
+#POR TANTO; NO TENDRIA QUE IR ESPECIE en Random?----
 #MIRA MI COMENT EN GDOCS SOBRE LA REDUNDANCIA DE ESTE MODELO
 residplot(k) #i just tried also the model without the log, and the residuals and the q-q plot have a worst distribution
 m.prueba_sec.k <- dredge(k, trace = TRUE, rank = "AICc", REML = FALSE)
