@@ -182,8 +182,8 @@ w5 <- knn2nb(knearneigh(coordinates(disfinal[,3:4]), k=8))
 #beetles 
 beetle <- subset(final, Group == "Beetle")
 beetle$plot <- as.numeric(as.character(beetle$plot))
-beetle.v <- beetle[,c("plot", "subplot", "visitslog")] #datos de plot, subplot, y visitas de BEETLES
-beetle.v <-beetle.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visitslog))
+beetle.v <- beetle[,c("plot", "subplot", "visits")] #datos de plot, subplot, y visitas de BEETLES
+beetle.v <-beetle.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visits))
 beetle.v <- left_join(disfinal, beetle.v, by= c("plot", "subplot"))
 beetle.v$visits[is.na(beetle.v$visits)] <- 0
 
@@ -205,8 +205,8 @@ plot(mc.beetles)
 #flies
 flies <- subset(final, Group == "Fly")
 flies$plot <- as.numeric(as.character(flies$plot))
-flies.v <- flies[,c("plot", "subplot","visitslog")] 
-flies.v <-flies.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visitslog))
+flies.v <- flies[,c("plot", "subplot","visits")] 
+flies.v <-flies.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visits))
 flies.v <- left_join(disfinal,flies.v, by= c("plot", "subplot"))
 flies.v$visits[is.na(flies.v$visits)] <- 0
 
@@ -222,8 +222,8 @@ moran.mc(flies.v$visits, mat2listw(plots.dists.inv), nsim=99) #p-value= 0.01
 #butterflies
 but <- subset(final, Group == "Butterfly")
 but$plot <- as.numeric(as.character(but$plot))
-but.v <- but[,c("plot", "subplot","visitslog")] #datos de plot, subplot, y visitas 
-but.v <-but.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visitslog))
+but.v <- but[,c("plot", "subplot","visits")] #datos de plot, subplot, y visitas 
+but.v <-but.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visits))
 but.v <- left_join(disfinal,but.v , by= c("plot", "subplot"))
 but.v$visits[is.na(but.v$visits)] <- 0
 
@@ -239,8 +239,8 @@ moran.mc(but.v$visits, mat2listw(plots.dists.inv), nsim=99) #p-value= 0.1
 #bees
 bee <- subset(final, Group == "Bee")
 bee$plot <- as.numeric(as.character(bee$plot))
-bee.v <- bee[,c("plot", "subplot","visitslog")] #datos de plot, subplot, y visitas 
-bee.v <-bee.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visitslog))
+bee.v <- bee[,c("plot", "subplot","visits")] #datos de plot, subplot, y visitas 
+bee.v <-bee.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visits))
 bee.v <- left_join(disfinal, bee.v, by= c("plot", "subplot"))
 bee.v$visits[is.na(bee.v$visits)] <- 0
 
@@ -254,8 +254,8 @@ moran.plot(bee.v$visits,mat2listw(plots.dists.inv), main= "Spatial autocorrelati
 moran.mc(bee.v$visits, mat2listw(plots.dists.inv), nsim=99) #p-value= 0.01
 
 #polinizadores general 
-junto <- final[,c("plot", "subplot","visitslog")]
-junto <- junto %>% group_by(plot, subplot) %>% summarise (visit = sum(visitslog))
+junto <- final[,c("plot", "subplot","visits")]
+junto <- junto %>% group_by(plot, subplot) %>% summarise (visit = sum(visits))
 junto$plot <- as.numeric(junto$plot)
 junto <- left_join(disfinal, junto, by= c("plot", "subplot"))
 junto <- subset(junto, subplot != "OUT")
@@ -278,7 +278,7 @@ plot(bee.corr, main= "Bees distribution across plots",xlab="Distance (m)", ylab=
 plot(total.corr, main= "Floral visitors distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
 ############################################ >Plants########################################
-plantas <- final[,c("plot", "subplot", "Plant", "individuals", "fruit", "log.seed")]
+plantas <- final[,c("plot", "subplot", "Plant", "individuals", "fruit", "seed")]
 plantas <- plantas[-which(duplicated(plantas)), ] #It appears in the data set a lot of duplicated rows, because the previus data set was with the pollinators
 #                                                   so we have to eliminate the duplicates, and I did it with this step
 #CHFU
@@ -479,8 +479,8 @@ par(mfrow=c(1,1))
 ##########################################>Fitness###################################################
 #here i have the seeds per one fruit per individual
 #CHFU 
-CHFU$log.seed <- as.numeric(CHFU$log.seed)
-CHFU.fit <- CHFU %>% group_by(plot, subplot) %>% summarise (seeds = sum(log.seed))
+
+CHFU.fit <- CHFU %>% group_by(plot, subplot) %>% summarise (seeds = sum(seed))
 CHFU.fit <- left_join(disfinal, CHFU.fit,by= c("plot", "subplot"))
 CHFU.fit$seeds[is.na(CHFU.fit$seeds)] <- 0
 
@@ -494,8 +494,8 @@ moran.plot(CHFU.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrel
 moran.mc(CHFU.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 #LEMA
-LEMA$log.seed <- as.numeric(LEMA$log.seed)
-LEMA.fit <- LEMA %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(log.seed))
+
+LEMA.fit <- LEMA %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
 LEMA.fit <- left_join(disfinal, LEMA.fit, by= c("plot", "subplot"))
 LEMA.fit$seeds[is.na(LEMA.fit$seeds)] <- 0
 
@@ -509,15 +509,14 @@ moran.plot(LEMA.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrel
 moran.mc(LEMA.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 #PUPA 
-PUPA$log.seed <- as.numeric(PUPA$log.seed)
-PUPA.fit <- PUPA %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(log.seed))
+
+PUPA.fit <- PUPA %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
 PUPA.fit <- left_join(disfinal, PUPA.fit, by= c("plot", "subplot"))
-PUPA.fit$seeds <- PUPA.fit$seeds
 PUPA.fit$seeds [is.na(PUPA.fit$seeds )] <- 0
 
 pupa.corr.s <- spline.correlog(x=PUPA.fit$x_coor2, y=PUPA.fit$y_coor2,
                                z=PUPA.fit$seeds, resamp=100, quiet=TRUE)
-plot(pupa.corr.s, main= " Spatial Autocorrelation PUPA fitness across plots")
+plot(pupa.corr.s, main= " Spatial Autocorrelation PUPA fitness across plots")#no works---
 
 moran.test(PUPA.fit$seeds,mat2listw(plots.dists.inv)) # 0.20
 moran.test(PUPA.fit$seeds, nb2listw(w5)) # vecinos, I=  0.2739
@@ -525,8 +524,8 @@ moran.plot(PUPA.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrel
 moran.mc(PUPA.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 #MESU
-MESU$log.seed <- as.numeric(MESU$log.seed)
-MESU.fit <- MESU %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(log.seed))
+
+MESU.fit <- MESU %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
 MESU.fit <- left_join(disfinal, MESU.fit, by= c("plot", "subplot"))
 MESU.fit$seeds[is.na(MESU.fit$seeds)] <- 0 
 mesu.corr.s <- spline.correlog(x=MESU.fit$x_coor2, y=MESU.fit$y_coor2,
@@ -539,7 +538,7 @@ moran.plot(MESU.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrel
 moran.mc(MESU.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 #CETE 
-CETE.fit <- CETE %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(log.seed))
+CETE.fit <- CETE %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
 CETE.fit <- left_join(disfinal, CETE.fit, by= c("plot", "subplot"))
 CETE.fit$seeds <- CETE.fit$seeds
 CETE.fit$seeds [is.na(CETE.fit$seeds )] <- 0
@@ -555,7 +554,7 @@ moran.mc(CETE.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 
 #SPRU 
-SPRU.fit <- SPRU %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(log.seed))
+SPRU.fit <- SPRU %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
 SPRU.fit <- left_join(disfinal, SPRU.fit, by= c("plot", "subplot"))
 SPRU.fit$seeds <- SPRU.fit$seeds
 SPRU.fit$seeds [is.na(SPRU.fit$seeds )] <- 0
@@ -570,7 +569,7 @@ moran.plot(SPRU.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrel
 moran.mc(SPRU.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 #SOAS 
-SOAS.fit <- SOAS %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(log.seed))
+SOAS.fit <- SOAS %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
 SOAS.fit <- left_join(disfinal, SOAS.fit, by= c("plot", "subplot"))
 SOAS.fit$seeds <- SOAS.fit$seeds
 SOAS.fit$seeds [is.na(SOAS.fit$seeds )] <- 0
@@ -585,7 +584,7 @@ moran.plot(SOAS.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrel
 moran.mc(SOAS.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 #BEMA
-BEMA.fit <- BEMA %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(log.seed))
+BEMA.fit <- BEMA %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
 BEMA.fit <- left_join(disfinal, BEMA.fit, by= c("plot", "subplot"))
 BEMA.fit$seeds <- BEMA.fit$seeds
 BEMA.fit$seeds [is.na(BEMA.fit$seeds )] <- 0
@@ -600,7 +599,7 @@ moran.plot(BEMA.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrel
 moran.mc(BEMA.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 #SCLA
-SCLA.fit <- SCLA %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(log.seed))
+SCLA.fit <- SCLA %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
 SCLA.fit <- left_join(disfinal, SCLA.fit, by= c("plot", "subplot"))
 SCLA.fit$seeds <- SCLA.fit$seeds
 SCLA.fit$seeds [is.na(SCLA.fit$seeds )] <- 0
@@ -615,7 +614,7 @@ moran.plot(SCLA.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrel
 moran.mc(SCLA.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 #CHMI
-CHMI.fit <- CHMI %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(log.seed))
+CHMI.fit <- CHMI %>% group_by(plot, subplot, Plant) %>% summarise (seeds = sum(seed))
 CHMI.fit <- left_join(disfinal, CHMI.fit, by= c("plot", "subplot"))
 CHMI.fit$seeds [is.na(CHMI.fit$seeds )] <- 0
 
@@ -632,9 +631,9 @@ moran.mc(CHMI.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 #global fitness
 
-juntas.plantas.fit <- plantas[,c("plot", "subplot","log.seed")]
+juntas.plantas.fit <- plantas[,c("plot", "subplot","seed")]
 juntas.plantas.fit$log.seed <- as.numeric(juntas.plantas.fit$log.seed)
-juntas.plantas.fit <- juntas.plantas.fit %>% group_by(plot, subplot) %>% summarise (seeds = sum(log.seed))
+juntas.plantas.fit <- juntas.plantas.fit %>% group_by(plot, subplot) %>% summarise (seeds = sum(seed))
 juntas.plantas.fit$plot <- as.numeric(juntas.plantas.fit$plot)
 juntas.plantas.fit <- left_join(disfinal, juntas.plantas.fit, by= c("plot", "subplot"))
 juntas.plantas.fit$seeds[is.na(juntas.plantas.fit$seeds)] <- 0
@@ -663,13 +662,11 @@ plot(total.corr.pl.s, main= "Plant fitness distribution across plots",xlab="Dist
 par(mfrow=c(1,1))
 
 #NEIGHBORS Data transformation----
-start.plants <- subset(start.plants,edge %in% c("FALSE"))#esto es para quitar aquellas plantas que estan en los bordes. 
-#                           Esto hace que no tenga las columnas A y F, ni las finasl 1 y 6
-start.plants <- subset(start.plants, focal %in% c("SOAS","CHFU","LEMA","CHMI", "SCLA"))
+
 
 end.plants <- subset(end.plants,edge %in% c("FALSE"))
-end.plants <- subset(end.plants, focal %in% c("BEMA","CETE","MESU","PUPA", "SPRU"))
-neighbors <- rbind(start.plants, end.plants) #all the neighbors together, now i have to join to the final dataset
+end.plant <- subset(end.plants, focal %in% c("SOAS","CHFU","LEMA","CHMI", "SCLA","BEMA","CETE","MESU","PUPA", "SPRU"))
+neighbors <- end.plants #all the neighbors together, now i have to join to the final dataset
 neighbors_1 <- neighbors[-which(duplicated(neighbors)), ] 
 neighbors_1$Plant <- neighbors_1$focal
 neighbors_1$neigh_inter <- as.numeric(neighbors_1$neigh_inter)
@@ -775,7 +772,7 @@ CHFU.vis <- subset(data.spread.visitors, Plant == "CHFU")
 
 CHFU.vis$subplot <- as.factor(CHFU.vis$subplot)
 #fit random structure
-m1<- lme(log.seed ~ 1, data= CHFU.vis,random = ~1 |plot, control=lCtr,
+m1<- lme(seed ~ 1, data= CHFU.vis,random = ~1 |plot, control=lCtr,
          method = "ML")
 m2 <- lme(log.seed ~ 1, data= CHFU.vis, random = ~1 |plot, control=lCtr,
           corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
@@ -791,7 +788,7 @@ options(na.action = "na.fail")
 
 #final model for CHFU
 m.prueba.chufu.3 <- lme(log.seed ~ Beetle+Fly+ Bee +neigh_inter.1m+neigh_intra.1m, data= CHFU.vis, random = ~1 |plot, control=lCtr,
-                         method = "ML")
+                        corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
 m.prueba_sec.chufu.2 <- dredge(m.prueba.chufu.3, trace = TRUE, rank = "AICc", REML = FALSE)
 (attr(m.prueba_sec.chufu.2, "rank.call"))
 fmList.prueba.chufu.2 <- get.models(m.prueba_sec.chufu.2, 1:6) 
