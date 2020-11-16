@@ -318,6 +318,7 @@ df1 <- data
 df1$flowers2 <- ifelse(!df1$Day %in% c(22,23) & !(df1$Month == 4) & is.na(df1$flowers), 0, df1$flowers) 
 
 df1$visits.flower <- (df1$visits/df1$flowers2)#There are -Inf. Should I write 1 flower in the places that we have visits? 
+df1$seed.indv <- (df1$seed)*(df1$fruit)
 data <- df1 #Base de datos final
 #write.csv2(data,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Final_global_data.csv",row.names = FALSE)
 
@@ -367,3 +368,4 @@ head(neigbors.intra.inter.split)
 
 #write.csv2(disfinal,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/distances.csv",row.names = FALSE)
 #       dataframe with the distances across plots and subplots
+
