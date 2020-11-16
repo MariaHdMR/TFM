@@ -35,119 +35,18 @@ library(tidyr)
 #load data and data transformations----
 
 
-
 #neighbors data, there is not the plot 4
 start.plants <- read.table("data/focal_neighbours.2020_start.csv", header=T, sep=";")
 head(start.plants)
 end.plants <- read.table("data/focal_neighbours.2020_2nphenology.csv", header=T, sep=";")
 head(end.plants)
 
-#NEIGHBORS Data transformation
-start.plants <- subset(start.plants,edge %in% c("FALSE"))#esto es para quitar aquellas plantas que estan en los bordes. 
-#                           Esto hace que no tenga las columnas A y F, ni las finasl 1 y 6
-start.plants <- subset(start.plants, focal %in% c("SOAS","CHFU","LEMA","CHMI", "SCLA"))
-
-end.plants <- subset(end.plants,edge %in% c("FALSE"))
-end.plants <- subset(end.plants, focal %in% c("BEMA","CETE","MESU","PUPA", "SPRU"))
-neighbors <- rbind(start.plants, end.plants) #all the neighbors together, now i have to join to the final dataset
-neighbors_1 <- neighbors[-which(duplicated(neighbors)), ] 
-neighbors_1$Plant <- neighbors_1$focal
-neighbors_1$neigh_inter <- as.numeric(neighbors_1$neigh_inter)
-neighbors_1$neigh_intra <- as.numeric(neighbors_1$neigh_intra)
-neighbors_1$unique_id <- paste(neighbors_1$plot, neighbors_1$subplot,neighbors_1$Plant,neighbors_1$distance, sep="_")
-neighbors1 <- neighbors_1 %>% distinct(unique_id, .keep_all = TRUE)
-final$unique_id <- paste(final$plot, final$subplot,final$Plant, sep="_")
-final$subplot <- as.factor(final$subplot)
-final$Plant <- as.factor(final$Plant)
-
-neighbors <- neighbors_1[,c("plot","subplot","Plant","distance", "neigh_intra","neigh_inter")] 
-
-
-neighbors.7.5 <- subset(neighbors, distance %in% c("d1")) 
-neighbors.7.5$distance7.5 <- neighbors.7.5$distance
-neighbors.7.5$neigh_intra.7.5 <- neighbors.7.5$neigh_intra
-neighbors.7.5$neigh_inter.7.5<- neighbors.7.5$neigh_inter
-
-neighbors.1m <- subset(neighbors, distance %in% c("d2")) 
-neighbors.1m$distances.1m <- neighbors.1m$distance
-neighbors.1m$neigh_intra.1m <- neighbors.1m$neigh_intra
-neighbors.1m$neigh_inter.1m<- neighbors.1m$neigh_inter
-neighbors.3m <- subset(neighbors, distance %in% c("d3")) 
-neighbors.3m$distances.3m <- neighbors.3m$distance
-neighbors.3m$neigh_intra.3m <- neighbors.3m$neigh_intra
-neighbors.3m$neigh_inter.3m<- neighbors.3m$neigh_inter
-neighbors.plot <- subset(neighbors, distance %in% c("d4")) 
-neighbors.plot$distances.plot <- neighbors.plot$distance
-neighbors.plot$neigh_intra.plot <- neighbors.plot$neigh_intra
-neighbors.plot$neigh_inter.plot <- neighbors.plot$neigh_inter
-
-a <- dplyr::full_join(neighbors.7.5, neighbors.1m, by= c("plot", "subplot",  "Plant"))
-
-b <- dplyr::full_join(neighbors.3m, neighbors.plot, by= c("plot", "subplot",  "Plant"))
-
-ab<- dplyr::full_join(a, b, by= c("plot", "subplot",  "Plant"))
-head(ab) 
-vecinos<- ab[,c("plot","subplot","Plant", "neigh_inter.plot","neigh_intra.plot",
-                "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
-vecinos <- unique(vecinos)
-vecinos$unique_id <- paste(vecinos$plot, vecinos$subplot,vecinos$Plant, sep="_")
-vecinos <- vecinos %>% distinct(unique_id, .keep_all = TRUE)
-#final$unique_id <- paste(final$plot, final$subplot,final$Plant, sep="_")
-final.data <- dplyr::full_join( final, vecinos , by=c("plot", "subplot", "Plant")) #veinos + base de datos pol+abund
-
-none.visitor <- na.omit(final.data) #only neighbors in the places that i have a pollinator
-none.visitor<- none.visitor[,c("plot","subplot","Plant","Group","visits", "individuals", "seed", "fruit", "visitas_indv", "visitas_indv_hora", "neigh_inter.plot","neigh_intra.plot",
-                               "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
-
-
-data <- dplyr::full_join(none.visitor, disfinal, by=c("plot", "subplot"))#ahora junto la base de datos con la de las coordenadas
-#this data have all the neigbors together
-
-
-data <- data %>% group_by(plot, subplot, Plant, Group, individuals, seed, fruit,visitas_indv_hora, x_coor2, y_coor2,
-                          neigh_inter.plot,neigh_intra.plot,neigh_intra.3m ,neigh_inter.3m, neigh_inter.1m ,neigh_intra.1m ,
-                          neigh_inter.7.5,neigh_intra.7.5) %>% summarise (visits.total = sum(visitas_indv_hora))%>%
-  ungroup()
-data <- na.omit(data)
-
-data <- data[,c("plot","subplot","Plant","Group","visits.total", "individuals", "seed", "fruit",  "neigh_inter.plot","neigh_intra.plot",
-                "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5", "x_coor2", "y_coor2")] 
-head(data)
-data.spread.visitors <- spread(data, Group, visits.total, fill = 0, convert = FALSE,
-                               drop = TRUE, sep = NULL) #final data of neighbors and the visitors spread it. 
-
-
-neigbors.intra.inter <- tidyr::gather(data.spread.visitors,'neigh_inter.plot', 'neigh_intra.plot', 'neigh_intra.3m', 'neigh_inter.3m', 'neigh_inter.1m', 
-                                      'neigh_intra.1m', 'neigh_inter.7.5', 'neigh_intra.7.5', key = "distance", value = "n_neighbors" )
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.plot"] <- "a"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.plot"] <- "b"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.3m"] <- "c"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.3m"] <- "d"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.1m"] <- "e"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.1m"] <- "f"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.7.5"] <- "g"
-neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.7.5"] <- "h"
-neigbors.intra.inter$distance <- as.factor(neigbors.intra.inter$distance)
-neigbors.intra.inter$n_neighbors_total <- neigbors.intra.inter$n_neighbors 
-neigbors.intra.inter$distance_total <- neigbors.intra.inter$distance
-inter.neigh <- subset(neigbors.intra.inter, distance_total%in% c("a","c","e","g"))
-inter.neigh$n_neighbors_inter <- inter.neigh$n_neighbors_total
-intra.neigh <- subset(neigbors.intra.inter, distance_total%in% c("b","d","f","h"))
-intra.neigh$distance_total <- as.character(intra.neigh$distance_total)
-intra.neigh$n_neighbors_intra <- intra.neigh$n_neighbors_total
-intra.neigh$distance[intra.neigh$distance_total == "b"] <- 'a' #PLOT
-intra.neigh$distance[intra.neigh$distance_total == "d"] <- "c"#3M
-intra.neigh$distance[intra.neigh$distance_total == "f"] <- "e"#1M
-intra.neigh$distance[intra.neigh$distance_total == "h"] <- "g"#7.5cm
-intra <- intra.neigh[,c("n_neighbors_intra" )] 
-neigbors.intra.inter.split<- cbind(inter.neigh, intra)# in this data i have the neighbors separate with the level plot, 3m, 1m and 7.5 cm
-head(neigbors.intra.inter.split)
 
 #data of the coordenates of the plots
 distances <- read.csv("data/caracolesplotposition.csv", sep = ";") 
 head(distances)
 
-##########################################DISTANCES PLOTS#############################################
+
 distances <- distances[seq(2,72,2),]
 distances2 <- rbind(distances, distances, distances,
                     distances, distances, distances,
@@ -182,12 +81,13 @@ diag(plots.dists.inv) <- 0
 disfinal$x_coor2 <- as.numeric(disfinal$x_coor2)
 disfinal$y_coor2 <- as.numeric(disfinal$y_coor2)
 w5 <- knn2nb(knearneigh(coordinates(disfinal[,3:4]), k=8))
-######################
+
+
 #pollinators, abundances and competition data
 FV <- read.table("data/Data_2020/raw_Pollinators_2020_1.csv", header=T, sep=";") #pollinators 2020
 head(FV)
 FV3 <- FV %>% group_by(Day, Month, Year, Plot, Subplot,Group,ID_Simple, Plant) %>% summarise (visits = sum(Visits))%>%
-    ungroup()
+  ungroup()
 FV3$ID <- FV3$ID_Simple
 head(FV3)
 
@@ -252,7 +152,7 @@ final <- subset(final, subplot != "OUT")
 final$visits <- final$vis
 final$individuals <- as.numeric(final$individuals)
 
-#minimum has to be 1 individual of plants, so I change the 0 to 1
+#minimum has to be 1 individual of plants, so I change the 0 to 1, the same has to be with the flowers...
 final$individuals[is.na(final$individuals)] <- 1
 
 final$visits[final$visits== 0] <- 0.01 #in order to not have 0 to do the log I change the 0 values to 0,01
@@ -262,6 +162,115 @@ final$visitas_indv_hora <- (final$visitas_indv*60)/30#this is to have the numer 
 final$visitas_indv_hora2 <- log(final$visitas_indv_hora ) #the distribution of the visits is check doing the log.
 hist(final$visitas_indv_hora2)
 hist(log(final$visits)) #zero inflated...----
+
+#NEIGHBORS Data transformation
+start.plants <- subset(start.plants,edge %in% c("FALSE"))#esto es para quitar aquellas plantas que estan en los bordes. 
+#                           Esto hace que no tenga las columnas A y F, ni las finasl 1 y 6
+start.plants <- subset(start.plants, focal %in% c("SOAS","CHFU","LEMA","CHMI", "SCLA"))
+
+end.plants <- subset(end.plants,edge %in% c("FALSE"))
+end.plants <- subset(end.plants, focal %in% c("BEMA","CETE","MESU","PUPA", "SPRU"))
+neighbors <- rbind(start.plants, end.plants) #all the neighbors together, now i have to join to the final dataset
+neighbors_1 <- neighbors[-which(duplicated(neighbors)), ] 
+neighbors_1$Plant <- neighbors_1$focal
+neighbors_1$neigh_inter <- as.numeric(neighbors_1$neigh_inter)
+neighbors_1$neigh_intra <- as.numeric(neighbors_1$neigh_intra)
+neighbors_1$unique_id <- paste(neighbors_1$plot, neighbors_1$subplot,neighbors_1$Plant,neighbors_1$distance, sep="_")
+neighbors1 <- neighbors_1 %>% distinct(unique_id, .keep_all = TRUE)
+
+final$unique_id <- paste(final$plot, final$subplot,final$Plant, sep="_")
+final$subplot <- as.factor(final$subplot)
+final$Plant <- as.factor(final$Plant)
+
+neighbors <- neighbors_1[,c("plot","subplot","Plant","distance", "neigh_intra","neigh_inter")] 
+
+
+neighbors.7.5 <- subset(neighbors, distance %in% c("d1")) 
+neighbors.7.5$distance7.5 <- neighbors.7.5$distance
+neighbors.7.5$neigh_intra.7.5 <- neighbors.7.5$neigh_intra
+neighbors.7.5$neigh_inter.7.5<- neighbors.7.5$neigh_inter
+
+neighbors.1m <- subset(neighbors, distance %in% c("d2")) 
+neighbors.1m$distances.1m <- neighbors.1m$distance
+neighbors.1m$neigh_intra.1m <- neighbors.1m$neigh_intra
+neighbors.1m$neigh_inter.1m<- neighbors.1m$neigh_inter
+neighbors.3m <- subset(neighbors, distance %in% c("d3")) 
+neighbors.3m$distances.3m <- neighbors.3m$distance
+neighbors.3m$neigh_intra.3m <- neighbors.3m$neigh_intra
+neighbors.3m$neigh_inter.3m<- neighbors.3m$neigh_inter
+neighbors.plot <- subset(neighbors, distance %in% c("d4")) 
+neighbors.plot$distances.plot <- neighbors.plot$distance
+neighbors.plot$neigh_intra.plot <- neighbors.plot$neigh_intra
+neighbors.plot$neigh_inter.plot <- neighbors.plot$neigh_inter
+
+a <- dplyr::full_join(neighbors.7.5, neighbors.1m, by= c("plot", "subplot",  "Plant"))
+
+b <- dplyr::full_join(neighbors.3m, neighbors.plot, by= c("plot", "subplot",  "Plant"))
+
+ab<- dplyr::full_join(a, b, by= c("plot", "subplot",  "Plant"))
+head(ab) 
+vecinos<- ab[,c("plot","subplot","Plant", "neigh_inter.plot","neigh_intra.plot",
+                "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
+vecinos <- unique(vecinos)
+vecinos$unique_id <- paste(vecinos$plot, vecinos$subplot,vecinos$Plant, sep="_")
+vecinos <- vecinos %>% distinct(unique_id, .keep_all = TRUE)
+#final$unique_id <- paste(final$plot, final$subplot,final$Plant, sep="_")
+final.data <- dplyr::full_join(final, vecinos , by=c("plot", "subplot", "Plant")) #veinos + base de datos pol+abund
+
+none.visitor <- na.omit(final.data) #only neighbors in the places that i have a pollinator
+none.visitor<- none.visitor[,c("plot","subplot","Plant","Group","visits", "individuals", "seed", "fruit", "visitas_indv", "visitas_indv_hora", "neigh_inter.plot","neigh_intra.plot",
+                               "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
+
+
+data3 <- dplyr::right_join(none.visitor, disfinal, by=c("plot", "subplot"))#ahora junto la base de datos con la de las coordenadas
+#this data have all the neigbors together
+
+
+#data4 <- data3 %>% group_by(plot, subplot, Plant, Group, individuals, seed, fruit,visitas_indv_hora, x_coor2, y_coor2,
+ #                         neigh_inter.plot,neigh_intra.plot,neigh_intra.3m ,neigh_inter.3m, neigh_inter.1m ,neigh_intra.1m ,
+  #                        neigh_inter.7.5,neigh_intra.7.5) %>% summarise (visits.total = sum(visits))%>%
+  #ungroup()
+data <- na.omit(data3)
+
+#data <- data[,c("plot","subplot","Plant","Group","visits.total", "individuals", "seed", "fruit",  "neigh_inter.plot","neigh_intra.plot",
+ #               "neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5", "x_coor2", "y_coor2")] 
+head(data)
+data$unique_id <- paste(data$plot, data$subplot,data$Plant,data$Group, sep="_")
+data.1 <- data %>% distinct(unique_id, .keep_all = TRUE)
+
+data.spread.visitors <- spread(data.1, Group, visits, fill = 0, convert = FALSE,
+                               drop = TRUE, sep = NULL) #solo 222 entradas
+
+
+neigbors.intra.inter <- tidyr::gather(data.spread.visitors,'neigh_inter.plot', 'neigh_intra.plot', 'neigh_intra.3m', 'neigh_inter.3m', 'neigh_inter.1m', 
+                                      'neigh_intra.1m', 'neigh_inter.7.5', 'neigh_intra.7.5', key = "distance", value = "n_neighbors" )
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.plot"] <- "a"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.plot"] <- "b"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.3m"] <- "c"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.3m"] <- "d"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.1m"] <- "e"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.1m"] <- "f"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.7.5"] <- "g"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.7.5"] <- "h"
+neigbors.intra.inter$distance <- as.factor(neigbors.intra.inter$distance)
+neigbors.intra.inter$n_neighbors_total <- neigbors.intra.inter$n_neighbors 
+neigbors.intra.inter$distance_total <- neigbors.intra.inter$distance
+inter.neigh <- subset(neigbors.intra.inter, distance_total%in% c("a","c","e","g"))
+inter.neigh$n_neighbors_inter <- inter.neigh$n_neighbors_total
+intra.neigh <- subset(neigbors.intra.inter, distance_total%in% c("b","d","f","h"))
+intra.neigh$distance_total <- as.character(intra.neigh$distance_total)
+intra.neigh$n_neighbors_intra <- intra.neigh$n_neighbors_total
+intra.neigh$distance[intra.neigh$distance_total == "b"] <- 'a' #PLOT
+intra.neigh$distance[intra.neigh$distance_total == "d"] <- "c"#3M
+intra.neigh$distance[intra.neigh$distance_total == "f"] <- "e"#1M
+intra.neigh$distance[intra.neigh$distance_total == "h"] <- "g"#7.5cm
+intra <- intra.neigh[,c("n_neighbors_intra" )] 
+neigbors.intra.inter.split<- cbind(inter.neigh, intra)# in this data i have the neighbors separate with the level plot, 3m, 1m and 7.5 cm
+head(neigbors.intra.inter.split)
+
+
+
+#######flowers
 
 
 flores<-  read.table("data/Data_2020/Flowers_Abundance_2020.csv", header=T, sep=";")
@@ -274,7 +283,6 @@ flores.juntas <- tidyr::gather(flores, key = "Plant", value = "flowers", 6:23)
 flores.juntas$plot <- flores.juntas$Plot
 flores.juntas$subplot <- flores.juntas$Subplot
 flores.juntas <- subset(flores.juntas, subplot != "OUT")
-
 
 
 #nueva base de datos
@@ -303,7 +311,7 @@ df1 <- together2
 df2 <- together2
 df3 <- together2
 filas.sin.na <- 1073:1
-df1[filas.sin.na,] <- replace_na(df1[filas.sin.na,],list(flowers = 0)) #arreglado
+
 
 
 str(df1)
@@ -312,15 +320,13 @@ posiciones <- which(is.na(df3[filas.sin.na,13])) #aqui me solecciona solo las li
 df3$flowers[posiciones] <- 0 #ahora sustituyo esas lineas que sn Nas en 0. #arreglado
 
 
+df5 <- df3
+filas.sin.na3 <- 1271:1517
+posiciones4 <- which(is.na(df5[1271:1517,13])) #no entiendo por qué pero no se me cambian los datos. 
+df5$flowers[posiciones4] <- 0
 
-filas.sin.na1 <- 1277:1520
-posiciones1 <- which(is.na(df1[filas.sin.na1,1]))
-df1$flowers[posiciones1] <- 0
 
-
-#la base de datos de "final" ya tiene los polinizadores,las visitas/hora/indv, las plantas, y 
-#                       las abundancias de las plantas
-
+#df5, si corrijo esos datos de flores, sería la base de datos completa. 
 
 final$log.seed <-  log(final$seed)
 hist(final$seed)
@@ -347,7 +353,6 @@ phenology.color #This grpah is to know in which week a visit was register in a p
 
 #Now I'm going to calculate the neighbors inter e intra at different scales following the David Neighbors script. At the end, there would be
 #2 dataframes, one for the first species, and another for the last species. 
-
 
 
 
