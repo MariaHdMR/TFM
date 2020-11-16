@@ -183,6 +183,8 @@ disfinal$x_coor2 <- as.numeric(disfinal$x_coor2)
 disfinal$y_coor2 <- as.numeric(disfinal$y_coor2)
 w5 <- knn2nb(knearneigh(coordinates(disfinal[,3:4]), k=8))
 
+#write.csv2(disfinal,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/distances.csv",row.names = FALSE)
+
 #pollinators, abundances and competition data
 FV <- read.table("Analisis_BES/data/raw_Pollinators_2020_1.csv", header=T, sep=";") #pollinators 2020
 head(FV)
@@ -314,6 +316,8 @@ sum(is.na(data$flowers))
 
 df1 <- data
 df1$flowers2 <- ifelse(!df1$Day %in% c(22,23) & !(df1$Month == 4) & is.na(df1$flowers), 0, df1$flowers) 
+
+df1$visits.flower <- (df1$visits/df1$flowers2)#There are -Inf. Should I write 1 flower in the places that we have visits? 
 data <- df1 #Base de datos final
 #write.csv2(data,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Final_global_data.csv",row.names = FALSE)
 
@@ -360,3 +364,6 @@ head(neigbors.intra.inter.split)
 
 #write.csv2(neigbors.intra.inter.split,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Data_neighbors.intra.inter.split.csv",row.names = FALSE)
 #       Here I have the neighbors separate in intra and inter
+
+#write.csv2(disfinal,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/distances.csv",row.names = FALSE)
+#       dataframe with the distances across plots and subplots
