@@ -1,5 +1,5 @@
 #Load the data for the BES analyses, make the transformations and get the global dataframe to can work with. 
-#First: ----
+#Caculate the neigbors. David Garcia-Callejas code ----
 #We decide to only have one period of phenology. I used the phenology in order to calculate the neigbors. For calculating the neighbors I used the 
 #code created for David Garcia-Callejas call CaracolesNeighbors. 
 
@@ -140,7 +140,7 @@ ggplot(tt,aes(x = subplot,y = sum_intra)) + geom_point(aes(color = edge))
 #write.csv2(neigh.long,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/focal_neighbours.2020_2nphenology.csv",row.names = FALSE)
 #This dataframe is the focal_neighbors.2020_2ndphenology.csv , where I have all the neighbors. 
 
-#libraries and packages for transforming the data----
+#load data and transforming----
 plants.neigh <- read.table("Analisis_BES/data/focal_neighbours.2020_2nphenology.csv", header=T, sep=";")
 head(plants.neigh)
 
@@ -313,40 +313,50 @@ sum(is.na(data$flowers))
 #Ahora tengo que arreglar la columna de flores, ya que hay NAs que son 0, pero también hay NAs que son NAs. Las fechas 22 y 23 del mes 4 son NAs
 
 df1 <- data
-df1$flowers2 <- ifelse(!df1$Day %in% c(22,23) & !df1$Month != 4 & is.na(df1$flowers), 0, df1$flowers) #no me lo arregla
-#data <- df1 #cuando esté arreglado lo de las flores
-#########
-######## No correr hasta terner arreglado lo de las flores
-######
-#data.spread.visitors <- spread(data.1, Group, visits, fill = 0, convert = FALSE,
- #                              drop = TRUE, sep = NULL) #solo 222 entradas
+df1$flowers2 <- ifelse(!df1$Day %in% c(22,23) & !(df1$Month == 4) & is.na(df1$flowers), 0, df1$flowers) 
+data <- df1 #Base de datos final
+#write.csv2(data,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Final_global_data.csv",row.names = FALSE)
 
 
-#neigbors.intra.inter <- tidyr::gather(data.spread.visitors,'neigh_inter.plot', 'neigh_intra.plot', 'neigh_intra.3m', 'neigh_inter.3m', 'neigh_inter.1m', 
- #                                     'neigh_intra.1m', 'neigh_inter.7.5', 'neigh_intra.7.5', key = "distance", value = "n_neighbors" )
-#neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.plot"] <- "a"
-#neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.plot"] <- "b"
-#neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.3m"] <- "c"
-#neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.3m"] <- "d"
-#neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.1m"] <- "e"
-#neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.1m"] <- "f"
-#neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.7.5"] <- "g"
-#neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.7.5"] <- "h"
-#neigbors.intra.inter$distance <- as.factor(neigbors.intra.inter$distance)
-#neigbors.intra.inter$n_neighbors_total <- neigbors.intra.inter$n_neighbors 
-#neigbors.intra.inter$distance_total <- neigbors.intra.inter$distance
-#inter.neigh <- subset(neigbors.intra.inter, distance_total%in% c("a","c","e","g"))
-#inter.neigh$n_neighbors_inter <- inter.neigh$n_neighbors_total
-#intra.neigh <- subset(neigbors.intra.inter, distance_total%in% c("b","d","f","h"))
-#intra.neigh$distance_total <- as.character(intra.neigh$distance_total)
-#intra.neigh$n_neighbors_intra <- intra.neigh$n_neighbors_total
-#intra.neigh$distance[intra.neigh$distance_total == "b"] <- 'a' #PLOT
-#intra.neigh$distance[intra.neigh$distance_total == "d"] <- "c"#3M
-#intra.neigh$distance[intra.neigh$distance_total == "f"] <- "e"#1M
-#intra.neigh$distance[intra.neigh$distance_total == "h"] <- "g"#7.5cm
-#intra <- intra.neigh[,c("n_neighbors_intra" )] 
-#neigbors.intra.inter.split<- cbind(inter.neigh, intra)# in this data i have the neighbors separate with the level plot, 3m, 1m and 7.5 cm
-#head(neigbors.intra.inter.split)
+data$unique_id <- paste(data$plot, data$subplot,data$Plant,data$Group, sep="_")
+data <- data %>% distinct(unique_id, .keep_all = TRUE)
+data.spread.visitors <- spread(data, Group, visits, fill = 0, convert = FALSE,
+                              drop = TRUE, sep = NULL) 
+
+#now I want to calculate the neighbors intra and inter separately.
+neigbors.intra.inter <- tidyr::gather(data.spread.visitors,'neigh_inter.plot', 'neigh_intra.plot', 'neigh_intra.3m', 'neigh_inter.3m', 'neigh_inter.1m', 
+                                      'neigh_intra.1m', 'neigh_inter.7.5', 'neigh_intra.7.5', key = "distance", value = "n_neighbors" )
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.plot"] <- "a"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.plot"] <- "b"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.3m"] <- "c"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.3m"] <- "d"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.1m"] <- "e"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.1m"] <- "f"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_inter.7.5"] <- "g"
+neigbors.intra.inter$distance[neigbors.intra.inter$distance == "neigh_intra.7.5"] <- "h"
+neigbors.intra.inter$distance <- as.factor(neigbors.intra.inter$distance)
+neigbors.intra.inter$n_neighbors_total <- neigbors.intra.inter$n_neighbors 
+neigbors.intra.inter$distance_total <- neigbors.intra.inter$distance
+inter.neigh <- subset(neigbors.intra.inter, distance_total%in% c("a","c","e","g"))
+inter.neigh$n_neighbors_inter <- inter.neigh$n_neighbors_total
+intra.neigh <- subset(neigbors.intra.inter, distance_total%in% c("b","d","f","h"))
+intra.neigh$distance_total <- as.character(intra.neigh$distance_total)
+intra.neigh$n_neighbors_intra <- intra.neigh$n_neighbors_total
+intra.neigh$distance[intra.neigh$distance_total == "b"] <- 'a' #PLOT
+intra.neigh$distance[intra.neigh$distance_total == "d"] <- "c"#3M
+intra.neigh$distance[intra.neigh$distance_total == "f"] <- "e"#1M
+intra.neigh$distance[intra.neigh$distance_total == "h"] <- "g"#7.5cm
+intra <- intra.neigh[,c("n_neighbors_intra" )] 
+neigbors.intra.inter.split<- cbind(inter.neigh, intra)# in this data I have the neighbors separate with the level plot, 3m, 1m and 7.5 cm
+head(neigbors.intra.inter.split)
 
 
+#write.csv2(neigbors.intra.inter.split,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Data_neighbors.intra.inter.split.csv",row.names = FALSE)
 
+
+#Final dataframes ----
+#write.csv2(data,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Final_global_data.csv",row.names = FALSE) 
+#       Here I have all the neighbors together
+
+#write.csv2(neigbors.intra.inter.split,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Data_neighbors.intra.inter.split.csv",row.names = FALSE)
+#       Here I have the neighbors separate in intra and inter
