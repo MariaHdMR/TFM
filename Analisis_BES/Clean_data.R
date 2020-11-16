@@ -152,7 +152,7 @@ head(distances) #In this data I have only the coordenates for one plot. Now I ha
 distances <- distances[seq(2,72,2),]
 distances2 <- rbind(distances, distances, distances,
                     distances, distances, distances,
-                    distances, distances, distances) #For publication, this need to be properly measured from Klm.
+                    distances, distances, distances)
 distances2$plot <- c(rep(1,36),rep(2,36),rep(3,36),rep(4,36),rep(5,36),
                      rep(6,36),rep(7,36),rep(8,36),rep(9,36))
 tesaurus <- data.frame(plot = c(1:9),
