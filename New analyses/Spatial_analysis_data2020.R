@@ -34,7 +34,6 @@ library(tidyr)
 
 #load data and data transformations----
 
-
 #neighbors data, there is not the plot 4
 start.plants <- read.table("data/focal_neighbours.2020_start.csv", header=T, sep=";")
 head(start.plants)
@@ -50,7 +49,7 @@ head(distances)
 distances <- distances[seq(2,72,2),]
 distances2 <- rbind(distances, distances, distances,
                     distances, distances, distances,
-                    distances, distances, distances) #For publication, this need to be properly measured from Klm.
+                    distances, distances, distances) 
 distances2$plot <- c(rep(1,36),rep(2,36),rep(3,36),rep(4,36),rep(5,36),
                      rep(6,36),rep(7,36),rep(8,36),rep(9,36))
 tesaurus <- data.frame(plot = c(1:9),
@@ -320,10 +319,13 @@ posiciones <- which(is.na(df3[filas.sin.na,13])) #aqui me solecciona solo las li
 df3$flowers[posiciones] <- 0 #ahora sustituyo esas lineas que sn Nas en 0. #arreglado
 
 
+df3 <- as.data.frame(df3)
 df5 <- df3
+head(as.data.frame(df3))
 filas.sin.na3 <- 1271:1517
-posiciones4 <- which(is.na(df5[filas.sin.na3,13])) #no entiendo por qué pero no se me cambian los datos.
+posiciones4 <- which(is.na(df5[filas.sin.na3,13])) #no entiendo por qué pero no se mecambian los datos.
 df5$flowers[filas.sin.na3[posiciones4]] <- 0
+df5$flowers[1271:1517]
 
 #df5, si corrijo esos datos de flores, sería la base de datos completa. 
 
