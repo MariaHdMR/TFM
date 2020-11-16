@@ -322,9 +322,8 @@ df3$flowers[posiciones] <- 0 #ahora sustituyo esas lineas que sn Nas en 0. #arre
 
 df5 <- df3
 filas.sin.na3 <- 1271:1517
-posiciones4 <- which(is.na(df5[1271:1517,13])) #no entiendo por qué pero no se me cambian los datos. 
-df5$flowers[posiciones4] <- 0
-
+posiciones4 <- which(is.na(df5[filas.sin.na3,13])) #no entiendo por qué pero no se me cambian los datos.
+df5$flowers[filas.sin.na3[posiciones4]] <- 0
 
 #df5, si corrijo esos datos de flores, sería la base de datos completa. 
 
