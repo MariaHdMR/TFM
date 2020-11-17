@@ -355,6 +355,7 @@ k <- lme(visits ~ neigh_inter.1m+ neigh_intra.1m, data= Bet.vis,random = ~ 1|plo
          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T),method = "ML")
 #I tried the model writting as random factor ~ 1|plot+ 1|Plant but the model stays more than 45 min running. For that, I decide
 #not to include them
+<<<<<<< HEAD
 #I think this is not correctly specified (according to google) try
 k <- lme(visits ~ neigh_inter.1m+ neigh_intra.1m, data= Bet.vis,random = ~ 1|plot/Plant, control=lCtr,
          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T),method = "ML")
@@ -365,6 +366,12 @@ m.prueba_sec.k <- dredge(k, trace = TRUE, rank = "AICc", REML = FALSE)#neigh int
 fmList.prueba.k <- get.models(m.prueba_sec.k, 1:4) #this one is also slow, but doable 
 summary(model.avg(fmList.prueba.k))#neigh intra 1m
 importance(fmList.prueba.k)
+=======
+m.prueba_sec.k <- dredge(k, trace = TRUE, rank = "AICc", REML = FALSE)#
+(attr(m.prueba_sec.k, "rank.call"))
+fmList.prueba.k <- get.models(m.prueba_sec.k, 1:4) 
+summary(model.avg(fmList.prueba.k))#
+>>>>>>> 0655af34eb4fbb3219200c0b9b2ca6c84506284a
 residplot(k) 
 
 Bet.vis$fittedvalues <- fitted(k)
@@ -476,3 +483,76 @@ fmList.prueba.k2.bee.i <- get.models(m.prueba_sec.k2.bee.i, 1:4)
 summary(model.avg(fmList.prueba.k2.bee.i))#
 
 ####
+#flies
+#
+fly.vis <- subset(data, Group== "Fly")#I have rows with the same coordenates. 
+fly.vis$y_coor2 <-  jitter(fly.vis$y_coor2)
+
+#random structure visits count
+c.vis.fly.1<- lme(visits ~ 1, data= fly.vis,random = ~1 |plot, control=lCtr,
+                  method = "ML")
+c2.vis.fly.1 <- lme(visits ~ 1, data= fly.vis, random = ~1 |plot, control=lCtr,
+                    corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
+c3.vis.fly.1<- lme(visits ~ 1, data= fly.vis, random = ~1 |plot, control=lCtr,
+                   corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
+c4.vis.fly.1 <- lme(visits ~ 1, data= fly.vis, random = ~1 |plot, control=lCtr,
+                    corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+
+AIC(c.vis.fly.1, c2.vis.fly.1, c3.vis.fly.1, c4.vis.fly.1)#the 4th model is the best.
+
+k2.fly <- lme(visits ~ neigh_inter.1m+ neigh_intra.1m, data= fly.vis,random = ~1 |plot, control=lCtr,
+              corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+residplot(k2.fly) #the resiudals are better without the log. 
+
+m.prueba_sec.k2.fly <- dredge(k2.fly, trace = TRUE, rank = "AICc", REML = FALSE)#neight intra 1m maybe
+(attr(m.prueba_sec.k2.fly, "rank.call"))
+fmList.prueba.k2.fly <- get.models(m.prueba_sec.k2.fly, 1:4) 
+summary(model.avg(fmList.prueba.k2.fly))#
+
+fly.vis$fittedvalues <- fitted(k2.fly)
+flyt.plot.fl <- ggplot(fly.vis, aes(x = neigh_intra.1m))+
+    geom_point(aes(y= visits))+
+    geom_smooth(method = "lm",aes(y=fittedvalues))+
+    ggtitle("Visits of Beetles with neigh_intra.1m")+
+    ylab("Number of Fly visits")+
+    xlab("Number of neighbors intra at 1m")+
+    theme_light()
+flyt.plot.fl
+
+#flies random structure visits per flower
+fly.vis$visits.flower <- as.numeric(fly.vis$visits.flower)
+flies.vis1 <- fly.vis[!is.na(fly.vis$visits.flower),]
+flies.vis1$visits.flower[flies.vis1$visits.flower== Inf] <- 'NA' #I have problems with the INf numbers, so I change them to NA and
+#           I delete them
+flies.vis1$visits.flower <- as.numeric(flies.vis1$visits.flower)
+flies.vis1 <- flies.vis1[!is.na(flies.vis1$visits.flower),]
+
+c.vis.fly.1.i<- lme(visits.flower ~ 1, data= flies.vis1,random = ~1 |plot, control=lCtr,
+                    method = "ML")
+c2.vis.fly.1.i <- lme(visits.flower ~ 1, data= flies.vis1, random = ~1 |plot, control=lCtr,
+                      corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T), method = "ML")
+c3.vis.fly.1.i<- lme(visits.flower ~ 1, data= flies.vis1, random = ~1 |plot, control=lCtr,
+                     corr = corSpatial(form = ~x_coor2 + y_coor2, type ="rational", nugget = T), method = "ML")
+c4.vis.fly.1.i <- lme(visits.flower ~ 1, data= flies.vis1, random = ~1 |plot, control=lCtr,
+                      corr = corSpatial(form = ~x_coor2 + y_coor2, type ="exponential", nugget = T), method = "ML")
+
+AIC(c.vis.fly.1.i, c2.vis.fly.1.i, c3.vis.fly.1.i, c4.vis.fly.1.i)#the 1st model is the best. 
+
+k2.fly.i <- lme(log(visits.flower) ~ neigh_inter.1m+ neigh_intra.1m, data= flies.vis1,random = ~1 |plot, control=lCtr,
+                 method = "ML")
+residplot(k2.fly.i) #the resiudals are better with the log. 
+
+m.prueba_sec.k2.fly.i <- dredge(k2.fly.i, trace = TRUE, rank = "AICc", REML = FALSE)#neightintra 1m 
+(attr(m.prueba_sec.k2.fly.i, "rank.call"))
+fmList.prueba.k2.fly.i <- get.models(m.prueba_sec.k2.fly.i, 1:4) 
+summary(model.avg(fmList.prueba.k2.fly.i))#
+
+flies.vis1$fittedvalues <- fitted(k2.fly.i)
+fliest.plot.fl <- ggplot(flies.vis1, aes(x = neigh_intra.1m))+
+    geom_point(aes(y= log(visits.flower)))+
+    geom_smooth(method = "lm",aes(y=fittedvalues))+
+    ggtitle("Visits of Flies (per flowers) with neigh_intra.1m")+
+    ylab("Number of Fly visits")+
+    xlab("Number of neighbors intra at 1m")+
+    theme_light()
+fliest.plot.fl
