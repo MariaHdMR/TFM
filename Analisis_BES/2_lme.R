@@ -355,7 +355,6 @@ k <- lme(visits ~ neigh_inter.1m+ neigh_intra.1m, data= Bet.vis,random = ~ 1|plo
          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T),method = "ML")
 #I tried the model writting as random factor ~ 1|plot+ 1|Plant but the model stays more than 45 min running. For that, I decide
 #not to include them
-<<<<<<< HEAD
 #I think this is not correctly specified (according to google) try
 k <- lme(visits ~ neigh_inter.1m+ neigh_intra.1m, data= Bet.vis,random = ~ 1|plot/Plant, control=lCtr,
          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T),method = "ML")
@@ -366,12 +365,6 @@ m.prueba_sec.k <- dredge(k, trace = TRUE, rank = "AICc", REML = FALSE)#neigh int
 fmList.prueba.k <- get.models(m.prueba_sec.k, 1:4) #this one is also slow, but doable 
 summary(model.avg(fmList.prueba.k))#neigh intra 1m
 importance(fmList.prueba.k)
-=======
-m.prueba_sec.k <- dredge(k, trace = TRUE, rank = "AICc", REML = FALSE)#
-(attr(m.prueba_sec.k, "rank.call"))
-fmList.prueba.k <- get.models(m.prueba_sec.k, 1:4) 
-summary(model.avg(fmList.prueba.k))#
->>>>>>> 0655af34eb4fbb3219200c0b9b2ca6c84506284a
 residplot(k) 
 
 Bet.vis$fittedvalues <- fitted(k)
