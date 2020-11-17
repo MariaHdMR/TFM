@@ -5,8 +5,9 @@ library(spdep)#-> for Moran's I
 library(ncf) #spline.correlog
 ####load data
 data <- read_csv2("Analisis_BES/data/Final_global_data.csv")
-data$visits <- as.numeric(data$visits)
-data <- as.data.frame(data)
+data$visits <- as.numeric(data$visits) #por que es esto necesario?
+data <- as.data.frame(data) #Maria, por que usas tidyverse para cargar datos, si luego los pasa a base r? 
+head(data)
 distances <- read_csv2("Analisis_BES/data/distances.csv")
 distances <- as.data.frame(distances)
 distances$x_coor2 <- as.numeric(distances$x_coor2)
@@ -16,12 +17,13 @@ distancias.matriz <-as.matrix(dist(cbind(distances$x_coor2, distances$y_coor2)))
 plots.dists.inv <- 1/distancias.matriz
 diag(plots.dists.inv) <- 0
 w5 <- knn2nb(knearneigh(coordinates(distances[,3:4]), k=8))
+
 ##### ##############################Pollinators I de Moran#######################################
 #Here I used the number of visits (count) per one Group of pollinators per subplot and per plot (regardless the plant species that they visited)
 #Visits (count)----
 #>beetles 
 beetle <- subset(data, Group == "Beetle")
-beetle$plot <- as.numeric(as.character(beetle$plot))
+beetle$plot <- as.numeric(as.character(beetle$plot)) #esto me preocupa un poco por que indica que los datos no son homogeneos...
 beetle.v <- beetle[,c("plot", "subplot","visits")] #datos de plot, subplot, y visitas de BEETLES
 beetle.v <-beetle.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visits))
 beetle.v <- left_join(distances, beetle.v, by= c("plot", "subplot"))
@@ -40,6 +42,7 @@ moran.plot(beetle.v$visits,mat2listw(plots.dists.inv), main= " Spatial Autocorre
 
 moran.mc(beetle.v$visits, mat2listw(plots.dists.inv), nsim=99) #p.value= 0.01 #in internet it is said that The Montercalo
 # has more accurate results then the moran.test function. 
+#IB: GREAT, beetles tend to be slightly clustered, specially at short distances.
 
 #>flies
 flies <- subset(data, Group == "Fly")
@@ -57,6 +60,7 @@ moran.test(flies.v$visits,mat2listw(plots.dists.inv)) # I= 0.0698
 moran.test(flies.v$visits, nb2listw(w5)) # vecinos, I= 0.11
 moran.plot(flies.v$visits,mat2listw(plots.dists.inv), main= "Spatial autocorrelation flies across plots")
 moran.mc(flies.v$visits, mat2listw(plots.dists.inv), nsim=99) #p-value= 0.01
+#IB: Flies show a very small spatial autocorrelation. 
 
 #butterflies
 but <- subset(data, Group == "Butterfly")
@@ -74,6 +78,7 @@ moran.test(but.v$visits,mat2listw(plots.dists.inv)) # I= -1.032727e-02, homogeni
 moran.test(but.v$visits, nb2listw(w5)) # vecinos, I=  -0.0125584112
 moran.plot(but.v$visits,mat2listw(plots.dists.inv),  main= "Spatial autocorrelation butterflies across plots")
 moran.mc(but.v$visits, mat2listw(plots.dists.inv), nsim=99) #p-value= 0.98
+#IB: Buterflies do not show spatial autocorrelation. This agrees with its high mobility.
 
 #bees
 bee <- subset(data, Group == "Bee")
@@ -91,6 +96,8 @@ moran.test(bee.v$visits,mat2listw(plots.dists.inv))# I = 0.03588
 moran.test(bee.v$visits, nb2listw(w5))# I= 0.0617
 moran.plot(bee.v$visits,mat2listw(plots.dists.inv), main= "Spatial autocorrelation bees across plots")
 moran.mc(bee.v$visits, mat2listw(plots.dists.inv), nsim=99) #p-value= 0.01
+#IB: Bees also show a really weak spatial autocorrelation. It fits the mobility expectations 
+#beetles < flies < bees < buterflies.
 
 #polinizadores general 
 junto <- data[,c("Group", "plot", "subplot","visits")]
@@ -108,6 +115,7 @@ moran.test(junto$visit,mat2listw(plots.dists.inv)) # I= 0.1840
 moran.test(junto$visit, nb2listw(w5)) # vecinos, I= 0.2493
 moran.plot(junto$visit,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation pollinators across plots")
 moran.mc(junto$visit, mat2listw(plots.dists.inv), nsim=99) #p-value= 0.01
+#IB: Overall, there is a moderate spatial pattern. I am not sure we need to present this in the paper. 
 
 par(mfrow=c(2,3))
 plot(bet.corr, main= " Beetles distribution across plots",xlab="Distance (m)", ylab="Correlation")
@@ -117,16 +125,16 @@ plot(bee.corr, main= "Bees distribution across plots",xlab="Distance (m)", ylab=
 plot(total.corr, main= "Floral visitors distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
 
-
 #now, I'll try with the number of visits per Group of floral visitors / number of flowers of the  Plant species that they visited per subplot
 #                       and per plot
+#IB: I don't think this is necessary for the paper.
 #visits/flowers----
 
 #>beetles flowers 
 
 beetle.fl <- beetle[,c("plot", "subplot","visits.flower")] 
 beetle.fl$visits.flower[beetle.fl$visits.flower== Inf] <- 'NA'
-beetle.fl$visits.flower <-as.numeric(beetle.fl$visits.flower)
+beetle.fl$visits.flower <-as.numeric(beetle.fl$visits.flower) 
 beetle.fl <-na.omit(beetle.fl)
 beetle.fl <-beetle.fl %>% group_by(plot, subplot) %>% summarise (visits.fl = sum(visits.flower))%>%
     ungroup()
@@ -251,7 +259,7 @@ plot(but.corr.fl, main= "Visits of Butterflies per flowers distribution across p
 plot(bee.corr.fl, main= "Visits of Bees per flowers distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(total.corr.fl, main= "Visits of Floral visitors per flowers distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
-
+#IB: I will not show this one to keep the story simple.
 
 ############################################ Plants Individuals########################################
 #Here I'm going to use the number of individuals of each species per subplot and per plot
@@ -460,6 +468,7 @@ plot(soas.corr, main= " SOAS distribution across plots",xlab="Distance (m)", yla
 plot(chmi.corr, main= " CHMI distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(total.corr.pl, main= "Plants distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
+#IB: Great, remember to highlight plants are more clustered than pollinators.
 
 #####Fitness###----
 #First the fitness is the number of seeds per ONE fruit----
@@ -478,6 +487,7 @@ moran.test(CHFU.fit$seeds,mat2listw(plots.dists.inv)) # I= 0.1032
 moran.test(CHFU.fit$seeds, nb2listw(w5)) # vecinos, I= 0.1921
 moran.plot(CHFU.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation CHFU fitness (seeds) across plots")
 moran.mc(CHFU.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
+#IB: The plot stills show a very weak pattern. 
 
 #LEMA
 
@@ -493,6 +503,7 @@ moran.test(LEMA.fit$seeds,mat2listw(plots.dists.inv)) # I= 0.1065
 moran.test(LEMA.fit$seeds, nb2listw(w5)) # vecinos, I= 0.2095
 moran.plot(LEMA.fit$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation LEMA fitness (seeds) across plots")
 moran.mc(LEMA.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
+#IB: Same here
 
 #PUPA 
 
@@ -643,6 +654,8 @@ plot(cete.corr.s, main= " CETE fitness (seeds) distribution across plots",xlab="
 plot(bema.corr.s, main= " BEMA fitness (seeds) distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(total.corr.pl.s, main= "Plant fitness (seeds) distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
+#IB: I think we can skip this one too for the presentation. 
+#In any case, I would only explore the three species analyzed in detail for fitness
 
 #Now with the data of fitness in fruits = (seeds/one fruit)*fruits----
 
@@ -660,6 +673,7 @@ moran.test(CHFU.fit.fr$seeds,mat2listw(plots.dists.inv)) # I= 0.0569
 moran.test(CHFU.fit.fr$seeds, nb2listw(w5)) # vecinos, I= 0.1648
 moran.plot(CHFU.fit.fr$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation CHFU fitness (fruits) across plots")
 moran.mc(CHFU.fit.fr$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
+#IB: really small.
 
 #LEMA
 
@@ -675,6 +689,7 @@ moran.test(LEMA.fit.fr$seeds,mat2listw(plots.dists.inv)) # I= 0.1577
 moran.test(LEMA.fit.fr$seeds, nb2listw(w5)) # vecinos, I= 0.1773
 moran.plot(LEMA.fit.fr$seeds,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation LEMA fitness (fruits) across plots")
 moran.mc(LEMA.fit.fr$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
+#A bit stronger... 
 
 #PUPA 
 
@@ -822,4 +837,4 @@ plot(cete.corr.s.fr, main= " CETE fitness (fruits) distribution across plots",xl
 plot(bema.corr.s.fr, main= " BEMA fitness (fruits) distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(total.corr.pl.s.fr, main= "Plant fitness (fruits) distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
-
+#IB: Same here, I would show only the results for the three species studied in detail in the sems.
