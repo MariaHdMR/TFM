@@ -5,13 +5,14 @@ library(lme4)
 library(nlme)
 library(MuMIn)
 library(predictmeans)
+
 #fitness----
 data <- read_csv2("Analisis_BES/data/Final_global_data.csv")
 data$visits <- as.numeric(data$visits)
 data <- as.data.frame(data)
 
 #I'm going to create 2 different dataframe in order to can spread the number of visits (count) and the number of visit
-# per flowers. FOt that, I create the two dataframes, I spread them, and after I join the columns.
+# per flowers. For that, I create the two dataframes, I spread them, and after I join the columns.
 data1 <- data %>% group_by(plot, subplot, Plant, Group, individuals, seed,seed.indv,fruit,visits,visits.flower, x_coor2, y_coor2,
                           neigh_inter.plot,neigh_intra.plot,neigh_intra.3m ,neigh_inter.3m, neigh_inter.1m ,neigh_intra.1m ,
                           neigh_inter.7.5,neigh_intra.7.5) %>% summarise (visits.total = sum(visits))%>%
@@ -51,6 +52,7 @@ data.spread2 <- data.spread2[,c("plot","subplot","Plant", "individuals","seed","
          "neigh_inter.plot","neigh_intra.plot","neigh_intra.3m", "neigh_inter.3m", "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
 
 todo <- full_join(data.spread1, data.spread2)
+head(as.data.frame(todo))
 
 
 #control for the lme
@@ -75,17 +77,29 @@ AIC(m1, m2, m4) #best model is m1, without coordenates
 options(na.action = "na.fail")
 
 #final model for CHFU
-m.prueba.chufu.3 <- lme(seed ~ Beetle+Fly+ Bee +neigh_inter.1m+neigh_intra.1m+neigh_inter.7.5+neigh_intra.7.5, data= CHFU.vis, random = ~1 |plot, control=lCtr,
+#head(CHFU.vis)
+pairs(CHFU.vis[,c(5,7,10:25)]) #always good to see how it looks like.
+m.prueba.chufu.3 <- lme(seed ~ Beetle+Fly+ Bee +neigh_inter.1m+neigh_intra.1m+neigh_inter.7.5+neigh_intra.7.5, 
+                        data= CHFU.vis, random = ~1 |plot, control=lCtr,
                          method = "ML")
 m.prueba.chufu.3.fl <- lme(seed ~ Beetle.fl+Fly.fl+ Bee.fl +neigh_inter.1m+neigh_intra.1m+neigh_inter.7.5+neigh_intra.7.5, data= CHFU.vis, random = ~1 |plot, control=lCtr,
                         method = "ML")
 
 residplot(m.prueba.chufu.3)
 residplot(m.prueba.chufu.3.fl)#I think that the one that fix better it is that one. 
+#In this case, I am not worried by which has better residuals, but more explanatory power.
+summary(m.prueba.chufu.3)
+summary(m.prueba.chufu.3.fl)
 
-m.prueba_sec.chufu.2 <- dredge(m.prueba.chufu.3.fl, trace = TRUE, rank = "AICc", REML = FALSE) #nothing so relevant
+m.prueba_sec.chufu.2 <- dredge(m.prueba.chufu.3.fl, 
+                               trace = TRUE, rank = "AICc", 
+                               REML = FALSE) #nothing so relevant
+#IB: Why AICc and not AIC? Is this considered a low sample size?
 (attr(m.prueba_sec.chufu.2, "rank.call"))
 fmList.prueba.chufu.2 <- get.models(m.prueba_sec.chufu.2, 1:6) 
+importance(m.prueba_sec.chufu.2) #MARIA, this is how you calculate importance. 
+importance(fmList.prueba.chufu.2) #MARIA, this is how you calculate importance. 
+#I think this is what we want to use to select variables.
 summary(model.avg(fmList.prueba.chufu.2))# nothing
 r.squaredGLMM(m.prueba.chufu.3)
 
@@ -114,20 +128,20 @@ residplot(m.prueba.chufu.3.fr1)#both models seem so similar, so I just try with 
 CHFU.vis1 <- CHFU.vis[,c("individuals","seed","seed.indv","fruit","Bee", "Beetle", "Fly", "Butterfly", "x_coor2", "y_coor2",
         "neigh_inter.1m", "neigh_intra.1m" , "neigh_inter.7.5" , "neigh_intra.7.5")] 
 cor(CHFU.vis1) #I thought that maybe were  correlation between the neighbors variables, no seems. 
+
 m.prueba_sec.chufu.2.fr <- dredge(m.prueba.chufu.3.fr, trace = TRUE, rank = "AICc", REML = FALSE)#neigh intra 1m important
 (attr(m.prueba_sec.chufu.2.fr, "rank.call"))
 fmList.prueba.chufu.2.fr <- get.models(m.prueba_sec.chufu.2.fr, 1:6) 
 summary(model.avg(fmList.prueba.chufu.2.fr))# neigh intra 1m
+importance(fmList.prueba.chufu.2.fr) #MARIA, this is how you calculate importance. 
 r.squaredGLMM(m.prueba.chufu.3.fr)
 
-
-CHFU.vis$fittedvalues <- fitted(m.prueba.chufu.3.fr)
+CHFU.vis$fittedvalues <- fitted(m.prueba.chufu.3.fr) #estas usando el modelo completo
 g.chfu <- ggplot(CHFU.vis, aes(x = neigh_intra.1m))+
-    geom_point(aes(y=seed))+
+    geom_point(aes(y=seed.indv))+ #Aqui tenias seeds, pero el modelo lo haces con seed.idiv
     geom_smooth(method = "lm",aes(y=fittedvalues))+
     ggtitle("CHFU fitness with neighbors intra at 1m")
-g.chfu #no cuadra, duda ----
-
+g.chfu #no cuadra, duda IB: YA CUADRA.
 
 
 #LEMA
@@ -173,7 +187,7 @@ m.prueba_sec.lema.2 <- dredge(m.prueba.lema.2, trace = TRUE, rank = "AICc", REML
 (attr(m.prueba_sec.lema.2, "rank.call"))
 fmList.prueba.lema.2 <- get.models(m.prueba_sec.lema.2, 1:4) 
 summary(model.avg(fmList.prueba.lema.2))# 
-
+importance(fmList.prueba.lema.2) #nice... beetles is positive! 
 
 
 #>LEMA (seed/one fruit)*fruits
@@ -200,7 +214,7 @@ residplot(m.prueba.lema.2.fr.fl)#both models seem similar, for that reason I cho
 m.prueba_sec.lema.2.fr <- dredge(m.prueba.lema.2.fr, trace = TRUE, rank = "AICc", REML = FALSE)#nothing
 fmList.prueba.lema.2.fr <- get.models(m.prueba_sec.lema.2.fr, 1:4) 
 summary(model.avg(fmList.prueba.lema.2.fr))# 
-
+importance(fmList.prueba.lema.2.fr)
 
 #>PUPA
 PUPA.vis <- subset(todo, Plant == "PUPA") 
@@ -250,6 +264,7 @@ m.prueba_sec.pupa.2 <- dredge(m.prueba.pupa.2.fl, trace = TRUE, rank = "AICc", R
 (attr(m.prueba_sec.pupa.2, "rank.call"))
 fmList.prueba.pupa.2 <- get.models(m.prueba_sec.pupa.2, 1:4) 
 summary(model.avg(fmList.prueba.pupa.2))# 
+importance(fmList.prueba.pupa.2)
 r.squaredGLMM(m.prueba.pupa.2)
 
 PUPA.vis1$fittedvalues <- fitted(m.prueba.pupa.2.fl)
@@ -260,7 +275,7 @@ PUPA.seed.n <- ggplot(PUPA.vis1, aes(x = neigh_intra.7.5))+
     ylab("Number of seed/fruit")+
     xlab("Number of neighbors intra at 7.5cm")+
     theme_light()
-PUPA.seed.n
+PUPA.seed.n #molaria que fuese un efecto indirecto de polinizadores... a ver el SEM
 
 #(seed/one fruit)*fruits
 #random structure
@@ -289,6 +304,7 @@ m.prueba_sec.pupa.2.fr <- dredge(m.prueba.pupa.2.fr, trace = TRUE, rank = "AICc"
 (attr(m.prueba_sec.pupa.2.fr, "rank.call"))
 fmList.prueba.pupa.2.fr <- get.models(m.prueba_sec.pupa.2.fr, 1:4) 
 summary(model.avg(fmList.prueba.pupa.2.fr))#
+importance(fmList.prueba.pupa.2.fr) #mola!
 r.squaredGLMM(m.prueba.pupa.2.fr)
 
 
@@ -300,7 +316,7 @@ PUPA.seed.n.bee <- ggplot(PUPA.vis, aes(x = Bee))+
     ylab("Number of seed/fruit")+
     xlab("Number of bee vistis")+
     theme_light()
-PUPA.seed.n.bee #poquisimos datos
+PUPA.seed.n.bee #poquisimos datos... IB: Bueno... suficientes.
 
 
 PUPA.seed.n.7.5 <- ggplot(PUPA.vis, aes(x = neigh_inter.7.5))+
@@ -310,7 +326,7 @@ PUPA.seed.n.7.5 <- ggplot(PUPA.vis, aes(x = neigh_inter.7.5))+
     ylab("Number of seed/fruit")+
     xlab("Number of neighbors inter at 7.5cm")+
     theme_light()
-PUPA.seed.n.7.5 #poquisimos datos
+PUPA.seed.n.7.5 #poquisimos datos. Hay ahi un outlyer.
 
 ###################################################################################################################
 ################                                  VISITS----
@@ -339,10 +355,16 @@ k <- lme(visits ~ neigh_inter.1m+ neigh_intra.1m, data= Bet.vis,random = ~ 1|plo
          corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T),method = "ML")
 #I tried the model writting as random factor ~ 1|plot+ 1|Plant but the model stays more than 45 min running. For that, I decide
 #not to include them
+#I think this is not correctly specified (according to google) try
+k <- lme(visits ~ neigh_inter.1m+ neigh_intra.1m, data= Bet.vis,random = ~ 1|plot/Plant, control=lCtr,
+         corr = corSpatial(form = ~x_coor2 + y_coor2, type ="gaussian", nugget = T),method = "ML")
+
 m.prueba_sec.k <- dredge(k, trace = TRUE, rank = "AICc", REML = FALSE)#neigh intra 1m
+#yes, it's slow, but like 5 minuts in my Mac.
 (attr(m.prueba_sec.k, "rank.call"))
-fmList.prueba.k <- get.models(m.prueba_sec.k, 1:4) 
+fmList.prueba.k <- get.models(m.prueba_sec.k, 1:4) #this one is also slow, but doable 
 summary(model.avg(fmList.prueba.k))#neigh intra 1m
+importance(fmList.prueba.k)
 residplot(k) 
 
 Bet.vis$fittedvalues <- fitted(k)
@@ -353,7 +375,7 @@ Bet.plot <- ggplot(Bet.vis, aes(x = neigh_intra.1m))+
     ylab("Number of Beetle visits")+
     xlab("Number of neighbors intra at 1m")+
     theme_light()
-Bet.plot
+Bet.plot #super nice!!
 
 
 #random structure visits per flower
