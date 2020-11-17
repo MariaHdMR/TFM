@@ -22,12 +22,12 @@ library(tidyverse)
 library(dplyr)
 
 #source("R/CaracolesNeighbours.R")
-source("C:/Users/Cisco/Documents/TFM/CaracolesNeighbours.R")
+source("Analisis_BES/CaracolesNeighbours.R")
 # read data
-comp <- read.csv2("C:/Users/Cisco/Documents/TFM/Analisis_BES/data/competition_caracoles2020.csv",stringsAsFactors = FALSE)
+comp <- read.csv2("Analisis_BES/data/competition_caracoles2020.csv",stringsAsFactors = FALSE)
 comp<- subset(comp, plot != 4)#This year I don't have for some species the abundance of the plot 4, for that reason I remove it for all the dataframes
 str(comp)
-abund <- read.csv2("C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Abundances_2020.csv",stringsAsFactors = FALSE)
+abund <- read.csv2("Analisis_BES/data/Abundances_2020.csv",stringsAsFactors = FALSE)
 abund <- dplyr::arrange(abund,year,month,day,plot,subplot,species)
 abund$unique_id <- paste(abund$plot, abund$subplot, abund$species, sep="_")
 abund <- abund %>% distinct(unique_id,.keep_all = TRUE)
@@ -146,7 +146,7 @@ head(plants.neigh)
 
 
 #data of the coordenates of the plots
-distances <- read.csv("data/caracolesplotposition.csv", sep = ";") 
+distances <- read.csv("Analisis_BES/data/caracolesplotposition.csv", sep = ";") 
 head(distances) #In this data I have only the coordenates for one plot. Now I have to calculate for the rest plots
 
 distances <- distances[seq(2,72,2),]
@@ -360,12 +360,12 @@ head(neigbors.intra.inter.split)
 
 
 #Final dataframes ----
-#write.csv2(data,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Final_global_data.csv",row.names = FALSE) 
+#write.csv2(data,file = "Analisis_BES/data/Final_global_data.csv",row.names = FALSE) 
 #       Here I have all the neighbors together
 
-#write.csv2(neigbors.intra.inter.split,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Data_neighbors.intra.inter.split.csv",row.names = FALSE)
+#write.csv2(neigbors.intra.inter.split,file = "Analisis_BES/data/Data_neighbors.intra.inter.split.csv",row.names = FALSE)
 #       Here I have the neighbors separate in intra and inter
 
-#write.csv2(disfinal,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/distances.csv",row.names = FALSE)
+#write.csv2(disfinal,file = "Analisis_BES/data/distances.csv",row.names = FALSE)
 #       dataframe with the distances across plots and subplots
 
