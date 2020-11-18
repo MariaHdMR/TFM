@@ -23,7 +23,8 @@ w5 <- knn2nb(knearneigh(coordinates(distances[,3:4]), k=8))
 #Visits (count)----
 #>beetles 
 beetle <- subset(data, Group == "Beetle")
-beetle$plot <- as.numeric(as.character(beetle$plot)) #esto me preocupa un poco por que indica que los datos no son homogeneos...
+beetle$plot <- as.numeric(as.character(beetle$plot)) #esto me preocupa un poco por que indica que los datos no son homogeneos...#M:pero beetle ya tiene
+# plot como numeric, lo hice para que no me surgieran problemas, por qué pueden ser no homogeneos?
 beetle.v <- beetle[,c("plot", "subplot","visits")] #datos de plot, subplot, y visitas de BEETLES
 beetle.v <-beetle.v %>% group_by(plot, subplot) %>% summarise (visits = sum(visits))
 beetle.v <- left_join(distances, beetle.v, by= c("plot", "subplot"))
@@ -455,10 +456,11 @@ moran.test(num.plant$num.planta, nb2listw(w5)) # vecinos, I= 0.3247
 moran.plot(num.plant$num.planta,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation plants across plots")
 moran.mc(num.plant$num.planta, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
-par(mfrow=c(4,3))
+par(mfrow=c(2,2))
 plot(chfu.corr, main= " CHFU distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(lema.corr, main= " LEMA distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(pupa.corr, main= " PUPA distribution across plots",xlab="Distance (m)", ylab="Correlation")
+
 plot(me.corr, main= " MESU distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(cete.corr, main= " CETE distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(bema.corr, main= " BEMA distribution across plots",xlab="Distance (m)", ylab="Correlation")
@@ -641,7 +643,7 @@ moran.plot(juntas.plantas.fit$seeds,mat2listw(plots.dists.inv),main= "Spatial Au
 moran.mc(juntas.plantas.fit$seeds, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
 
-par(mfrow=c(4,3))
+par(mfrow=c(2,2))
 plot(chfu.corr.s, main= " CHFU fitness (seeds) distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(lema.corr.s, main= " LEMA fitness (seeds) distributionfitness across plots",xlab="Distance (m)", ylab="Correlation")
 plot(pupa.corr.s, main= " PUPA fitness (seeds) distribution across plots",xlab="Distance (m)", ylab="Correlation")
