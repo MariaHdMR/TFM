@@ -166,7 +166,7 @@ CHFU.sem1 <- CHFU.sem[,c( "seed", "fruit", "x_coor2", "y_coor2", "Bee","Beetle",
 #                                        butterflies, so I just need to eliminate it to can do the corregram
 
 
-CHFU.sem1$seed <- rescale(CHFU.sem1$seed)
+CHFU.sem1$seed <- rescale(CHFU.sem1$seed) #this is ok, but it's a decision how to scale... I am curious why this one.
 CHFU.sem1$n_neighbors_inter <- rescale(CHFU.sem1$n_neighbors_inter)
 CHFU.sem1$n_neighbors_intra <- rescale(CHFU.sem1$n_neighbors_intra)
 CHFU.sem1$flowers2 <- rescale(CHFU.sem1$flowers2)
@@ -185,7 +185,8 @@ print(modindices(multigroup.8))
 
 par(mfrow=c(1,1))
 semPaths(multigroup.8)
-
+#IB: Mola, podrias añadir en power point o similar los coeficientes de los paths, 
+# y esto sera tu resultado principal de la charla de la BES.
 
 
 
