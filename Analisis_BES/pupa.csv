@@ -1,0 +1,13 @@
+group;distance;bee;inter;intra;flower
+fitness;plot;0.521;0.238;0.012;NA
+fitness;3m;0.545;0.253;0.017;NA
+fitness;1m;0.672;0.514;-0.112;NA
+fitness;7.5cm;0.193;0.274;0.432;NA
+bee;plot;NA;0.243;-0.516;0.091
+bee;3m;NA;0.095;-0.486;0.135
+bee;1m;NA;-0.301;-0.14;-0.025
+bee;7.5cm;NA;0.487;0.526;-0.075
+fly;plot;NA;NA;0.251;NA
+fly;3m;NA;NA;-0.006;NA
+fly;1m;NA;NA;0.073;NA
+fly;7.5cm;NA;NA;-0.25;NA
