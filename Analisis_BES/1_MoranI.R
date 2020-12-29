@@ -34,7 +34,8 @@ head(beetle.v)
 #grafico de la correlacion espacial
 bet.corr <- spline.correlog(x=beetle.v$x_coor2, y=beetle.v$y_coor2,
                             z=beetle.v$visits, resamp=100, quiet=TRUE) 
-plot(bet.corr, main= " Spatial Autocorrelation beetles across plots")
+plot(bet.corr, main= " Spatial Autocorrelation beetles across plots",
+     ylim= c(-0.5:0.5))
 
 #test de moran. Aqui quiero obtener El estadistico de Moran y p.value 
 moran.test(beetle.v$visits,mat2listw(plots.dists.inv)) # I= 0.19
@@ -55,7 +56,7 @@ flies.v$visits[is.na(flies.v$visits)] <- 0
 
 flies.corr <- spline.correlog(x=flies.v$x_coor2, y=flies.v$y_coor2,
                               z=flies.v$visits, resamp=100, quiet=TRUE)
-plot(flies.corr, main= "Spatial autocorrelation flies across plots")
+plot(flies.corr, main= "Spatial autocorrelation flies across plots",ylim= c(-0.5:0.5))
 
 moran.test(flies.v$visits,mat2listw(plots.dists.inv)) # I= 0.0698
 moran.test(flies.v$visits, nb2listw(w5)) # vecinos, I= 0.11
@@ -73,7 +74,7 @@ but.v$visits[is.na(but.v$visits)] <- 0
 
 but.corr <- spline.correlog(x=but.v$x_coor2, y=but.v$y_coor2,
                             z=but.v$visits, resamp=100, quiet=TRUE)
-plot(but.corr, main= "Spatial autocorrelation butterflies across plots")
+plot(but.corr, main= "Spatial autocorrelation butterflies across plots",ylim= c(-0.5:0.5))
 
 moran.test(but.v$visits,mat2listw(plots.dists.inv)) # I= -1.032727e-02, homogenius
 moran.test(but.v$visits, nb2listw(w5)) # vecinos, I=  -0.0125584112
@@ -91,7 +92,7 @@ bee.v$visits[is.na(bee.v$visits)] <- 0
 
 bee.corr <- spline.correlog(x=bee.v$x_coor2, y=bee.v$y_coor2,
                             z=bee.v$visits, resamp=100, quiet=TRUE)
-plot(bee.corr, main= "Spatial autocorrelation bees across plots")
+plot(bee.corr, main= "Spatial autocorrelation bees across plots", ylim= c(-0.5:0.5))
 
 moran.test(bee.v$visits,mat2listw(plots.dists.inv))# I = 0.03588
 moran.test(bee.v$visits, nb2listw(w5))# I= 0.0617
@@ -110,7 +111,7 @@ junto$visit[is.na(junto$visit)] <- 0
 
 total.corr <- spline.correlog(x=junto$x_coor2, y=junto$y_coor2,
                               z=junto$visit, resamp=100, quiet=TRUE)
-plot(total.corr, main= "Spatial Autocorrelation visitors across plots")
+plot(total.corr, main= "Spatial Autocorrelation visitors across plots", ylim= c(-0.5:0.5))
 
 moran.test(junto$visit,mat2listw(plots.dists.inv)) # I= 0.1840
 moran.test(junto$visit, nb2listw(w5)) # vecinos, I= 0.2493
@@ -118,13 +119,16 @@ moran.plot(junto$visit,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation
 moran.mc(junto$visit, mat2listw(plots.dists.inv), nsim=99) #p-value= 0.01
 #IB: Overall, there is a moderate spatial pattern. I am not sure we need to present this in the paper. 
 
-par(mfrow=c(2,3))
-plot(bet.corr, main= " Beetles distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(flies.corr, main= "Flies distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(but.corr, main= "Butterflies distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(bee.corr, main= "Bees distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(total.corr, main= "Floral visitors distribution across plots",xlab="Distance (m)", ylab="Correlation")
+par(mfrow=c(2,2))
+plot(bet.corr, main= " Beetles distribution",xlab="Distance (m)", ylab="Correlation", ylim= c(-0.5:0.5))
+plot(flies.corr, main= "Flies distribution",xlab="Distance (m)", ylab="Correlation", ylim= c(-0.5:0.5))
+plot(but.corr, main= "Butterflies distribution",xlab="Distance (m)", ylab="Correlation", ylim= c(-0.5:0.5))
+plot(bee.corr, main= "Bees distribution",xlab="Distance (m)", ylab="Correlation", ylim= c(-0.5:0.5))
+plot(total.corr, main= "Floral visitors distribution",xlab="Distance (m)", ylab="Correlation", ylim= c(-0.5:0.5))
 par(mfrow=c(1,1))
+
+
+
 
 #now, I'll try with the number of visits per Group of floral visitors / number of flowers of the  Plant species that they visited per subplot
 #                       and per plot
@@ -278,7 +282,8 @@ CHFU.p$num.planta[is.na(CHFU.p$num.planta)] <- 0
 #grafico de la correlacion espacial
 chfu.corr <- spline.correlog(x=CHFU.p$x_coor2, y=CHFU.p$y_coor2,
                              z=CHFU.p$num.planta, resamp=100, quiet=TRUE)
-plot(chfu.corr, main= " Spatial Autocorrelation CHFU across plots")
+plot(chfu.corr, main=expression(paste("Spatial autocorrelation ",italic("Chamaemelum fuscatum"))), ylim= c(-0.5:0.5))
+
 
 moran.test(CHFU.p$num.planta,mat2listw(plots.dists.inv)) # I= 0.20
 moran.test(CHFU.p$num.planta, nb2listw(w5)) # vecinos, I= 0.3198
@@ -297,6 +302,8 @@ lema.corr <- spline.correlog(x=LEMA.2$x_coor2, y=LEMA.2$y_coor2,
                              z=LEMA.2$num.planta, resamp=100, quiet=TRUE)
 plot(lema.corr, main= " Spatial Autocorrelation LEMA across plots")
 
+plot(lema.corr, main=expression(paste("Spatial autocorrelation ",italic("Leontodon maroccanus"))), ylim= c(-0.5:0.5))
+
 moran.test(LEMA.2$num.planta,mat2listw(plots.dists.inv)) # I= 0.24
 moran.test(LEMA.2$num.planta, nb2listw(w5)) # vecinos, I= 0.39
 moran.plot(LEMA.2$num.planta,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation LEMA across plots")
@@ -312,6 +319,9 @@ PUPA.p1$num.planta[is.na(PUPA.p1$num.planta)] <- 0
 pupa.corr <- spline.correlog(x=PUPA.p1$x_coor2, y=PUPA.p1$y_coor2,
                              z=PUPA.p1$num.planta, resamp=100, quiet=TRUE)
 plot(pupa.corr, main= " Spatial Autocorrelation PUPA across plots")
+
+plot(pupa.corr, main=expression(paste("Spatial autocorrelation ",italic("Pulicaria paludosa"))), ylim= c(-0.5:0.5))
+
 
 moran.test(PUPA.p1$num.planta,mat2listw(plots.dists.inv)) # I= 0.2128
 moran.test(PUPA.p1$num.planta, nb2listw(w5)) # vecinos, I= 0.288
@@ -329,6 +339,8 @@ MESU.p$num.planta[is.na(MESU.p$num.planta)] <- 0
 me.corr <- spline.correlog(x=MESU.p$x_coor2, y=MESU.p$y_coor2,
                            z=MESU.p$num.planta, resamp=100, quiet=TRUE)
 plot(me.corr, main= " Spatial Autocorrelation MESU across plots")
+
+plot(me.corr, main=expression(paste("Spatial autocorrelation ",italic("Melillotus sulcatus"))), ylim= c(-0.5:0.5))
 
 moran.test(MESU.p$num.planta,mat2listw(plots.dists.inv)) # I= 0.153
 moran.test(MESU.p$num.planta, nb2listw(w5)) # vecinos, I= 0.20
@@ -348,6 +360,8 @@ chmi.corr <- spline.correlog(x=CHMI.p$x_coor2, y=CHMI.p$y_coor2,
                              z=CHMI.p$num.planta, resamp=100, quiet=TRUE)
 plot(chmi.corr, main= " Spatial Autocorrelation CHMI across plots")
 
+plot(chmi.corr, main=expression(paste("Spatial autocorrelation ",italic("Chamaemelum mixtum"))), ylim= c(-0.5:0.5))
+
 moran.test(CHMI.p$num.planta,mat2listw(plots.dists.inv)) # I= 2.779055e-02 
 moran.test(CHMI.p$num.planta, nb2listw(w5)) # vecinos, I=  0.0566546763 
 moran.plot(CHMI.p$num.planta,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation CHMI across plots")
@@ -364,6 +378,8 @@ CETE.p$num.planta[is.na(CETE.p$num.planta)] <- 0
 cete.corr <- spline.correlog(x=CETE.p$x_coor2, y=CETE.p$y_coor2,
                              z=CETE.p$num.planta, resamp=100, quiet=TRUE)
 plot(cete.corr, main= " Spatial Autocorrelation CETE across plots")
+
+plot(cete.corr, main=expression(paste("Spatial autocorrelation ",italic("Centaurium tenuiflorum"))), ylim= c(-0.5:0.5))
 
 moran.test(CETE.p$num.planta,mat2listw(plots.dists.inv)) # I= 0.1435
 moran.test(CETE.p$num.planta, nb2listw(w5)) # vecinos, I= 0.2557
@@ -382,6 +398,8 @@ bema.corr <- spline.correlog(x=BEMA.p$x_coor2, y=BEMA.p$y_coor2,
                              z=BEMA.p$num.planta, resamp=100, quiet=TRUE)
 plot(bema.corr, main= " Spatial Autocorrelation BEMA across plots")
 
+plot(bema.corr, main=expression(paste("Spatial autocorrelation ",italic("Beta macrocarpa"))), ylim= c(-0.5:0.5))
+
 moran.test(BEMA.p$num.planta,mat2listw(plots.dists.inv)) # I=  0.1452
 moran.test(BEMA.p$num.planta, nb2listw(w5)) # vecinos, 0.277
 moran.plot(BEMA.p$num.planta,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation BEMA across plots")
@@ -398,6 +416,8 @@ SCLA.p$num.planta[is.na(SCLA.p$num.planta)] <- 0
 scla.corr <- spline.correlog(x=SCLA.p$x_coor2, y=SCLA.p$y_coor2,
                              z=SCLA.p$num.planta, resamp=100, quiet=TRUE)
 plot(scla.corr, main= " Spatial Autocorrelation SCLA across plots")
+
+plot(scla.corr, main=expression(paste("Spatial autocorrelation ",italic("Scorzonera laciniata"))), ylim= c(-0.5:0.5))
 
 moran.test(SCLA.p$num.planta,mat2listw(plots.dists.inv)) # I= 0.119
 moran.test(SCLA.p$num.planta, nb2listw(w5)) # vecinos,  0.19
@@ -416,6 +436,8 @@ soas.corr <- spline.correlog(x=SOAS.p$x_coor2, y=SOAS.p$y_coor2,
                              z=SOAS.p$num.planta, resamp=100, quiet=TRUE)
 plot(soas.corr, main= " Spatial Autocorrelation SOAS across plots")
 
+plot(soas.corr, main=expression(paste("Spatial autocorrelation ",italic("Sonchus asper"))), ylim= c(-0.5:0.5))
+
 moran.test(SOAS.p$num.planta,mat2listw(plots.dists.inv)) # I= 0.2331
 moran.test(SOAS.p$num.planta, nb2listw(w5)) # vecinos,  0.3411
 moran.plot(SOAS.p$num.planta,mat2listw(plots.dists.inv), main= " Spatial Autocorrelation SOAS across plots")
@@ -432,6 +454,7 @@ SPRU.p$num.planta[is.na(SPRU.p$num.planta)] <- 0
 spru.corr <- spline.correlog(x=SPRU.p$x_coor2, y=SPRU.p$y_coor2,
                              z=SPRU.p$num.planta, resamp=100, quiet=TRUE)
 plot(spru.corr, main= " Spatial Autocorrelation SPRU across plots")
+plot(spru.corr, main=expression(paste("Spatial autocorrelation ",italic("Spergularia rubra"))), ylim= c(-0.5:0.5))
 
 moran.test(SPRU.p$num.planta,mat2listw(plots.dists.inv)) # I= 0.1086
 moran.test(SPRU.p$num.planta, nb2listw(w5)) # vecinos,  0.09
@@ -451,24 +474,17 @@ total.corr.pl <- spline.correlog(x=num.plant$x_coor2, y=num.plant$y_coor2,
                                  z=num.plant$num.planta, resamp=100, quiet=TRUE)
 plot(total.corr.pl, main= "Spatial Autocorrelation plants across plots")
 
+
 moran.test(num.plant$num.planta,mat2listw(plots.dists.inv)) # I= 0.21
 moran.test(num.plant$num.planta, nb2listw(w5)) # vecinos, I= 0.3247
 moran.plot(num.plant$num.planta,mat2listw(plots.dists.inv),main= "Spatial Autocorrelation plants across plots")
 moran.mc(num.plant$num.planta, mat2listw(plots.dists.inv), nsim=99) #p-value=0.01
 
-par(mfrow=c(2,2))
-plot(chfu.corr, main= " CHFU distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(lema.corr, main= " LEMA distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(pupa.corr, main= " PUPA distribution across plots",xlab="Distance (m)", ylab="Correlation")
+par(mfrow=c(3,1))
+plot(chfu.corr, main=expression(paste("Distribution",italic(" Chamaemelum fuscatum"))), ylim= c(-0.5:0.5),xlab="Distance (m)", ylab="Correlation")
+plot(lema.corr, main=expression(paste("Distribution",italic(" Leontodon maroccanus"))), ylim= c(-0.5:0.5),xlab="Distance (m)", ylab="Correlation")
+plot(pupa.corr, main=expression(paste("Distribution",italic(" Pulicaria paludosa"))), ylim= c(-0.5:0.5),xlab="Distance (m)", ylab="Correlation")
 
-plot(me.corr, main= " MESU distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(cete.corr, main= " CETE distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(bema.corr, main= " BEMA distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(scla.corr, main= " SCLA distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(spru.corr, main= " SPRU distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(soas.corr, main= " SOAS distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(chmi.corr, main= " CHMI distribution across plots",xlab="Distance (m)", ylab="Correlation")
-plot(total.corr.pl, main= "Plants distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
 #IB: Great, remember to highlight plants are more clustered than pollinators.
 
@@ -656,6 +672,13 @@ plot(cete.corr.s, main= " CETE fitness (seeds) distribution across plots",xlab="
 plot(bema.corr.s, main= " BEMA fitness (seeds) distribution across plots",xlab="Distance (m)", ylab="Correlation")
 plot(total.corr.pl.s, main= "Plant fitness (seeds) distribution across plots",xlab="Distance (m)", ylab="Correlation")
 par(mfrow=c(1,1))
+
+par(mfrow=c(3,1))
+plot(chfu.corr.s, main=expression(paste("Distribution",italic(" Chamaemelum fuscatum"), " fitness")), ylim= c(-0.5:0.5),xlab="Distance (m)", ylab="Correlation")
+plot(lema.corr.s, main=expression(paste("Distribution",italic(" Leontodon maroccanus")," fitness")), ylim= c(-0.5:0.5),xlab="Distance (m)", ylab="Correlation")
+plot(pupa.corr.s, main=expression(paste("Distribution",italic(" Pulicaria paludosa"), " fitness")), ylim= c(-0.5:0.5),xlab="Distance (m)", ylab="Correlation")
+par(mfrow=c(1,1))
+
 #IB: I think we can skip this one too for the presentation. 
 #In any case, I would only explore the three species analyzed in detail for fitness
 
