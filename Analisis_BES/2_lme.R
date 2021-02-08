@@ -59,7 +59,7 @@ head(as.data.frame(todo))
 #control for the lme
 lCtr <- lmeControl(maxIter = 5000, msMaxIter = 5000, tolerance = 1e-9, niterEM = 250, msMaxEval = 200)#this lmecontrol is
 #                   going to be used in all the lme models for all the species
-#>CHFU seeds/one fruit
+#>CHFU seeds/one fruit----
 CHFU.vis <- subset(todo, Plant == "CHFU")
 hist (log(CHFU.vis$seed))
 #fit random structure
@@ -90,9 +90,8 @@ residplot(m.prueba.chufu.3)
 #In this case, I am not worried by which has better residuals, but more explanatory power.
 summary(m.prueba.chufu.3)
 m.prueba_sec.chufu.2 <- dredge(m.prueba.chufu.3, 
-                               trace = TRUE, rank = "AIC", 
-                               REML = FALSE) 
-#IB: Why AICc and not AIC? Is this considered a low sample size?----
+                               trace = TRUE, rank = "AIC") 
+
 (attr(m.prueba_sec.chufu.2, "rank.call"))
 fmList.prueba.chufu.2 <- get.models(m.prueba_sec.chufu.2, 1:6) 
 importance(fmList.prueba.chufu.2) #MARIA, this is how you calculate importance. 
@@ -101,7 +100,7 @@ importance(fmList.prueba.chufu.2) #MARIA, this is how you calculate importance.
 summary(model.avg(fmList.prueba.chufu.2))# nothing
 r.squaredGLMM(m.prueba.chufu.3)
 
-#CHFU seeds per total fruits
+#CHFU seeds per total seeds
 #fit random structure
 m1.fr<- lme(seed.indv ~ 1, data= CHFU.vis,random = ~1 |plot, control=lCtr,
          method = "ML")
@@ -133,7 +132,7 @@ summary(model.avg(fmList.prueba.chufu.2.fr))# neigh intra 1m
 importance(fmList.prueba.chufu.2.fr) 
 r.squaredGLMM(m.prueba.chufu.3.fr)
 
-CHFU.vis$fittedvalues <- fitted(m.prueba.chufu.3.fr) #estas usando el modelo completo-----
+CHFU.vis$fittedvalues <- fitted(m.prueba.chufu.3.fr) #estas usando el modelo completo
 g.chfu <- ggplot(CHFU.vis, aes(x = neigh_intra.1m))+
     geom_point(aes(y=seed.indv))+ #Aqui tenias seeds, pero el modelo lo haces con seed.idiv
     geom_smooth(method = "lm",aes(y=fittedvalues))+
@@ -142,7 +141,7 @@ g.chfu #no cuadra, duda IB: YA CUADRA.
 
 
 #LEMA
-#>LEMA seed/one fruit
+#>LEMA seed/one fruit----
 LEMA.vis <- subset(todo, Plant == "LEMA") 
 LEMA.vis1 <- LEMA.vis
 LEMA.vis1$Bee.fl[LEMA.vis1$Bee.fl== Inf] <- 'NA' #I have problems with the INf numbers, so I change them to NA and
@@ -183,7 +182,7 @@ summary(model.avg(fmList.prueba.lema.2))#
 importance(fmList.prueba.lema.2) #nice... beetles is positive! 
 
 
-#>LEMA (seed/one fruit)*fruits
+#>LEMA (seed/one fruit)*fruits= total seeds
 #random structure
 l1.fr<- lme(seed.indv ~ 1, data= LEMA.vis,random = ~1 |plot, control=lCtr,
          method = "ML")
@@ -225,7 +224,7 @@ PUPA.vis1 <- PUPA.vis1[!is.na(PUPA.vis1$Butterfly.fl),]
 PUPA.vis1 <- PUPA.vis1[!is.na(PUPA.vis1$Bee.fl),]
 
 
-#seed/one fruit
+#>PUPA seed/one fruit----
 #random structure
 p1<- lme(seed ~ 1, data= PUPA.vis,random = ~1 |plot, control=lCtr,
          method = "ML")
@@ -247,13 +246,12 @@ m.prueba.pupa.2 <- lme(seed ~ Beetle+Fly+ Bee +neigh_inter.1m+neigh_intra.1m+nei
 residplot(m.prueba.pupa.2)#se ajusta mal por la falta de puntos
 
 
-
 m.prueba_sec.pupa.2 <- dredge(m.prueba.pupa.2, trace = TRUE, rank = "AICc", REML = FALSE)#maybe neigh intra 7.5
 #IMPORTANTE. ELegir bien el modelo, porque si es el de visits counts las bees pueden tener importancia. 
 (attr(m.prueba_sec.pupa.2, "rank.call"))
 fmList.prueba.pupa.2 <- get.models(m.prueba_sec.pupa.2, 1:4) 
 summary(model.avg(fmList.prueba.pupa.2))# 
-importance(fmList.prueba.pupa.2)#bee, fly and beetle positive
+importance(fmList.prueba.pupa.2)#bee and fly positive
 r.squaredGLMM(m.prueba.pupa.2)
 
 PUPA.vis$fittedvalues1 <- fitted(m.prueba.pupa.2)
@@ -264,7 +262,7 @@ PUPA.seed.n <- ggplot(PUPA.vis, aes(x = neigh_intra.7.5))+
     ylab("Number of seed/fruit")+
     xlab("Number of neighbors intra at 7.5cm")+
     theme_light()
-PUPA.seed.n #molaria que fuese un efecto indirecto de polinizadores... a ver el SEM----
+PUPA.seed.n #molaria que fuese un efecto indirecto de polinizadores... a ver el SEM
 
 #(seed/one fruit)*fruits
 #random structure
@@ -315,14 +313,14 @@ PUPA.seed.n.7.5 <- ggplot(PUPA.vis, aes(x = neigh_inter.7.5))+
     theme_light()
 PUPA.seed.n.7.5 #poquisimos datos. Hay ahi un outlyer.
 
-###################################################################################################################
+####
 ################                                  VISITS----
-##################################################################################################################
+###
 #for the variable response visits, I have two posible variables: the visits (count) and the visits per flowers. I'm going
 #to do one lme per each, in order to see diferences. Also, these models are going to be done per group of floral visitor
 #For that reason, I'm going to use the general dataframe call data. It is more easy to do the subset with it.
 
-#Beetle visits
+#Beetle visits----
 Bet.vis <- subset(data, Group== "Beetle")
 #In Bet.vis I have some coordenates that are not unique, for that I change the y_coord in other to have different coordenates and the model could 
 #           converge. The next lines in the code are for changing these y coordenates. 
@@ -372,10 +370,10 @@ Bet.plot #super nice!!
 
 
 
-##butterflies
+##butterflies----
 but.vis <- subset(data, Group== "Butterfly") #solo 4 entradas
 
-#bees
+#bees----
 bee.vis <- subset(data, Group== "Bee")#I have rows with the same coordenates. 
 bee.vis$y_coor2 <-  jitter(bee.vis$y_coor2)
 
@@ -404,7 +402,7 @@ summary(model.avg(fmList.prueba.k2.bee))#
 importance(fmList.prueba.k2.bee)
 
 ####
-#flies
+#flies----
 #
 fly.vis <- subset(data, Group== "Fly")#I have rows with the same coordenates. 
 fly.vis$y_coor2 <-  jitter(fly.vis$y_coor2)
