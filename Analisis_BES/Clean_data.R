@@ -328,6 +328,11 @@ data <- data %>% distinct(unique_id, .keep_all = TRUE)
 data.spread.visitors <- spread(data, Group, visits, fill = 0, convert = FALSE,
                               drop = TRUE, sep = NULL) 
 
+#I want to see the correlations between the scale 7.5cm and 1m
+scales <- data.spread.visitors[,c("neigh_inter.1m", "neigh_intra.1m", "neigh_inter.7.5", "neigh_intra.7.5")]
+corrgram(scales, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
+         diag.panel=panel.density, pch=16, lty=1, main="Correlations between 1m and 7.5cm")
+
 #now I want to calculate the neighbors intra and inter separately.
 neigbors.intra.inter <- tidyr::gather(data.spread.visitors,'neigh_inter.plot', 'neigh_intra.plot', 'neigh_intra.3m', 'neigh_inter.3m', 'neigh_inter.1m', 
                                       'neigh_intra.1m', 'neigh_inter.7.5', 'neigh_intra.7.5', key = "distance", value = "n_neighbors" )
