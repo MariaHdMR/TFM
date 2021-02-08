@@ -29,7 +29,6 @@ Bee ~ n_neighbors_inter
 #intercept
 '
 
-
 modelo.chfu.fl <- ' #This model is for the dataframe neigbors.intra.inter.split #◘works with the no contrained
 #regresions
 #Plant_fitness = 
@@ -46,6 +45,8 @@ seed ~~flowers2
 '
 
 
+
+#modelo.chufu.1 es el mejor modelo si unicamente quiero meter las semillas por fruto. Saltar el resto de modelos salvo modelo.chfu.new
 modelo.chfu.1 <- ' #This model is for the dataframe neigbors.intra.inter.split #◘works with the no contrained
 #regresions
 #Plant_fitness = 
@@ -57,12 +58,11 @@ Bee ~ flowers2
 Bee ~inter
 flowers2 ~ inter + intra
 
+
 seed ~~flowers2
 
 #intercept
 '
-
-
 
 modelo.chfu.2 <- ' #This model is for the dataframe neigbors.intra.inter.split. works for the no constrained
 #regresions
@@ -78,10 +78,6 @@ seed ~~flowers2
 
 #intercept
 '
-
-
-
-
 
 modelo.chfu.3 <- ' #This model is for the dataframe neigbors.intra.inter.split.  works with the no constrained
 #regresions
@@ -111,22 +107,6 @@ seed ~~flowers2
 '
 
 
-modelo.chfu.5 <- ' #This model is for the dataframe neigbors.intra.inter.split. 
-#regresions
-#Plant_fitness = 
-seed ~ Bee
-seed ~ n_neighbors_inter 
-Bee ~n_neighbors_inter
-flowers2 ~ n_neighbors_inter
-
-seed ~~flowers2
-seed~seed
-#intercept
-'
-
-
-
-
 modelo.chfu.latent <-  '#This model is for the dataframe neigbors.intra.inter.split
 #regresions
 #Plant_fitness = ~ seed 
@@ -149,6 +129,27 @@ Fly ~  n_neighbors
 Beetle ~ n_neighbors
 #intercept
 '
+
+#this next model includes the seed/fruit that is going to be affected by the floral visitors, and the seed/indv that it is going to be affected by the neighbors
+#       (inter and intra neighbors). 
+modelo.chfu.new <- ' #This model is for the dataframe neigbors.intra.inter.split #◘works with the no contrained
+#regresions
+#Plant_fitness = 
+
+seed ~ Bee
+seed.indv ~ inter 
+seed.indv ~ intra
+Bee ~ flowers2
+Bee ~inter
+flowers2 ~ inter + intra
+
+seed~~flowers2
+seed.indv~~flowers2
+
+#intercept
+'
+
+
 #IMPORTANTE: 
 # >>CFI: The Comparative Fit Index is a revised form of NFI. Not very sensitive to sample size (Fan, Thompson, & Wang, 1999). 
 #           Compares the fit of a target model to the fit of an independent, or null, model. It should be > .90.
@@ -166,33 +167,45 @@ CHFU.sem1 <- CHFU.sem[,c( "seed", "fruit","seed.indv" ,"x_coor2", "y_coor2", "Be
 #                                        butterflies, so I just need to eliminate it to can do the corregram
 
 
-CHFU.sem1$seed <- rescale(CHFU.sem1$seed) #this is ok, but it's a decision how to scale... I am curious why this one.
-CHFU.sem1$n_neighbors_inter <- rescale(CHFU.sem1$n_neighbors_inter)
-CHFU.sem1$n_neighbors_intra <- rescale(CHFU.sem1$n_neighbors_intra)
-CHFU.sem1$flowers2 <- rescale(CHFU.sem1$flowers2)
-CHFU.sem1$Bee <- rescale(CHFU.sem1$Bee)
-CHFU.sem1$seed.indv <- rescale (CHFU.sem1$seed.indv)
+#I need to eliminate the letter g, because we are not going to consider the 7.5cm more. Update: I'm going to use 7.5cm, so I block this next line
+#chfu.sem2 <- subset(CHFU.sem1, distance_total != "g")
+chfu.sem2 <- CHFU.sem1
 
-CHFU.sem1$inter <- CHFU.sem1$n_neighbors_inter
-CHFU.sem1$intra <- CHFU.sem1$n_neighbors_intra
+chfu.sem2$seed <- rescale(chfu.sem2$seed) #this is ok, but it's a decision how to scale... I am curious why this one.
+chfu.sem2$seed.indv <- rescale(chfu.sem2$seed.indv)
+chfu.sem2$n_neighbors_inter <- rescale(chfu.sem2$n_neighbors_inter)
+chfu.sem2$n_neighbors_intra <- rescale(chfu.sem2$n_neighbors_intra)
+chfu.sem2$flowers2 <- rescale(chfu.sem2$flowers2)
+chfu.sem2$Bee <- rescale(chfu.sem2$Bee)
+chfu.sem2$seed.indv <- rescale (chfu.sem2$seed.indv)
 
-corrgram(CHFU.sem1, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
+chfu.sem2$inter <- chfu.sem2$n_neighbors_inter
+chfu.sem2$intra <- chfu.sem2$n_neighbors_intra
+chfu.corr <- chfu.sem2[,c( "seed", "fruit","seed.indv" ,
+                           "flowers2","distance_total")]
+corrgram(chfu.corr, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
+         diag.panel=panel.density, pch=16, lty=1, main="CHFU correlations simplified")
+
+corrgram(chfu.sem2, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
          diag.panel=panel.density, pch=16, lty=1, main="CHFU correlations") #to check the correlation between the variables
-multigroup.8 <- sem(modelo.chfu.1, CHFU.sem1, group = "distance_total") #the best model is the model.chfu.1 
+multigroup.8 <- sem(modelo.chfu.new, chfu.sem2, group = "distance_total") #the best model is the model.chfu.1  fot the seed/fruit
 summary(multigroup.8, standardize=T)
 varTable(multigroup.8)
-fitMeasures(multigroup.8, c("cfi","rmsea","srmr", "pvalue")) 
+#model indices CHFU ----
+fitMeasures(multigroup.8, c("cfi","rmsea","srmr", "pvalue")) #all the indices fit except rmsea. rmsea= 0.126 and it is supposed to be 
+#                                                              between 0.08 and 0.05, near 0. 
 print(modindices(multigroup.8))
 
-
+#Draw the path
 par(mfrow=c(1,1))
-semPaths(multigroup.8)
+semPaths(multigroup.8,whatLabels = "std",  residuals = F, exoCov = F, edge.label.cex=1.00, reorder = FALSE)#los coeff de los paths son la std
+
 #IB: Mola, podrias añadir en power point o similar los coeficientes de los paths, 
 # y esto sera tu resultado principal de la charla de la BES.
 
 
 #total seed per individual
-modelo.chfu.1.indv <- ' #This model is for the dataframe neigbors.intra.inter.split #◘works with the no contrained
+modelo.chfu.1.indv <- ' #This model is for the dataframe neigbors.intra.inter.split #works with the no contrained
 #regresions
 #Plant_fitness = 
 
@@ -207,18 +220,18 @@ seed.indv ~~flowers2
 
 #intercept
 '
-multigroup.8.indv <- sem(modelo.chfu.1.indv, CHFU.sem1, group = "distance_total") #the best model is the model.chfu.1 
+multigroup.8.indv <- sem(modelo.chfu.1.indv, chfu.sem2, group = "distance_total") #the best model is the model.chfu.1 
 summary(multigroup.8.indv, standardize=T)
 varTable(multigroup.8.indv)
 fitMeasures(multigroup.8.indv, c("cfi","rmsea","srmr", "pvalue")) #fittea
 print(modindices(multigroup.8.indv))
 
-
-
+#draw the path
+semPaths(multigroup.8.indv,whatLabels = "std",  residuals = F, exoCov = F, edge.label.cex=1.00, reorder = FALSE)
 
 
 #LEMA----
-
+#el siguiente modelo es el bueno si lo que quiero es hacer semillas por fruto
 modelo.lema.1 <- ' #This model is for the dataframe neigbors.intra.inter.split #works with the no contrained
 #regresions
 #Plant_fitness = 
@@ -234,39 +247,66 @@ Beetle  ~  inter
 #intercept
 '
 
+#this next model includes the seed/fruit and the seed/indv.
+#stranger things: the interaction seed ~beetles hace que el modelo fittee peor. 
+modelo.lema.new <- ' #This model is for the dataframe neigbors.intra.inter.split #works with the no contrained
+#regresions
+#Plant_fitness = 
+
+seed ~ Fly
+seed.indv ~ inter 
+seed.indv ~intra
+Beetle ~ inter 
+Fly ~intra
+flowers2 ~intra +inter
+Fly ~flowers2
+
+seed~~Fly
+Beetle ~~Fly
+
+#intercept
+'
+
 LEMA.sem <- subset(data, Plant== "LEMA")
-LEMA.sem1 <- LEMA.sem[,c( "seed", "fruit","seed.indv", "x_coor2", "y_coor2", "Butterfly","Beetle",
-                          "Fly", "flowers2","distance_total","n_neighbors_intra", "n_neighbors_inter")] #there are no visits of 
-#                                        butterflies, so I just need to eliminate it to can do the corregram
+LEMA.sem1 <- LEMA.sem[,c( "seed", "fruit","seed.indv", "x_coor2", "y_coor2", "Butterfly","Beetle", "Bee",
+                          "Fly", "flowers2","distance_total","n_neighbors_intra", "n_neighbors_inter")] 
+
+lema.sem2 <- LEMA.sem1
+#update: I will use the 7.5cm scale, so I blocked the next line.
+#lema.sem2 <- subset(LEMA.sem1, distance_total != "g")
+lema.sem2$seed <- rescale(lema.sem2$seed)
+lema.sem2$seed.indv <- rescale(lema.sem2$seed.indv)
+lema.sem2$n_neighbors_inter <- rescale(lema.sem2$n_neighbors_inter)
+lema.sem2$n_neighbors_intra <- rescale(lema.sem2$n_neighbors_intra)
+lema.sem2$flowers2 <- rescale(lema.sem2$flowers2)
+lema.sem2$Butterfly <- rescale(lema.sem2$Butterfly)
+lema.sem2$seed.indv <- rescale(lema.sem2$seed.indv)
+lema.sem2$flowers2 <- rescale(lema.sem2$flowers2)
+lema.sem2$Beetle <- rescale(lema.sem2$Beetle)
+lema.sem2$Fly <- rescale(lema.sem2$Fly)
+lema.sem2$Bee <- rescale(lema.sem2$Bee)
+
+lema.sem2$inter <- lema.sem2$n_neighbors_inter
+lema.sem2$intra <- lema.sem2$n_neighbors_intra
 
 
-LEMA.sem1$seed <- rescale(LEMA.sem1$seed)
-LEMA.sem1$n_neighbors_inter <- rescale(LEMA.sem1$n_neighbors_inter)
-LEMA.sem1$n_neighbors_intra <- rescale(LEMA.sem1$n_neighbors_intra)
-LEMA.sem1$flowers2 <- rescale(LEMA.sem1$flowers2)
-LEMA.sem1$Butterfly <- rescale(LEMA.sem1$Butterfly)
-LEMA.sem1$seed.indv <- rescale(LEMA.sem1$seed.indv)
-LEMA.sem1$flowers2 <- rescale(LEMA.sem1$flowers2)
-LEMA.sem1$Beetle <- rescale(LEMA.sem1$Beetle)
-LEMA.sem1$Fly <- rescale(LEMA.sem1$Fly)
+lema.corr <- lema.sem2[,c( "seed", "fruit","seed.indv" ,
+                           "flowers2","distance_total")]
+corrgram(lema.corr, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
+         diag.panel=panel.density, pch=16, lty=1, main="LEMA correlations simplified")
 
-
-
-
-LEMA.sem1$inter <- LEMA.sem1$n_neighbors_inter
-LEMA.sem1$intra <- LEMA.sem1$n_neighbors_intra
-
-corrgram(LEMA.sem1, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
-         diag.panel=panel.density, pch=16, lty=1, main="CHFU correlations") #to check the correlation between the variables
-multigroup.lema <- sem(modelo.lema.1, LEMA.sem1, group = "distance_total") #the best model is the model.chfu.1 
+corrgram(lema.sem2, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
+         diag.panel=panel.density, pch=16, lty=1, main="LEMA correlations") #to check the correlation between the variables
+multigroup.lema <- sem(modelo.lema.new, lema.sem2, group = "distance_total") #the best model is the modelo.lema.1 for the seed/fruit
 summary(multigroup.lema, standardize=T)
 varTable(multigroup.lema)
-fitMeasures(multigroup.lema, c("cfi","rmsea","srmr", "pvalue")) #fitea
+#model indeces LEMA ----
+fitMeasures(multigroup.lema, c("cfi","rmsea","srmr", "pvalue")) #fittea todo menos el pvalor. 
 print(modindices(multigroup.lema))
 
+#draw the path
 par(mfrow=c(1,1))
-semPaths(multigroup.lema)
-
+semPaths(multigroup.lema,whatLabels = "std",  residuals = F, exoCov = F, edge.label.cex=1.00, reorder = FALSE)
 
 
 
@@ -286,32 +326,30 @@ Beetle  ~  inter
 #intercept
 '
 
-multigroup.lema.indv <- sem(modelo.lema.1.indv, LEMA.sem1, group = "distance_total") #the best model is the model.chfu.1 
+multigroup.lema.indv <- sem(modelo.lema.1.indv, lema.sem2, group = "distance_total") #the best model is the model.chfu.1 
 summary(multigroup.lema.indv, standardize=T)
 varTable(multigroup.lema.indv)
 fitMeasures(multigroup.lema.indv, c("cfi","rmsea","srmr", "pvalue")) #fitea
 print(modindices(multigroup.lema.indv))
 
+#draw the path
 par(mfrow=c(1,1))
 semPaths(multigroup.lema.indv)
-
-
-
 
 
 #PUPA ----
 modelo.pupa.1 <- ' #This model is for the dataframe neigbors.intra.inter.split #works with the no contrained
 #regresions
 #Plant_fitness = 
-seed ~ Beetle
+seed ~ Bee
 seed ~ inter 
 seed ~ intra
-Beetle ~flowers2
+Bee ~flowers2
 Fly ~intra
 flowers2 ~inter+intra
 seed ~~ flowers2
-Beetle ~~ Fly
-Beetle  ~  inter
+Bee ~~ Fly
+Bee  ~  inter
 #intercept
 '
 
@@ -327,7 +365,7 @@ Fly ~intra
 
 #intercept
 '
-
+#this next model is the good one for the seeds/fruit
 modelo.pupa.3 <- ' #This model is for the dataframe neigbors.intra.inter.split #wnot bad, but can be good
 #regresions
 #Plant_fitness = 
@@ -337,6 +375,22 @@ seed ~ intra
 Bee ~inter + flowers2 + intra
 Fly ~intra 
 
+#intercept
+'
+#Este modelo es el mas cercano que he conseguido para PUPA. This model includes the seed/fruit and the seed/indv. 
+#strange things: in the output of the lme of this species, the Bees seems to be important for the fitness of this species, but in the SEM 
+# if we put the interaction between seed ~Bee the model didn't get a good fit; the fit of the model fit greatly when the seed~Bee interaction disappear.
+modelo.pupa.new <- ' #This model is for the dataframe neigbors.intra.inter.split 
+#regresions
+#Plant_fitness = 
+seed ~Fly
+seed.indv ~ inter 
+seed.indv ~ intra
+Bee ~inter 
+Bee ~intra
+Fly ~intra 
+seed.indv ~flowers2
+seed ~~seed.indv
 #intercept
 '
 
@@ -356,16 +410,24 @@ PUPA.sem1$seed.indv <- rescale(PUPA.sem1$seed.indv)
 PUPA.sem1$inter <- PUPA.sem1$n_neighbors_inter
 PUPA.sem1$intra <- PUPA.sem1$n_neighbors_intra
 
+
+pupa.corr <- PUPA.sem1[,c( "seed", "fruit","seed.indv" ,
+                           "flowers2","distance_total")]
+corrgram(pupa.corr, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
+         diag.panel=panel.density, pch=16, lty=1, main="PUPA correlations simplified")
+
 corrgram(PUPA.sem1, order=TRUE, lower.panel=panel.conf, upper.panel=panel.pts, text.panel=panel.txt,
-         diag.panel=panel.density, pch=16, lty=1, main="CHFU correlations") #to check the correlation between the variables
-multigroup.pupa <- sem(modelo.pupa.3, PUPA.sem1, group = "distance_total") #the best model is the model.chfu.1 
+         diag.panel=panel.density, pch=16, lty=1, main="PUPA correlations") #to check the correlation between the variables
+multigroup.pupa <- sem(modelo.pupa.new, PUPA.sem1, group = "distance_total") #the best model is the modelo.pupa.3 for seed/fruit
 summary(multigroup.pupa, standardize=T)
 varTable(multigroup.pupa)
-fitMeasures(multigroup.pupa, c("cfi","rmsea","srmr", "pvalue")) #fitea
+#model indices PUPA ----
+fitMeasures(multigroup.pupa, c("cfi","rmsea","srmr", "pvalue")) #fitea todo menos srmr y rmsea. 
 print(modindices(multigroup.pupa))
 
+#draw the path
 par(mfrow=c(1,1))
-semPaths(multigroup.pupa)
+semPaths(multigroup.pupa,whatLabels = "std",  residuals = F, exoCov = F, edge.label.cex=1.00, reorder = FALSE)
 
 #seed per individuals
 modelo.pupa.3.indv <- ' #This model is for the dataframe neigbors.intra.inter.split #wnot bad, but can be good
