@@ -1,0 +1,17 @@
+group;distance;inter;intra;fly
+seed_fruit;6m;NA;NA;0.047
+seed_fruit;3m;NA;NA;0.047
+seed_fruit;1m;NA;NA;0.047
+seed_fruit;7.5cm;NA;NA;0.047
+seed_total;6m;0.017;0;NA
+seed_total;3m;0.004;-0.024;NA
+seed_total;1m;0.001;-0.004;NA
+seed_total;7.5cm;0;0;NA
+fly;6m;NA;0.205;NA
+fly;3m;NA;0.056;NA
+fly;1m;NA;0.009;NA
+fly;7.5cm;NA;0.001;NA
+beetle;6m;-0.096;0.352;NA
+beetle;3m;-0.022;0.1;NA
+beetle;1m;-0.004;0.015;NA
+beetle;7.5cm;0;0.002;NA
