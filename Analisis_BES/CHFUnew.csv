@@ -1,0 +1,17 @@
+group;distance;bee;inter;intra
+seed_fruit;6m;0.111;NA;NA
+seed_fruit;3m;0.102;NA;NA
+seed_fruit;1m;0.097;NA;NA
+seed_fruit;7.5cm;0.087;NA;NA
+seed_total;6m;NA;NA;-0.185
+seed_total;3m;NA;NA;-0.174
+seed_total;1m;NA;NA;-0.1
+seed_total;7.5cm;NA;NA;0.028
+bee;6m;NA;-0.251;NA
+bee;3m;NA;-0.222;NA
+bee;1m;NA;-0.207;NA
+bee;7.5cm;NA;-0.191;NA
+flowers;6m;NA;-0.615;0.443
+flowers;3m;NA;-0.362;0.633
+flowers;1m;NA;-0.383;0.629
+flowers;7.5cm;NA;-0.32;0.153
