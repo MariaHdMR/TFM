@@ -19,7 +19,9 @@
 
 # load packages for calculating the neighbors
 library(tidyverse)
-library(dplyr)
+library(dplyr)  
+library(spdep) #this is for calculating the neighbors for Moran's I
+library(corrgram) # to do the corrgram
 
 #source("R/CaracolesNeighbours.R")
 source("Analisis_BES/CaracolesNeighbours.R")
@@ -194,16 +196,24 @@ FV$ID <- FV$ID_Simple
 head(FV)
 
 #In the alfonso data I have the fitness (number of seeds per one fruit) and the pollinators
-alfonsodata<-  read.table("Analisis_BES/data/2020_data_models_phenol_overlap_Seeds_per_fruit.csv", header=T, sep=",")
-head(alfonsodata)
-alfonsodata<- alfonsodata[,c("Plot","Subplot","Plant","Seeds_per_fruit","Fruit", "visits_GF", "ID")]
-alfonsodata$seed <- alfonsodata$Seeds_per_fruit
-alfonsodata$fruit <- alfonsodata$Fruit
+alfonsodata<-  read.table("Analisis_BES/data/2020_NN_NEW_data_models_phenol_overlap.csv", header=T, sep=",")
+head(alfonsodata)#This dataframe do not have the total seeds per individual. I need to calculate it, more down
+alfonsodata<- alfonsodata[,c("Plot","Subplot","Plant","Seeds_GF","Fruit_GF", "visits_GF", "ID")]
+
+alfonsodata$seed <- alfonsodata$Seeds_GF
+alfonsodata$fruit <- alfonsodata$Fruit_GF
 alfonsodata$visits <- alfonsodata$visits_GF
 alfonsodata <- subset(alfonsodata, Plot != 4)
 
-FV <- FV[,c("Day", "Month", "Year", "Plant", "ID", "Group")]
-head(FV)
+FV <- FV[,c("Day", "Month", "Year", "Plant", "ID_Simple", "Group")]
+head(FV)# reminder, my ID-SImple is the ID of the data of Alfonso
+
+FV$ID <- FV$ID_Simple
+#Remove points from ID names
+FV$ID <- sub("\\.", "", FV$ID)
+
+# filter tabanidae
+FV <- FV %>% filter(ID != "Tabanidae")
 
 FV.al <- left_join(alfonsodata, FV,  by= c("ID", "Plant"))
 FV.al <- distinct(FV.al)
@@ -213,8 +223,8 @@ FV.al<- FV.al %>% group_by(Day, Month, Year, Plot, Subplot, Group, Plant, seed, 
 
 #select the plots and subplots that I want
 head(FV.al)
+FV.al <- FV.al %>% filter(!is.na(Plant),Plant!="0",Subplot!="OUT",Plant!="Ground")
 FV.al <- subset(FV.al, Plot != "OUT")
-FV.al <- subset(FV.al, Subplot != "OUT")
 FV.al <- subset(FV.al, Plot != 4)
 
 FV.al$vis <- as.numeric(FV.al$vis) #necesary?
@@ -361,14 +371,14 @@ neigbors.intra.inter.split<- cbind(inter.neigh, intra)# in this data I have the 
 head(neigbors.intra.inter.split)
 
 
-#write.csv2(neigbors.intra.inter.split,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Data_neighbors.intra.inter.split.csv",row.names = FALSE)
+#write.csv2(neigbors.intra.inter.split,file = "C:/Users/Cisco/Documents/TFM/Analisis_BES/data/Data_neighbors.intra.inter.split.check1.csv",row.names = FALSE)
 
 
 #Final dataframes ----
-#write.csv2(data,file = "Analisis_BES/data/Final_global_data.csv",row.names = FALSE) 
+#write.csv2(data,file = "Analisis_BES/data/Final_global_data.check1.csv",row.names = FALSE) 
 #       Here I have all the neighbors together
 
-#write.csv2(neigbors.intra.inter.split,file = "Analisis_BES/data/Data_neighbors.intra.inter.split.csv",row.names = FALSE)
+#write.csv2(neigbors.intra.inter.split,file = "Analisis_BES/data/Data_neighbors.intra.inter.split.check1.csv",row.names = FALSE)
 #       Here I have the neighbors separate in intra and inter
 
 #write.csv2(disfinal,file = "Analisis_BES/data/distances.csv",row.names = FALSE)
