@@ -147,6 +147,7 @@ plants.neigh <- read.table("Analisis_BES/data/focal_neighbours.2020_2nphenology.
 head(plants.neigh)
 
 
+
 #data of the coordenates of the plots
 distances <- read.csv("Analisis_BES/data/caracolesplotposition.csv", sep = ";") 
 head(distances) #In this data I have only the coordenates for one plot. Now I have to calculate for the rest plots
@@ -255,6 +256,16 @@ final$individuals[is.na(final$individuals)] <- 1
 
 final$visits[final$visits== 0] <- 0.01 #in order to not have 0 to do the log I change the 0 values to 0,01
 hist(log(final$visits)) #zero inflated...
+
+#grafico para ver las visitas por especie de planta
+datos2 <- final %>% group_by(Group, Plant) %>% summarise (vis = sum(visits))%>%
+    ungroup()
+datos2 <- na.omit(datos2)
+ggplot(datos2, aes(fill=Group, y=vis, x=Plant)) + 
+    geom_bar(position="stack", stat="identity")+ theme_bw()+
+    labs(x ="Plant species", y = "Number of visits",fill=NULL)+ theme(legend.position="bottom")
+
+
 
 #NEIGHBORS Data transformation
 

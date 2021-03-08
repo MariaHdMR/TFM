@@ -11,7 +11,7 @@ library(ggplot2)
 
 data <- read.table("Analisis_BES/CHFUnew.csv", header= T , sep= ";") 
 data <- as.data.frame(data) 
-head(data)
+head(data) #Todos los valores entre 0 y 1, no hace falta modificar nada
 data$distance <- as.factor(data$distance)
 
 #CHUFU con seed_fruit
@@ -127,15 +127,24 @@ grid.arrange(fitness.bee1,fitness.intra.1,bee.inter2,flower.inter2, flower.intra
 data.lema <- read.table("Analisis_BES/LEMAnew.csv", header= T , sep= ";")
 head(data.lema)
 str(data.lema)
-lema.1 <- subset(data.lema, group== "seed_fruit")
+data.lema2 <- data.lema
+
+#Para dibujar el barplot sin problemas dentro de la escala entre -1 y 1, lo que voy a hacer es cambiar
+# los valores mayores de 1 por 1, simplemente para ver la tendencia de los gráficos. Para ello voy a crear
+# otra base de datos donde esten estos valores modificados. 
+
+data.lema2[,3:6][data.lema2 [,3:6] >1 ] <- 1
+
+lema.1 <- subset(data.lema2, group== "seed_fruit")
 lema.1 <- lema.1[,c("distance", "beetle", "fly")] 
 lema.1$distance <- factor(lema.1$distance, levels = c('7.5cm', '1m', '3m','6m'))
+
 
 
 seed.bet.lema<-ggplot(data=lema.1, aes(x=distance, y=beetle,fill=distance)) +
     geom_bar(stat="identity")
 seed.bet.lema1<-seed.bet.lema+labs(x = NULL, y= NULL,size=30)+ 
-    annotate("text", x = 2.5, y = -0.5, label = "Beetle to seeds per fruit", size=4)+
+    annotate("text", x = 2.6, y = -0.5, label = "Beetle to seeds per fruit", size=4)+
     theme(axis.title.y = element_text(size=15))+
     theme(axis.title.x = element_text(size=15))+
     theme(axis.line = element_line(colour="black"))+
@@ -146,7 +155,7 @@ seed.bet.lema1<-seed.bet.lema+labs(x = NULL, y= NULL,size=30)+
 seed.fly.lema3<-ggplot(data=lema.1, aes(x=distance, y=fly, fill=distance)) +
     geom_bar(stat="identity")
 seed.fly.lema1<-seed.fly.lema3+labs(x = NULL, y= NULL,size=30)+ 
-    annotate("text", x = 2.5, y = 0.8, label = "Fly to seeds per fruit", size=4)+
+    annotate("text", x = 2.6, y = -0.5, label = "Fly to seeds per fruit", size=4)+
     theme(axis.title.y = element_text(size=15))+
     theme(axis.title.x = element_text(size=15))+
     theme(axis.line = element_line(colour="black"))+
@@ -161,7 +170,7 @@ lema.5$distance <- factor(lema.5$distance, levels = c('7.5cm', '1m', '3m','6m'))
 seed.t.lema.intra<-ggplot(data=lema.5, aes(x=distance, y=intra,fill=distance)) +
     geom_bar(stat="identity")
 seed.t.lema1.intra<-seed.t.lema.intra+labs(x = NULL, y= NULL,size=30)+ 
-    annotate("text", x = 2.5, y = 0.8, label = "Intraspecific to total seeds", size=4)+
+    annotate("text", x = 2.6, y = 0.8, label = "Intraspecific to \n total seeds", size=4)+
     theme(axis.title.y = element_text(size=15))+
     theme(axis.title.x = element_text(size=15))+
     theme(axis.line = element_line(colour="black"))+
@@ -172,7 +181,7 @@ seed.t.lema1.intra<-seed.t.lema.intra+labs(x = NULL, y= NULL,size=30)+
 seed.t.lema.inter<-ggplot(data=lema.5, aes(x=distance, y=inter,fill=distance)) +
     geom_bar(stat="identity")
 seed.t.lema1.inter<-seed.t.lema.inter+labs(x = NULL, y= NULL,size=30)+ 
-    annotate("text", x = 2.5, y = 0.8, label = "Interspecific to total seeds", size=4)+
+    annotate("text", x = 2.6, y = 0.8, label = "Interspecific to \n total seeds", size=4)+
     theme(axis.title.y = element_text(size=15))+
     theme(axis.title.x = element_text(size=15))+
     theme(axis.line = element_line(colour="black"))+
@@ -190,7 +199,7 @@ lema.2$distance <- factor(lema.2$distance, levels = c('7.5cm', '1m', '3m','6m'))
 bet.intra.lema<-ggplot(data=lema.2, aes(x=distance, y=intra,fill=distance)) +
     geom_bar(stat="identity")
 bet.intra.lema1<-bet.intra.lema+labs(x = NULL, y= NULL,size=30)+ 
-    annotate("text", x = 2.5, y = 0.8, label = "Intraspecific to beetle", size=4)+
+    annotate("text", x = 2.6, y = 0.8, label = "Intraspecific to beetle", size=4)+
     theme(axis.title.y = element_text(size=15))+
     theme(axis.title.x = element_text(size=15))+
     theme(axis.line = element_line(colour="black"))+
@@ -201,7 +210,7 @@ bet.intra.lema1<-bet.intra.lema+labs(x = NULL, y= NULL,size=30)+
 bet.inter.lema<-ggplot(data=lema.2, aes(x=distance, y=inter,fill=distance)) +
     geom_bar(stat="identity")
 bet.inter.lema1<-bet.inter.lema+labs(x = NULL, y= NULL,size=30)+ 
-    annotate("text", x = 2.5, y = 0.8, label = "Interspecific to beetle", size=4)+
+    annotate("text", x = 2.6, y = 0.8, label = "Interspecific to beetle", size=4)+
     theme(axis.title.y = element_text(size=15))+
     theme(axis.title.x = element_text(size=15))+
     theme(axis.line = element_line(colour="black"))+
@@ -216,7 +225,7 @@ lema.3$distance <- factor(lema.3$distance, levels = c('7.5cm', '1m', '3m','6m'))
 fly.intra.lema<-ggplot(data=lema.3, aes(x=distance, y=intra, fill=distance)) +
     geom_bar(stat="identity")
 fly.intra.lema1<-fly.intra.lema+labs(x = NULL, y= NULL,size=30)+ 
-    annotate("text", x = 2.5, y = 0.8, label = "Intraspecific to fly", size=4)+
+    annotate("text", x = 2.6, y = 0.8, label = "Intraspecific to fly", size=4)+
     theme(axis.title.y = element_text(size=15))+
     theme(axis.title.x = element_text(size=15))+
     theme(axis.line = element_line(colour="black"))+
@@ -231,7 +240,7 @@ lema.4$distance <- factor(lema.4$distance, levels = c('7.5cm', '1m', '3m','6m'))
 flo.intra.lema<-ggplot(data=lema.4, aes(x=distance, y=intra,fill=distance)) +
     geom_bar(stat="identity")
 flo.intra.lema1<-flo.intra.lema+labs(x = NULL, y= NULL,size=30)+ 
-    annotate("text", x = 2.5, y = 0.8, label = "Intraspecific to flower", size=4)+
+    annotate("text", x = 2.6, y = 0.8, label = "Intraspecific to flower", size=4)+
     theme(axis.title.y = element_text(size=15))+
     theme(axis.title.x = element_text(size=15))+
     theme(axis.line = element_line(colour="black"))+
@@ -242,7 +251,7 @@ flo.intra.lema1<-flo.intra.lema+labs(x = NULL, y= NULL,size=30)+
 flo.inter.lema<-ggplot(data=lema.4, aes(x=distance, y=inter,fill=distance)) +
     geom_bar(stat="identity")
 flo.inter.lema1<-flo.inter.lema+labs(x = NULL, y= NULL,size=30)+ 
-    annotate("text", x = 2.5, y = 0.8, label = "Interspecific to flower", size=4)+
+    annotate("text", x = 2.6, y = 0.8, label = "Interspecific to flower", size=4)+
     theme(axis.title.y = element_text(size=15))+
     theme(axis.title.x = element_text(size=15))+
     theme(axis.line = element_line(colour="black"))+

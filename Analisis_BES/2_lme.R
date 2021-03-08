@@ -6,11 +6,29 @@ library(nlme)
 library(MuMIn)
 library(predictmeans)
 library(tidyverse)
+library(ggplot2)
 
 #fitness----
 data <- read_csv2("Analisis_BES/data/Final_global_data.check1.csv")
 data$visits <- as.numeric(data$visits)
 data <- as.data.frame(data)
+
+#First I'm going to do a barplot to see how many visits per guild have each plant species. 
+#Este gráfico además nos muestra las species de plantas de las que tenemos datos asociados de fitness
+# con datos de visitas y de vecinos. Mientras que el gráfico que está hecho en el script de clean analyses
+# tiene solo los datos de las especies que tienen visitas, a mi me parece más realista este gráfico. 
+datos <- data[!is.na(data$Group),]
+
+datos1 <- datos[,c("Group","visits", "Plant")]
+datos2 <- datos1 %>% group_by(Group, Plant) %>% summarise (vis = sum(visits))%>%
+  ungroup()
+
+ggplot(datos2, aes(fill=Group, y=vis, x=Plant)) + 
+  geom_bar(position="stack", stat="identity")+ theme_bw()+
+  labs(x ="Plant species", y = "Number of visits",fill=NULL)+ theme(legend.position="bottom")+
+  ggtitle("Number of visits per group per plant species")
+
+
 
 #I'm going to create 2 different dataframe in order to can spread the number of visits (count) and the number of visit
 # per flowers. For that, I create the two dataframes, I spread them, and after I join the columns.
@@ -111,7 +129,7 @@ residplot(m.prueba.chufu.3)
 summary(m.prueba.chufu.3)
 m.prueba_sec.chufu.2 <- dredge(m.prueba.chufu.3, trace = TRUE, rank = "AICc", REML = FALSE) 
 (attr(m.prueba_sec.chufu.2, "rank.call"))
-fmList.prueba.chufu.2 <- get.models(m.prueba_sec.chufu.2, 1:9) 
+fmList.prueba.chufu.2 <- get.models(m.prueba_sec.chufu.2, 1:9)#poner 10 
 importance(fmList.prueba.chufu.2) 
 #neig intra 1m > neigh intra 7.5 > neigh inter 7.5 > bee > fly > neigh inter 1m
  
@@ -279,14 +297,14 @@ importance(fmList.prueba.pupa.2)
 r.squaredGLMM(m.prueba.pupa.2)
 
 PUPA.vis$fittedvalues1 <- fitted(m.prueba.pupa.2)
-PUPA.seed.n <- ggplot(PUPA.vis, aes(x = neigh_intra.7.5))+
-    geom_point(aes(y= seed))+
-    geom_smooth(method = "lm",aes(y=fittedvalues1))+
-    ggtitle("PUPA fitness (seed/fruit) with neighbors intra at 7.5cm")+
-    ylab("Number of seed/fruit")+
-    xlab("Number of neighbors intra at 7.5cm")+
-    theme_light()
-PUPA.seed.n #molaria que fuese un efecto indirecto de polinizadores... a ver el SEM
+#PUPA.seed.n <- ggplot(PUPA.vis, aes(x = neigh_intra.7.5))+
+ #   geom_point(aes(y= seed))+
+  #  geom_smooth(method = "lm",aes(y=fittedvalues1))+
+  #  ggtitle("PUPA fitness (seed/fruit) with neighbors intra at 7.5cm")+
+  #  ylab("Number of seed/fruit")+
+  #  xlab("Number of neighbors intra at 7.5cm")+
+  #  theme_light()
+#PUPA.seed.n #molaria que fuese un efecto indirecto de polinizadores... a ver el SEM
 
 
 
@@ -321,24 +339,24 @@ r.squaredGLMM(m.prueba.pupa.2.fr)
 
 
 PUPA.vis$fittedvalues <- fitted(m.prueba.pupa.2.fr)
-PUPA.seed.n.bee <- ggplot(PUPA.vis, aes(x = Bee))+
-    geom_point(aes(y= seed.indv))+
-    geom_smooth(method = "lm",aes(y=fittedvalues))+
-    ggtitle("PUPA fitness (seed/fruit)*fruits with bee visits")+
-    ylab("Number of seed/fruit")+
-    xlab("Number of bee vistis")+
-    theme_light()
-PUPA.seed.n.bee #poquisimos datos... IB: Bueno... suficientes.
+#PUPA.seed.n.bee <- ggplot(PUPA.vis, aes(x = Bee))+
+#    geom_point(aes(y= seed.indv))+
+ #   geom_smooth(method = "lm",aes(y=fittedvalues))+
+#    ggtitle("PUPA fitness (seed/fruit)*fruits with bee visits")+
+ #   ylab("Number of seed/fruit")+
+  #  xlab("Number of bee vistis")+
+   # theme_light()
+#PUPA.seed.n.bee #poquisimos datos... IB: Bueno... suficientes.
 
 
-PUPA.seed.n.7.5 <- ggplot(PUPA.vis, aes(x = neigh_inter.7.5))+
-    geom_point(aes(y= seed.indv))+
-    geom_smooth(method = "lm",aes(y=fittedvalues))+
-    ggtitle("PUPA fitness (seed/fruit)*fruits with neighbors inter at 7.5cm")+
-    ylab("Number of seed/fruit")+
-    xlab("Number of neighbors inter at 7.5cm")+
-    theme_light()
-PUPA.seed.n.7.5 #poquisimos datos. 
+#PUPA.seed.n.7.5 <- ggplot(PUPA.vis, aes(x = neigh_inter.7.5))+
+#    geom_point(aes(y= seed.indv))+
+#    geom_smooth(method = "lm",aes(y=fittedvalues))+
+#    ggtitle("PUPA fitness (seed/fruit)*fruits with neighbors inter at 7.5cm")+
+#    ylab("Number of seed/fruit")+
+#    xlab("Number of neighbors inter at 7.5cm")+
+#    theme_light()
+#PUPA.seed.n.7.5 #poquisimos datos. 
 
 ####
 ################                                  VISITS----
@@ -349,8 +367,6 @@ PUPA.seed.n.7.5 #poquisimos datos.
 
 #Beetle visits----
 Bet.vis <- subset(data, Group== "Beetle")
-
-
 Bet.vis$neigh_inter.1m <- scale(Bet.vis$neigh_inter.1m)
 Bet.vis$neigh_intra.1m <- scale (Bet.vis$neigh_intra.1m)
 Bet.vis$flowers2 <- scale(Bet.vis$flowers2)

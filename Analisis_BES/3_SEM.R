@@ -1,10 +1,11 @@
 #Last stept in the analysis, the SEM multigroup. 
 library(corrgram)#SEM
-library(sem)#SEM
+#library(sem)#SEM # tener cuidado porque el paquese sem y lavaan crean problemas si estan los dos. 
 library(lavaan)#SEM
 library(scales)
 library(tidyverse)
 library(semPlot)
+#detach("package:sem",unload=TRUE)
 
 
 #IMPORTANTE: 
@@ -119,18 +120,6 @@ seed ~~flowers2
 '
 
 
-modelo.chfu.latent <-  '#This model is for the dataframe neigbors.intra.inter.split
-#regresions
-#Plant_fitness = ~ seed 
-#define the latent variables: V= floral visitors, n= Neighbors
-V = ~ Bee
-N = ~ n_neighbors_inter + n_neighbors_intra 
-#structural relations
-seed ~ V+N
-Bee ~n_neighbors_inter
-V~N
-#intercept
-'
 modelo1.chfu <- ' #This model is for the dataframe neigbors.intra.inter
 #regresions
 #Plant_fitness = ~ seed 
@@ -177,6 +166,7 @@ chfu.sem2$n_neighbors_intra <- scale(chfu.sem2$n_neighbors_intra)
 chfu.sem2$flowers2 <- scale(chfu.sem2$flowers2)
 chfu.sem2$Bee <- scale(chfu.sem2$Bee)
 chfu.sem2$seed.indv <- scale (chfu.sem2$seed.indv)
+chfu.sem2$Fly <- scale (chfu.sem2$Fly)
 
 chfu.sem2$inter <- chfu.sem2$n_neighbors_inter
 chfu.sem2$intra <- chfu.sem2$n_neighbors_intra
@@ -213,31 +203,6 @@ anova(multigroup.8, multigroup2.constrained) # Yes, there is a difference betwee
 #       the best model is the model no constrained one because the cfi, rmsea...indices.
 
 
-#total seed per individual
-#modelo.chfu.1.indv <- ' #This model is for the dataframe neigbors.intra.inter.split #works with the no contrained
-#regresions
-#Plant_fitness = 
-
-#seed.indv ~ Bee
-#seed.indv ~ inter 
-#seed.indv ~ intra
-#Bee ~ flowers2
-#Bee ~inter
-#flowers2 ~ inter + intra
-
-#seed.indv ~~flowers2
-
-#intercept
-#'
-#multigroup.8.indv <- sem(modelo.chfu.1.indv, chfu.sem2, group = "distance_total") #the best model is the model.chfu.1 
-#summary(multigroup.8.indv, standardize=T)
-#varTable(multigroup.8.indv)
-#fitMeasures(multigroup.8.indv, c("cfi","rmsea","srmr", "pvalue")) #fittea
-#print(modindices(multigroup.8.indv))
-
-#draw the path
-#semPaths(multigroup.8.indv,whatLabels = "std",  residuals = F, exoCov = F, edge.label.cex=1.00, reorder = FALSE)
-
 
 #LEMA----
 #el siguiente modelo es el bueno si lo que quiero es hacer semillas por fruto
@@ -266,12 +231,12 @@ seed ~ Fly
 seed~ Beetle
 seed.indv ~ inter 
 seed.indv ~intra
-Beetle ~ inter +intra 
-Fly ~intra 
+Beetle ~ inter+intra 
+Fly ~intra
+flowers2 ~intra + inter
 
-flowers2 ~intra +inter
 
-Fly ~~flowers2
+Fly~~flowers2
 Beetle ~~Fly
 seed.indv~~Beetle
 seed~~Fly
@@ -334,33 +299,6 @@ semPaths(multigroup.lema,whatLabels = "std",  residuals = F, exoCov = F, edge.la
 
 
 
-#seed per indv
-#modelo.lema.1.indv <- ' #This model is for the dataframe neigbors.intra.inter.split #works with the no contrained
-#regresions
-#Plant_fitness = 
-#seed.indv ~ Beetle
-#seed.indv ~ inter 
-#seed.indv ~ intra
-#Beetle ~flowers2
-#Fly ~intra
-#flowers2 ~inter+intra
-#seed.indv ~~ flowers2
-#Beetle ~~ Fly
-#Beetle  ~  inter
-#intercept
-#'
-
-#multigroup.lema.indv <- sem(modelo.lema.1.indv, lema.sem2, group = "distance_total") #the best model is the model.chfu.1 
-#summary(multigroup.lema.indv, standardize=T)
-#varTable(multigroup.lema.indv)
-#fitMeasures(multigroup.lema.indv, c("cfi","rmsea","srmr", "pvalue")) #fitea
-#print(modindices(multigroup.lema.indv))
-
-#draw the path
-#par(mfrow=c(1,1))
-#semPaths(multigroup.lema.indv)
-
-
 #PUPA ----
 modelo.pupa.1 <- ' #This model is for the dataframe neigbors.intra.inter.split #works with the no contrained
 #regresions
@@ -417,7 +355,8 @@ Beetle ~inter + intra
 '
 
 PUPA.sem <- subset(data, Plant== "PUPA")
-PUPA.sem1 <- PUPA.sem[,c( "seed", "fruit", "x_coor2", "y_coor2", "Bee","Beetle",
+PUPA.sem2 <- PUPA.sem %>% filter(!(seed==3244.5))#este es el outlayer que nos encontramos en el lme
+PUPA.sem1 <- PUPA.sem2[,c( "seed", "fruit", "x_coor2", "y_coor2", "Bee","Beetle",
                           "Fly","Butterfly", "flowers2","seed.indv", "distance_total","n_neighbors_intra", "n_neighbors_inter")] 
 
 PUPA.sem1$seed <- scale(PUPA.sem1$seed)
@@ -461,23 +400,3 @@ anova(multigroup.pupa, multigroup.pupa.constrained) # NO! There is not a differe
 #draw the path
 par(mfrow=c(1,1))
 semPaths(multigroup.pupa.constrained,whatLabels = "std",  residuals = F, exoCov = F, edge.label.cex=1.00, reorder = FALSE)
-
-#seed per individuals
-#modelo.pupa.3.indv <- ' #This model is for the dataframe neigbors.intra.inter.split #wnot bad, but can be good
-#regresions
-#Plant_fitness = 
-#seed.indv ~ Bee
-#seed.indv ~ inter 
-#seed.indv ~ intra
-#Bee ~inter + flowers2 + intra
-#Fly ~intra 
-
-#intercept
-#'
-
-#multigroup.pupa.indv <- sem(modelo.pupa.3.indv, PUPA.sem1, group = "distance_total") #the best model is the model.chfu.1 
-#summary(multigroup.pupa.indv, standardize=T)
-#varTable(multigroup.pupa.indv)
-#fitMeasures(multigroup.pupa.indv, c("cfi","rmsea","srmr", "pvalue")) #fitea
-#print(modindices(multigroup.pupa.indv))
-
