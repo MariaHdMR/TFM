@@ -28,6 +28,20 @@ library(semPlot)
 data <- read_csv2("Analisis_BES/data/Data_neighbors.intra.inter.split.check1.csv") #this is the data That I have the neigbors split
 data <- as.data.frame(data) 
 head(data)
+str(data)
+summary(data) #WHY THERE ARE between 444 and 1856 NA's per variable?!
+data$fruit * data$seed == data$seed.indv #WHY some values are FALSE?
+plot(data$fruit, data$seed) #THIS IS HIGHLY SUSPICIOUS.
+boxplot(data$n_neighbors_inter ~ data$distance)
+boxplot(data$n_neighbors_intra ~ data$distance)
+boxplot(data$seed ~ data$distance)
+boxplot(data$flowers ~ data$distance) #wierd to think on this across scales.
+#I suggest removing it
+boxplot(data$Bee ~ data$distance) #wierd to think on this across scales.
+boxplot(data$Fly ~ data$distance) #wierd to think on this across scales.
+table(data$Month, data$plot) #So, we are using visits per sampling day, BUT n_nei and seeds per season?
+table(data$Month, data$seed) ## I don't understand the data.
+
 
 
 modelo.chfu <- ' #This model is for the dataframe neigbors.intra.inter.split
@@ -42,7 +56,7 @@ Bee ~ n_neighbors_inter
 #intercept
 '
 
-modelo.chfu.fl <- ' #This model is for the dataframe neigbors.intra.inter.split #◘works with the no contrained
+modelo.chfu.fl <- ' #This model is for the dataframe neigbors.intra.inter.split #◘works with the no constrained
 #regresions
 #Plant_fitness = 
 
@@ -148,6 +162,23 @@ seed.indv~~flowers2
 #intercept
 '
 
+modelo.chfu.nacho <- ' #This model is for the dataframe neigbors.intra.inter.split #◘works with the no contrained
+#regresions
+#Plant_fitness = 
+
+seed ~ Bee + Fly
+fruit ~ inter + intra
+Bee ~ inter + intra + flowers2
+Fly ~ inter + intra + flowers2
+flowers2 ~ inter + intra
+seed.indv ~ seed + fruit
+
+Bee ~~ Fly
+fruit ~~ seed
+
+#intercept
+'
+
 
 CHFU.sem <- subset(data, Plant== "CHFU")
 CHFU.sem1 <- CHFU.sem[,c( "seed", "fruit","seed.indv" ,"x_coor2", "y_coor2", "Bee","Beetle",
@@ -158,6 +189,7 @@ CHFU.sem1 <- CHFU.sem[,c( "seed", "fruit","seed.indv" ,"x_coor2", "y_coor2", "Be
 #I need to eliminate the letter g, because we are not going to consider the 7.5cm more. Update: I'm going to use 7.5cm, so I block this next line
 #chfu.sem2 <- subset(CHFU.sem1, distance_total != "g")
 chfu.sem2 <- CHFU.sem1
+head(chfu.sem2)
 
 chfu.sem2$seed <- scale(chfu.sem2$seed) 
 chfu.sem2$seed.indv <- scale(chfu.sem2$seed.indv)
@@ -165,8 +197,9 @@ chfu.sem2$n_neighbors_inter <- scale(chfu.sem2$n_neighbors_inter)
 chfu.sem2$n_neighbors_intra <- scale(chfu.sem2$n_neighbors_intra)
 chfu.sem2$flowers2 <- scale(chfu.sem2$flowers2)
 chfu.sem2$Bee <- scale(chfu.sem2$Bee)
-chfu.sem2$seed.indv <- scale (chfu.sem2$seed.indv)
+#chfu.sem2$seed.indv <- scale (chfu.sem2$seed.indv)
 chfu.sem2$Fly <- scale (chfu.sem2$Fly)
+chfu.sem2$fruit <- scale(chfu.sem2$fruit)
 
 chfu.sem2$inter <- chfu.sem2$n_neighbors_inter
 chfu.sem2$intra <- chfu.sem2$n_neighbors_intra
@@ -183,6 +216,14 @@ varTable(multigroup.8)
 #model indices CHFU ----
 fitMeasures(multigroup.8, c("cfi","rmsea","srmr", "pvalue")) #2 of the 4 indices don't fit, rmesea and srmr.
 print(modindices(multigroup.8))
+
+#nacho path
+multigroup.9 <- sem(modelo.chfu.nacho, chfu.sem2, group = "distance_total") #the best model is the model.chfu.1  fot the seed/fruit
+summary(multigroup.9, standardize=T)
+varTable(multigroup.9)
+#model indices CHFU ----
+fitMeasures(multigroup.9, c("cfi","rmsea","srmr", "pvalue")) #2 of the 4 indices don't fit, rmesea and srmr.
+print(modindices(multigroup.9))
 
 #Draw the path
 par(mfrow=c(1,1))
@@ -202,6 +243,14 @@ fitMeasures(multigroup2.constrained,c("cfi","rmsea","srmr", "pvalue") )
 anova(multigroup.8, multigroup2.constrained) # Yes, there is a difference between the models,
 #       the best model is the model no constrained one because the cfi, rmsea...indices.
 
+
+#nacho model
+multigroup2.constrained <- sem(modelo.chfu.nacho, chfu.sem2, group = "distance_total", group.equal = c("intercepts", "regressions"))
+summary(multigroup2.constrained)
+fitMeasures(multigroup2.constrained,c("cfi","rmsea","srmr", "pvalue") )
+#now I compare both models to see if there is a difference between them
+anova(multigroup.9, multigroup2.constrained) # Yes, there is a difference between the models,
+#       the best model is the model no constrained one because the cfi, rmsea...indices.
 
 
 #LEMA----
@@ -244,6 +293,23 @@ Beetle~~flowers2
 #intercept
 '
 
+#nacho
+modelo.lema.nacho <- ' #This model is for the dataframe neigbors.intra.inter.split #works with the no contrained
+#regresions
+#Plant_fitness = 
+
+seed ~ Fly + Beetle
+fruit ~ inter + intra
+Beetle ~ inter + intra + flowers2
+Fly ~ inter + intra + flowers2
+flowers2 ~ intra + inter
+seed.indv ~ seed + fruit
+
+Beetle ~~Fly
+fruit ~~ seed
+#intercept
+'
+
 LEMA.sem <- subset(data, Plant== "LEMA")
 LEMA.sem1 <- LEMA.sem[,c( "seed", "fruit","seed.indv", "x_coor2", "y_coor2", "Butterfly","Beetle", "Bee",
                           "Fly", "flowers2","distance_total","n_neighbors_intra", "n_neighbors_inter")] 
@@ -257,11 +323,12 @@ lema.sem2$n_neighbors_inter <- scale(lema.sem2$n_neighbors_inter)
 lema.sem2$n_neighbors_intra <- scale(lema.sem2$n_neighbors_intra)
 lema.sem2$flowers2 <- scale(lema.sem2$flowers2)
 lema.sem2$Butterfly <- scale(lema.sem2$Butterfly)
-lema.sem2$seed.indv <- scale(lema.sem2$seed.indv)
-lema.sem2$flowers2 <- scale(lema.sem2$flowers2)
+#lema.sem2$seed.indv <- scale(lema.sem2$seed.indv)
+#lema.sem2$flowers2 <- scale(lema.sem2$flowers2)
 lema.sem2$Beetle <- scale(lema.sem2$Beetle)
 lema.sem2$Fly <- scale(lema.sem2$Fly)
 lema.sem2$Bee <- scale(lema.sem2$Bee)
+lema.sem2$fruit <- scale(lema.sem2$fruit)
 
 lema.sem2$inter <- lema.sem2$n_neighbors_inter
 lema.sem2$intra <- lema.sem2$n_neighbors_intra
@@ -281,6 +348,13 @@ varTable(multigroup.lema)
 fitMeasures(multigroup.lema, c("cfi","rmsea","srmr", "pvalue")) #fittea todo 
 print(modindices(multigroup.lema))
 
+#nacho
+multigroup.lema.2 <- sem(modelo.lema.nacho, lema.sem2, group = "distance_total") #the best model is the modelo.lema.1 for the seed/fruit
+summary(multigroup.lema.2, standardize=T)
+varTable(multigroup.lema.2)
+#model indeces LEMA ----
+fitMeasures(multigroup.lema.2, c("cfi","rmsea","srmr", "pvalue")) #fittea todo 
+print(modindices(multigroup.lema.2))
 
 
 #now I'm going to creat the same model but constrained. This means that we are not considerating the different scales. 
@@ -292,6 +366,14 @@ fitMeasures(multigroup.lema.constrained,c("cfi","rmsea","srmr", "pvalue") )
 anova(multigroup.lema, multigroup.lema.constrained) # Yes, there is a difference between the models,
 #       the best model is the model no constrained one because the cfi, rmsea...indices.
 
+
+#nacho
+multigroup.lema.constrained.2 <- sem(modelo.lema.nacho, lema.sem2, group = "distance_total", group.equal = c("intercepts", "regressions"))
+summary(multigroup.lema.constrained.2)
+fitMeasures(multigroup.lema.constrained.2,c("cfi","rmsea","srmr", "pvalue") )
+#now I compare both models to see if there is a difference between them
+anova(multigroup.lema.2, multigroup.lema.constrained.2) # Yes, there is a difference between the models,
+#       the best model is the model no constrained one because the cfi, rmsea...indices.
 
 #draw the path
 par(mfrow=c(1,1))
@@ -354,6 +436,26 @@ Beetle ~inter + intra
 #intercept
 '
 
+
+modelo.pupa.nacho <- ' #This model is for the dataframe neigbors.intra.inter.split 
+#regresions
+#Plant_fitness = 
+seed ~ Fly + Bee + Beetle
+fruit ~ inter + intra
+Fly ~ intra + inter #+ flowers2
+Bee ~ inter + intra #+ flowers2
+Beetle ~ inter + intra #+ flowers2
+#flowers2 ~ intra + inter
+seed.indv ~ seed + fruit
+
+#Beetle ~~ Fly
+#Beetle ~~ Bee
+#Bee ~~ Fly
+#fruit ~~ seed
+#intercept
+'
+
+
 PUPA.sem <- subset(data, Plant== "PUPA")
 PUPA.sem2 <- PUPA.sem %>% filter(!(seed==3244.5))#este es el outlayer que nos encontramos en el lme
 PUPA.sem1 <- PUPA.sem2[,c( "seed", "fruit", "x_coor2", "y_coor2", "Bee","Beetle",
@@ -365,6 +467,7 @@ PUPA.sem1$n_neighbors_intra <- scale(PUPA.sem1$n_neighbors_intra)
 PUPA.sem1$flowers2 <- scale(PUPA.sem1$flowers2)
 PUPA.sem1$Butterfly <- scale(PUPA.sem1$Butterfly)
 PUPA.sem1$seed.indv <- scale(PUPA.sem1$seed.indv)
+PUPA.sem1$fruit <- scale(PUPA.sem1$fruit)
 
 PUPA.sem1$inter <- PUPA.sem1$n_neighbors_inter
 PUPA.sem1$intra <- PUPA.sem1$n_neighbors_intra
@@ -384,6 +487,14 @@ varTable(multigroup.pupa)
 fitMeasures(multigroup.pupa, c("cfi","rmsea","srmr", "pvalue")) #fitea 2 de 4. No fitea: pvalue y rmsea. 
 print(modindices(multigroup.pupa))
 
+#nacho
+multigroup.pupa.nacho <- sem(modelo.pupa.nacho, PUPA.sem1, group = "distance_total") #the best model is the modelo.pupa.3 for seed/fruit
+summary(multigroup.pupa.nacho, standardize=T)
+varTable(multigroup.pupa.nacho)
+#model indices PUPA ----
+fitMeasures(multigroup.pupa.nacho, c("cfi","rmsea","srmr", "pvalue")) #fitea 2 de 4. No fitea: pvalue y rmsea. 
+print(modindices(multigroup.pupa.nacho))
+
 
 #now I'm going to creat the same model but constrained. This means that we are not considerating the different scales. 
 multigroup.pupa.constrained <- sem(modelo.pupa.new, PUPA.sem1, group = "distance_total", group.equal = c("intercepts", "regressions"))
@@ -395,6 +506,17 @@ anova(multigroup.pupa, multigroup.pupa.constrained) # NO! There is not a differe
 #                   the different abudances of the neighbors do not have an effect on the fitness. The model that 
 #                   explains better ou data is the model constrained. Better indices. 
 
+
+#nacho
+#now I'm going to creat the same model but constrained. This means that we are not considerating the different scales. 
+multigroup.pupa.constrained.nacho <- sem(modelo.pupa.nacho, PUPA.sem1, group = "distance_total", group.equal = c("intercepts", "regressions"))
+summary(multigroup.pupa.constrained.nacho, standardize=T)
+fitMeasures(multigroup.pupa.constrained.nacho,c("cfi","rmsea","srmr", "pvalue") )
+
+#now I compare both models to see if there is a difference between them
+anova(multigroup.pupa.nacho, multigroup.pupa.constrained.nacho) # NO! There is not a difference between the two models. So in Pupa
+#                   the different abudances of the neighbors do not have an effect on the fitness. The model that 
+#                   explains better ou data is the model constrained. Better indices. 
 
 
 #draw the path
